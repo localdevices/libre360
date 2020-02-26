@@ -56,12 +56,15 @@ def detect_cameras():
 
 def trigger_cameras():
     for idx, device in enumerate(usb_devices):
-        # print(idx, device)
         shot_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_file = save_dir + shot_time + "_cam_" + str(idx) + ".jpg"
+        before_time = datetime.now()
         subprocess.call([gphoto2, port, device, capture_image_and_download, filename, save_file])
+        after_time = datetime.now()
+        print("Camera {:02d}: {}".format(idx, (after_time - before_time).total_seconds()))
+
 
 kill_gphoto2_process()
 detect_cameras()
 trigger_cameras()
-# subprocess.call([gphoto2, capture_image_and_download, filename, save_location])
+
