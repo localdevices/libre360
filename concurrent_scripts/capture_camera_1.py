@@ -1,3 +1,11 @@
+'''
+@author Gabriel Maguire
+@date 4/26/2020
+
+This script is called from the main_camera_control.py script and serves to trigger an image capture
+for camera 1 in the array. The image number is passed in as a command line argument.
+'''
+
 from datetime import datetime
 import subprocess, sys
 
