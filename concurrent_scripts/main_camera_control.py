@@ -78,6 +78,7 @@ def main():
     detect_cameras()
     
     ''' This loop is used a temporary method of collecting user input to trigger an image capture '''
+    '''
     while True:
         value = input("Command:\n")
         if value == "capture":
@@ -89,12 +90,13 @@ def main():
             print("EXITING")
             break
     print(type(capture_time[0]))
+    '''
     
     '''
     These series of loops are used to test the total speed in seconds of the image capture
     and download with multiple cameras
     '''
-    '''
+    
     for _ in range(10):
         for _ in range(10):
             capture_image(count)
@@ -104,7 +106,7 @@ def main():
     print(capture_time)
     avg_capture_time = sum(capture_time) / len(capture_time)
     print("Average total capture time: {}".format(avg_capture_time))
-    '''
+    
 
 
 if __name__ == "__main__":
