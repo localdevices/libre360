@@ -5,7 +5,6 @@ import numpy as np
 import time
 
 class Ublox():
-
     def __init__(self, baud_rate=9600, timeout=5, parent=None):
         """
         Initiate object with defaults
@@ -20,8 +19,6 @@ class Ublox():
         self.data = None
         self.text = None
         self.find_serial_device()
-
-        pass
 
     def find_serial_device(self, wildcard='u-blox'):
         """
