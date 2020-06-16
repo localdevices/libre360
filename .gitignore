@@ -1,0 +1,6 @@
+# eggs
+/odm360.egg-info/
+/.eggs/
+
+#pycharm
+/.idea/
