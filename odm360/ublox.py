@@ -4,8 +4,12 @@ import datetime
 import numpy as np
 import time
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class Ublox():
-    def __init__(self, baud_rate=9600, timeout=5, parent=None):
+    def __init__(self, baud_rate=9600, timeout=5, parent=None, logger=logger):
         """
         Initiate object with defaults
 
@@ -19,6 +23,7 @@ class Ublox():
         self.serial = None
         self.data = None
         self.text = None
+        self.logger = logger
         self.find_serial_device()
 
     def find_serial_device(self, wildcard='u-blox'):
@@ -32,11 +37,11 @@ class Ublox():
             port = p[0]
             description = p[1]
             if wildcard in description:
-                print('Found {:s} on port {:s}'.format(description, port))
+                self.logger.info(f'Found {description} on port {port}')
                 self.port = port
                 return
         # if the end of function is reached, apparently, no suitable port was found
-        print('No device with wildcard {:s} found on COM ports'.format(wildcard))
+        raise IOError(f'No device with wildcard {wildcard} found on COM ports')
 
     def open_serial_device(self):
         """
@@ -45,6 +50,7 @@ class Ublox():
         if self.port is not None:
             try:
                 self.serial = serial.Serial(self.port, self.baud_rate, timeout=self.timeout)
+                logger.info(f'Serial port on {self.port} opened with baud rate {self.baud_rate}')
             except:
                 raise IOError('Cannot open serial device, check permissions')
         else:
@@ -56,7 +62,7 @@ class Ublox():
         """
         if self.serial is not None:
             self.serial.close()
-            print('Serial connection to {:s} is closed.'.format(self.port))
+            logger.warning('Serial connection to {:s} is closed.'.format(self.port))
         else:
             raise IOError('No serial connection is open.')
 
@@ -66,6 +72,7 @@ class Ublox():
         """
         if self.serial is not None:
             self.data = self.serial.readline()
+            self.logger.info(f'Line read from ublox on port {self.port} with baud rate {self.baud_rate}')
         else:
             raise IOError('No serial connection is open.')
 
@@ -76,11 +83,13 @@ class Ublox():
         if self.serial is not None:
             self.text = None  # reinitiate text
             _read = True
+            # TODO: implement a timeout in case no suitable data is found within timeout period
             while _read:
                 self.read_serial_device()
                 try:
                     self.text = self.data.decode('utf-8')
                     _read = False
+                    self.logger.info(f'Text read from ublox on port {self.port} with baud rate {self.baud_rate}')
                 except:
                     # binary data found, so read until
                     pass
