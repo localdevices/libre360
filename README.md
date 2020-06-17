@@ -20,7 +20,8 @@ See also: https://www.opendronemap.org/2020/05/360-cameras/
 
 This project is built around raspbian, but can likely be deployed on almost any linux flavor.
 
-To install an environment, use Miniconda and prepare an environment with
+If you wish to test and develop code, we recommend establishing a Miniconda environment.
+When deploying on a raspberry pi, you can skip this part.
 ```
 conda env create -f environment.yml
 ```
@@ -28,8 +29,11 @@ Before installation, make sure you have the gphoto2 library installed with
 ```
 sudo apt install libgphoto2-dev
 ```
-Then install odm360 as developer with
+If you are working on a isolated conda environment, then first activate it.
 ```
 conda activate odm360
-pip install -e .
+```
+Then install odm360 as developer with
+```
+pip3 install -e .
 ```
