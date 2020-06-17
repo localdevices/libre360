@@ -10,6 +10,6 @@ Using the [Raspberry Pi High Quality Camera](https://www.raspberrypi.org/product
 * 7.564 (H) x 5.476 (V) mm
 * $25, 6mm lens
 
-Using a [field of view calculator](https://zwww.scantips.com/lights/fieldofview.html), this gives us 49.06° vertical field of view, 64.38° horizontal. To create a 360° array, we would need 6 (H) or 7 (V) cameras mounted, which would total $450-$525, which is approximately the price of a single Sony α6000.
+Using a [field of view calculator](https://zwww.scantips.com/lights/fieldofview.html), this gives us 49.06° vertical field of view, 64.38° horizontal. To create a 360° array, we would need 6 (H) or 7 (V) cameras mounted, which would total $450-$525, which is approximately the price of a single Sony α6000. These costs do not yet include the cost of the controlling Raspberry Pi nor GPS.
 
 The Sony α6000 rig is 24.3MP x 5 cameras yield a ~120MP synthetic image. The proposed Raspberry PI High Quality Camera is 12.3MP x 7 cameras yielding ~85MP. For comparison, a GoPro Max is 16.6MP.
