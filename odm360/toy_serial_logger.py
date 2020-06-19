@@ -23,8 +23,9 @@ def make_serial_reader(baud_rate, timeout):
     ports = serial.tools.list_ports.comports()
     for port in ports:
         serial_reader = serial.Serial(port[0], baud_rate, timeout)
-        if(validate_NMEA_sentence(serial_reader.readline())):
-            return serial_reader
+        for i in range(10):
+            if(validate_NMEA_sentence(serial_reader.readline())):
+                return serial_reader
 
 def log_NMEA(serial_reader, outfile):
     with open(outfile, 'wb') as of:
@@ -39,8 +40,11 @@ def validate_NMEA_sentence(sentence):
     # At the moment this only checks for a leading '$' char (ASCII 36)
     if(sentence.strip()[0] == 36):
        return True
-    else:
-       return False
+
+def validate_rinex_sentence(sentence):
+    """Check for a valid Rinex sentence (for now in .ubx format)"""
+    # TODO: actually validate something
+    return True # just assume it's ok so anything not NMEA gets passed for now
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
