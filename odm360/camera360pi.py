@@ -44,7 +44,8 @@ class Camera360pi(PiCamera):
         while (_take) and (time.time()-start_time < timeout):
             try:
                 self.logger.debug(f'Trial {n}')
-                camera.capture('/home/pi/Desktop/image.jpg') # Temporary image location until set_dst_fn is defined
+                # Temporary image location until set_dst_fn is defined
+                self.src_photo_fn = camera.capture('/home/pi/Desktop/image.jpg')
                 dt = time.time()-start_time
                 _take = False
                 self.logger.info(f'Picture taken in {str(self.src_photo_fn)} within {dt*1000} ms')
