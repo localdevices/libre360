@@ -1,9 +1,3 @@
-# import serial
-# import serial.tools.list_ports
-# import datetime
-# import numpy as np
-# import time
-
 import logging
 from odm360.serial_device import SerialDevice
 logger = logging.getLogger(__name__)
