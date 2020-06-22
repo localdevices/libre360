@@ -3,4 +3,4 @@
 
 from odm360 import ublox
 from odm360 import log
-from odm360 import camera360
+from odm360 import camera360gphoto

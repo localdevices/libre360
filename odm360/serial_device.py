@@ -12,7 +12,7 @@ class SerialDevice():
     """
     Class for generic functionalities for any serial device. Can be inherited for specific serial devices.
     """
-    def __init__(self, baud_rate=9600, timeout=5, parent=None, logger=logger):
+    def __init__(self, baud_rate=9600, timeout=5, parent=None, wildcard='dummy', logger=logger):
         """
         Initiate object with defaults
 
@@ -27,7 +27,7 @@ class SerialDevice():
         self.data = None
         self.text = None
         self.logger = logger
-        self.find_serial_device()
+        self.find_serial_device(wildcard=wildcard)
 
     def find_serial_device(self, wildcard='dummy'):
         """
@@ -39,6 +39,7 @@ class SerialDevice():
         for p in ports:
             port = p[0]
             description = p[1]
+            print(description)
             if wildcard in description:
                 self.logger.info(f'Found {description} on port {port}')
                 self.port = port
