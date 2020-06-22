@@ -20,4 +20,10 @@ class Ublox(SerialDevice):
         else:
             raise ValueError('No text found.')
 
+    def log_rinex(self):
+        """
+        Logs raw rinex data from serial connection
 
+        :return:
+        """
+        raise NotImplementedError('Not implemented yet.')
