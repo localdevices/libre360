@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class Camera360(Camera):
+class Camera360G(Camera):
     """
     This class is for increasing the functionalities of the Camera class of gphoto2 specifically for
     the 360 camera use case. Additional functionalities are:

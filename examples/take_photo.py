@@ -1,15 +1,11 @@
 import gphoto2 as gp
-from odm360 import camera360
+from odm360 import camera360gphoto
 from odm360.log import setuplog
-camera = camera360.Camera360()
 camera_list = list(gp.Camera.autodetect())
-rig = [camera360.Camera360(addr=addr) for name, addr in camera_list]
-
+rig = [camera360gphoto.Camera360G(addr=addr) for name, addr in camera_list]
 camera = rig[0]
-#
-# print(cams)
-# start a logger with defined log levels. This may be used in our main call
 
+# start a logger with defined log levels. This may be used in our main call
 verbose = 2
 quiet = 0
 log_level = max(10, 30 - 10 * (verbose - quiet))
