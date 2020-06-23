@@ -1,3 +1,9 @@
+"""
+This example is for letting a raspberry pi (child) listen and respond to incoming msgs.
+On the Parent side, after this script is started, a orchastrator should run (raspi_connect.py)
+
+
+"""
 import platform
 from odm360.log import setuplog
 from odm360.serial_device import SerialDevice
@@ -16,7 +22,7 @@ logger.info("starting...")
 try:
     # initiate a  object
     logger.info(f"Starting raspi object on {port}.")
-    rpi = SerialDevice(port, timeout=1.)
+    rpi = SerialDevice(port, timeout=0.01)  # let child communicate with very high frequency so that no messages are missed
     logger.info(f"Opening port {rpi.port} for listening.")
     # # open the uart connection to raspi and see if we get a serial object back
     rpi.open_serial()
@@ -26,16 +32,19 @@ try:
         try:
             txt = rpi._from_serial_txt()
             if txt != "":
+                logger.info(f'Received command "{txt}"')
+
                 # TODO implement the actual camera connection with raspi camera, methods are below in commented lines
                 # # a non-empty string is received, pass it to the appropriate method
                 # f = getattr(camera, txt)
                 # # execute function
                 # f()
                 # # give feedback if everything worked out
-                rpi._to_serial("0")
+                rpi._to_serial("1")
+                # import pdb;pdb.set_trace()
         except:
             # error messages are handled in the specific functions. Provide feedback back to the main
-            rpi._to_serial("-1")
+            rpi._to_serial("0")
             pass
 
 except Exception as e:
