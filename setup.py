@@ -25,7 +25,6 @@ setup(
     install_requires=[
         "pySerial",
         "numpy",
-        "scipy",
         "gphoto2",
         
     ],
