@@ -1,6 +1,6 @@
 from odm360 import ublox
 from odm360.log import setuplog
-
+from odm360.utils import find_serial
 # start a logger with defined log levels. This may be used in our main call
 verbose = 2
 quiet = 0
@@ -12,14 +12,15 @@ logger.info("starting...")
 try:
     # initiate a ublox object
     logger.info(f"Starting uBlox instance.")
-    gps = ublox.Ublox()
+    ports, descr = find_serial('u-blox')
+    gps = ublox.Ublox(ports[0])
     logger.info(f"Opening port {gps.port} for reading")
     # open the ublox connection and see if we get a serial object back
-    gps.open_serial_device()
+    gps.open_serial()
 
     # try to read a line and print it
-    gps.read_serial_text()
-    logger.info(gps.text)
+    txt = gps._from_serial_txt()
+    logger.info(txt)
 
     # gracefully close the object
     gps.close_serial_device()

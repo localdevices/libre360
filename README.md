@@ -35,6 +35,10 @@ Before installation, make sure you have the gphoto2 library installed with
 ```
 sudo apt install libgphoto2-dev
 ```
+Additional libraries that need installation in case raspbian lite is used are:
+```
+sudo apt-get install libatlas-base-dev gfortran
+```
 If you are working on a isolated conda environment, then first activate it.
 ```
 conda activate odm360
