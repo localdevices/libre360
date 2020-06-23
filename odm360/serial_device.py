@@ -1,9 +1,5 @@
 import serial
 import serial.tools.list_ports
-import datetime
-import numpy as np
-import time
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,7 +8,7 @@ class SerialDevice():
     """
     Class for generic functionalities for any serial device. Can be inherited for specific serial devices.
     """
-    def __init__(self, baud_rate=9600, timeout=5, parent=None, wildcard='dummy', logger=logger):
+    def __init__(self, port, baud_rate=9600, timeout=5, parent=None, wildcard='dummy', logger=logger):
         """
         Initiate object with defaults
 
@@ -22,40 +18,20 @@ class SerialDevice():
         """
         self.baud_rate = baud_rate
         self.timeout = timeout
-        self.port = None
+        self.port = port
         self.serial = None
         self.data = None
         self.text = None
         self.logger = logger
-        self.find_serial_device(wildcard=wildcard)
 
-    def find_serial_device(self, wildcard='dummy'):
-        """
-        Looks for an Arduino in all active serial ports
-
-        :param wildcard: str - wildcard used to look for serial device (default: u-blox)
-        """
-        ports = list(serial.tools.list_ports.comports())
-        for p in ports:
-            port = p[0]
-            description = p[1]
-            print(description)
-            if wildcard in description:
-                self.logger.info(f'Found {description} on port {port}')
-                self.port = port
-                self.description = description
-                return
-        # if the end of function is reached, apparently, no suitable port was found
-        raise IOError(f'No device with wildcard {wildcard} found on COM ports')
-
-    def open_serial_device(self):
+    def open_serial(self):
         """
         Open the serial device on self.port (return IOError if not found)
         """
         if self.port is not None:
             try:
                 self.serial = serial.Serial(self.port, self.baud_rate, timeout=self.timeout)
-                logger.info(f'Serial port on {self.port} with name {self.description} opened with baud rate {self.baud_rate}')
+                self.logger.info(f'Serial port on {self.port} opened with baud rate {self.baud_rate}')
             except:
                 raise IOError('Cannot open serial device, check permissions')
         else:
@@ -71,33 +47,36 @@ class SerialDevice():
         else:
             raise IOError('No serial connection is open.')
 
-    def read_serial_device(self):
+    def _to_serial(self, txt):
         """
-        Read one line (non-decoded) from serial device self.serial
+        encodes a string and sends to serial connection
+        """
+        self.serial.write(str.encode(txt))
+
+    def _from_serial(self):
+        """
+        reads from serial connection and decodes to string
+        :return:
+
         """
         if self.serial is not None:
-            self.data = self.serial.readline()
-            self.logger.info(f'Line read from {self.description} on port {self.port} with baud rate {self.baud_rate}')
+            return self.serial.readline()
         else:
             raise IOError('No serial connection is open.')
 
-    def read_serial_text(self):
+    def _from_serial_txt(self):
         """
         Read and tries to decode lines from serial device on self.serial, until decoded text is found
         """
-        if self.serial is not None:
-            self.text = None  # reinitiate text
-            _read = True
-            # TODO: implement a timeout in case no suitable data is found within timeout period
-            while _read:
-                self.read_serial_device()
-                try:
-                    self.text = self.data.decode('utf-8')
-                    _read = False
-                    self.logger.info(f'Text read from {self.description} on port {self.port} with baud rate {self.baud_rate}')
-                except:
-                    # binary data found, so read until
-                    pass
-        else:
-            raise IOError('No serial connection is open.')
+        _read = True
+        # TODO: implement a timeout in case no suitable data is found within timeout period
+        while _read:
+            data = self._from_serial()
+            try:
+                txt = data.decode('utf-8')
+                _read = False
+            except:
+                # binary data found, so read until
+                pass
+        return txt
 

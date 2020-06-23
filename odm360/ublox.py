@@ -3,12 +3,12 @@ from odm360.serial_device import SerialDevice
 logger = logging.getLogger(__name__)
 
 class Ublox(SerialDevice):
-    def find_serial_device(self, wildcard='u-blox'):
-        """
-        Looks for a u-blox device in all active serial ports
-        :param wildcard: str - wildcard used to look for serial device (default: u-blox)
-        """
-        super().find_serial_device(wildcard=wildcard)
+    # def find_serial_device(self, wildcard='u-blox'):
+    #     """
+    #     Looks for a u-blox device in all active serial ports
+    #     :param wildcard: str - wildcard used to look for serial device (default: u-blox)
+    #     """
+    #     super().find_serial_device(wildcard=wildcard)
 
     def parse_nmea(self):
         """
