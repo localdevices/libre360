@@ -1,5 +1,7 @@
+import time
 import logging
 from odm360.serial_device import SerialDevice
+
 logger = logging.getLogger(__name__)
 
 class Camera360Serial(SerialDevice):
@@ -23,29 +25,29 @@ class Camera360Serial(SerialDevice):
         """
         self._to_serial("init")
         # ask for success or no success
-        if self._from_serial_txt() != "0":
-            msg = 'Initialization of camera was unsuccessful'
-            self.logger.error(msg)
-            raise IOError(msg)
-        self.logger('Camera initialized')
+        return self.success('Camera initialized', 'Camera initialize failed')
 
-    def capture_until(self, timeout=1.):
+    def capture(self):
         """
-        Tries to capture an image until successful
-        :param timeout: float - amount of time capturing is tried
+        Capture an image
+        :param
         """
-        self._to_serial(f"capture_until(timeout={timeout}")
+        self._to_serial(f"capture")
         # ask for success or no success
-        if self._from_serial_txt() != "0":
-            msg = 'Image capture was unsuccessful'
-            self.logger.error(msg)
-            raise IOError(msg)
-        else:
-            self.logger('Image captured')
+        return self.success('Image captured', 'Image capture failed')
 
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
         # FIXME
+
+    def success(self, msg_true, msg_false):
+        success = bool(self._from_serial_txt())
+        if success:
+            msg = 'Camera initialized'
+            self.logger.info(msg_true)
+        else:
+            self.logger.error(msg_false)
+        return success
 
     # TODO: check if a file transfer method already exists
     # TODO: check if exif tag functionalities exist

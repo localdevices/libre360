@@ -1,3 +1,8 @@
+"""
+This example connects automatically to a raspberry pi (first one found on ports) and commands it through serial msgs.
+On the raspberry pi side, a receiving script should run (raspi_receive.py)
+"""
+
 from odm360.log import setuplog
 from odm360.camera360serial import Camera360Serial
 from odm360.utils import find_serial
@@ -20,14 +25,8 @@ try:
     # # open the uart connection to raspi and see if we get a serial object back
     rpi.open_serial()
     rpi.init()
-    rpi.capture_until(timeout=1)
-    # text = camera.get_summary()
-    # print('Summary')
-    # print('=======')
-    # print(str(text))
-    # camera.capture_until(timeout=1)
-    # # gracefully close the object
-    # gps.close_serial_device()
+    rpi.capture()
+    rpi.close_serial_device()
 
 except Exception as e:
     logger.exception(e)
