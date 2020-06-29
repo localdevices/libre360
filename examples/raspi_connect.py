@@ -26,6 +26,7 @@ try:
     rpi.open_serial()
     rpi.init()
     rpi.capture()
+    rpi.exit()
     rpi.close_serial_device()
 
 except Exception as e:
