@@ -27,6 +27,7 @@ class Camera360Pi(PiCamera):
         self.start_preview()
         # camera may need time to warm up
         time.sleep(2)
+        self.logger.info('Raspi camera initialized')
 	
     def exit(self):
         self.stop_preview()
