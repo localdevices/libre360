@@ -59,18 +59,18 @@ class SerialDevice():
         self.serial.write(p)
         # self.serial.write(str.encode(txt))
 
-    def _recv_method(self):
-        """
-        unserializes a function name and its arguments (provided as kwargs) from pickle
-        """
-
-        msg = {'name': name,
-               'kwargs': kwargs
-               }
-        try:
-            self._to_serial(msg)
-        except:
-
+    # def _recv_method(self):
+    #     """
+    #     unserializes a function name and its arguments (provided as kwargs) from pickle
+    #     """
+    #
+    #     msg = {'name': name,
+    #            'kwargs': kwargs
+    #            }
+    #     try:
+    #         self._to_serial(msg)
+    #     except:
+    #
 
     def _to_serial(self, data):
         """
