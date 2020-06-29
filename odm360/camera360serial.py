@@ -36,6 +36,11 @@ class Camera360Serial(SerialDevice):
         # ask for success or no success
         return self.success('Image captured', 'Image capture failed')
 
+    def exit(self):
+        self._send_method(f"exit")
+        # ask for success or no success
+        return self.success('Serial camera closed', 'Serial camera could not be closed')
+
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
         # FIXME
