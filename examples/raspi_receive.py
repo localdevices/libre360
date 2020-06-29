@@ -28,7 +28,7 @@ try:
     # # open the uart connection to raspi and see if we get a serial object back
     rpi.open_serial()
     # starting the Camera object
-    camera = Camera360Pi(root='.')
+    camera = Camera360Pi(root='.', logger=logger)
     # TODO start the camera
     _action = False  # when action is True, something should or should have been done, otherwise just listen
     while True:
