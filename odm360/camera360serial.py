@@ -41,7 +41,7 @@ class Camera360Serial(SerialDevice):
         # FIXME
 
     def success(self, msg_true, msg_false):
-        success = bool(self._from_serial_until().decode('utf-8'))
+        success = self._from_serial_until()
         if success:
             self.logger.info(msg_true)
         else:
