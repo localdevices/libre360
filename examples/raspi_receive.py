@@ -7,6 +7,7 @@ On the Parent side, after this script is started, a orchastrator should run (ras
 import platform
 from odm360.log import setuplog
 from odm360.serial_device import SerialDevice
+from odm360.camera360pi import Camera360Pi
 # start a logger with defined log levels. This may be used in our main call
 verbose = 2
 quiet = 0
@@ -27,25 +28,28 @@ try:
     # # open the uart connection to raspi and see if we get a serial object back
     rpi.open_serial()
     # starting the Camera object
+    camera = Camera360Pi(root='.')
     # TODO start the camera
+    _action = False  # when action is True, something should or should have been done, otherwise just listen
     while True:
         try:
-            txt = rpi._from_serial_txt()
-            if txt != "":
-                logger.info(f'Received command "{txt}"')
-
-                # TODO implement the actual camera connection with raspi camera, methods are below in commented lines
-                # # a non-empty string is received, pass it to the appropriate method
-                # f = getattr(camera, txt)
-                # # execute function
-                # f()
-                # # give feedback if everything worked out
-                rpi._to_serial("1")
-                # import pdb;pdb.set_trace()
+            p = rpi._from_serial()
+            _action = True
+            # if p != "":
+            logger.info(f'Received command "{p}"')
+            # a method is received, pass it to the appropriate method in camera object
+            method = p['name']
+            kwargs = p['kwargs']
+            f = getattr(camera, method)
+            # # execute function with kwargs provided
+            f(**kwargs)
+            # give feedback if everything worked out
+            rpi._to_serial(True)
         except:
             # error messages are handled in the specific functions. Provide feedback back to the main
-            rpi._to_serial("0")
-            pass
+            if _action:
+                rpi._to_serial(False)  #
+        _action = False
 
 except Exception as e:
     logger.exception(e)

@@ -23,7 +23,7 @@ class Camera360Serial(SerialDevice):
 
         :return:
         """
-        self._to_serial("init")
+        self._send_method("init")
         # ask for success or no success
         return self.success('Camera initialized', 'Camera initialize failed')
 
@@ -32,7 +32,7 @@ class Camera360Serial(SerialDevice):
         Capture an image
         :param
         """
-        self._to_serial(f"capture")
+        self._send_method(f"capture")
         # ask for success or no success
         return self.success('Image captured', 'Image capture failed')
 
@@ -41,9 +41,8 @@ class Camera360Serial(SerialDevice):
         # FIXME
 
     def success(self, msg_true, msg_false):
-        success = bool(self._from_serial_txt())
+        success = bool(self._from_serial_until().decode('utf-8'))
         if success:
-            msg = 'Camera initialized'
             self.logger.info(msg_true)
         else:
             self.logger.error(msg_false)
