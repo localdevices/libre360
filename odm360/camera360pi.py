@@ -31,6 +31,7 @@ class Camera360Pi(PiCamera):
 	
     def exit(self):
         self.stop_preview()
+        self.logger.info('Raspi camera stopped')
 
     def capture(self, timeout=1.):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
