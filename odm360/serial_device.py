@@ -9,12 +9,14 @@ class SerialDevice():
     """
     Class for generic functionalities for any serial device. Can be inherited for specific serial devices.
     """
-    def __init__(self, port, baud_rate=9600, timeout=5, parent=None, wildcard='dummy', logger=logger):
+    def __init__(self, port, root='.', baud_rate=9600, timeout=5, parent=None, logger=logger):
         """
         Initiate object with defaults
-
+        :param port: str - UART port to connect with
+        :param root: str - folder to store data in if applicable (default: '.')
         :param baud_rate: int - baud rate for reading (default: 9600)
         :param timeout: int - timeout in ms before serial port is ignored (default: 6)
+        :param parent: class - parent object from which this device is called
         :
         """
         self.baud_rate = baud_rate

@@ -14,7 +14,6 @@ def find_serial(wildcard='', logger=logger):
     for p in ps:
         port = p[0]
         description = p[1]
-        print(description)
         if wildcard.lower() in description.lower():
             logger.info(f'Found {description} on port {port}')
             ports.append(port)
