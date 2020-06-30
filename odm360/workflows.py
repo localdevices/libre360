@@ -59,7 +59,7 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
             except:
                 logger.info('Camera not responding or disconnected')
 
-        rpi.capture()
+        # rpi.capture()
         rpi.exit()
         rpi.close_serial_device()
 
