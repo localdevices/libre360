@@ -26,6 +26,7 @@ setup(
         "pySerial",
         "numpy",
         "gphoto2",
+        "schedule",
         
     ],
     extras_require={
