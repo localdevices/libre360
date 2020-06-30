@@ -13,6 +13,7 @@ class Camera360Serial(SerialDevice):
     def __init__(self, port, logger=logger, **kwargs):
         super().__init__(port, logger=logger, **kwargs)   # baud_rate=baud_rate, timeout=timeout, parent=parent, wildcard=wildcard,
         self.logger.info('Serial camera initialized')
+        self.photo = None  # here, information about the latest photo is stored.
 
     def init(self, timeout=1.):
         """
@@ -32,7 +33,8 @@ class Camera360Serial(SerialDevice):
         """
         self._send_method(f"capture")
         # ask for success or no success
-        return self.success('Image captured', 'Image capture failed')
+        self.photo = self.success('Image captured', 'Image capture failed')
+        logger.info(f'Photo stored on {self.port} on {self.photo["name"]}')
 
     def exit(self):
         self._send_method(f"exit")
@@ -45,7 +47,7 @@ class Camera360Serial(SerialDevice):
 
     def success(self, msg_true, msg_false):
         success = self._from_serial_until()
-        if success:
+        if success is not None:
             self.logger.info(msg_true)
         else:
             self.logger.error(msg_false)
