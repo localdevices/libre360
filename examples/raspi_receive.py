@@ -40,7 +40,7 @@ try:
         except:
             pass
     logger.info(f"Root folder provided as {p['root']}")
-    camera = Camera360Pi(root=p['root'])
+    camera = Camera360Pi(root=p['root'], logger=logger)
     _action = False  # when action is True, something should or should have been done, otherwise just listen
     while True:
         try:

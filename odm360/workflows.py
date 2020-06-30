@@ -1,4 +1,5 @@
 import logging
+import time
 import schedule
 
 import gphoto2 as gp
@@ -48,8 +49,10 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
         rpi.open_serial()
         # let the raspi camera know that it can start by providing a root folder to store photos in
         rpi._to_serial({'root': root})
+        time.sleep(1)
         rpi.init()
-        schedule.every(dt).seconds.do(rpi.capture())
+        # TODO: replace this scheduler with something like https://stackoverflow.com/questions/3393612/run-certain-code-every-n-seconds/13151299
+        schedule.every(dt).seconds.do(rpi.capture)
         while True:
             try:
                 schedule.run_pending()
