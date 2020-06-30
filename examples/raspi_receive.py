@@ -56,7 +56,7 @@ try:
             f(**kwargs)
             # give feedback if everything worked out
             # TODO: extend feedback with dictionary with time info, name of file, and so on
-            rpi._to_serial(True)
+            rpi._to_serial(camera.dst_fn)
         except:
             # error messages are handled in the specific functions. Provide feedback back to the main
             if _action:
