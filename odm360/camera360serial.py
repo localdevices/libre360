@@ -12,6 +12,7 @@ class Camera360Serial(SerialDevice):
     # def __init__(self, baud_rate=9600, timeout=1, parent=None, wildcard='UART', logger=logger):
     def __init__(self, port, logger=logger, **kwargs):
         super().__init__(port, logger=logger, **kwargs)   # baud_rate=baud_rate, timeout=timeout, parent=parent, wildcard=wildcard,
+        self.logger.info('Serial camera initialized')
 
     def init(self, timeout=1.):
         """
@@ -22,7 +23,7 @@ class Camera360Serial(SerialDevice):
         """
         self._send_method("init")
         # ask for success or no success
-        return self.success('Camera initialized', 'Camera initialize failed')
+        return self.success('Physical camera initialized', 'Physical camera initialize failed')
 
     def capture(self):
         """
