@@ -17,7 +17,7 @@ if platform.node() == 'raspberrypi':
 else:
     raise OSError('This function must be deployed on a raspberry pi')
 
-logger = setuplog("odm360_slave", "odm360_slave.log", log_level=log_level)
+logger = setuplog("odm360_child", "odm360_child.log", log_level=log_level)
 logger.info("starting...")
 
 try:
