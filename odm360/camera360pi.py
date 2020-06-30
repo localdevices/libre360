@@ -22,6 +22,8 @@ class Camera360Pi(PiCamera):
         self.logger = logger
         self.id = None  # TODO: give a uniue ID to each camera (once CameraRig is defined, complete)
         self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
+        if not(os.path.isdir(self._root)):
+            os.makedirs(self._root)
 
     def init(self):
         self.start_preview()

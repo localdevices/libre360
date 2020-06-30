@@ -6,15 +6,12 @@ logger = logging.getLogger(__name__)
 
 class Camera360Serial(SerialDevice):
     """
-    This class is for increasing the functionalities of the Camera class of gphoto2 specifically for
-    the 360 camera use case. Additional functionalities are:
-    - enable selecting a camera on a specific address (so that use of multiple cameras is warranted)
-    - enable transfer data to a root folder
-    - enable modification of exif tags of photos
+    Class creates a serial connection to a raspi with a raspi camera. Functionalities act similar to gphoto2
+    functionalities so that an end user has the feeling cameras are local and the same as a normal photo camera.
     """
     # def __init__(self, baud_rate=9600, timeout=1, parent=None, wildcard='UART', logger=logger):
     def __init__(self, port, logger=logger, **kwargs):
-            super().__init__(port, logger=logger, wildcard='UART', **kwargs)   # baud_rate=baud_rate, timeout=timeout, parent=parent, wildcard=wildcard,
+        super().__init__(port, logger=logger, **kwargs)   # baud_rate=baud_rate, timeout=timeout, parent=parent, wildcard=wildcard,
 
     def init(self, timeout=1.):
         """

@@ -27,9 +27,20 @@ try:
     logger.info(f"Opening port {rpi.port} for listening.")
     # # open the uart connection to raspi and see if we get a serial object back
     rpi.open_serial()
-    # starting the Camera object
-    camera = Camera360Pi(root='.')
-    # TODO start the camera
+    # starting the Camera object once a {'root': <NAME>} is passed through
+    start = False
+    logger.info('Waiting for root folder to start camera')
+    while not(start):
+        try:
+            p = rpi._from_serial()
+            if 'root' in p:
+                start = True
+            else:
+                raise('Received a wrong signal. Please restart the rig.')
+        except:
+            pass
+    logger.info(f"Root folder provided as {p['root']}")
+    camera = Camera360Pi(root=p['root'])
     _action = False  # when action is True, something should or should have been done, otherwise just listen
     while True:
         try:
@@ -44,6 +55,7 @@ try:
             # # execute function with kwargs provided
             f(**kwargs)
             # give feedback if everything worked out
+            # TODO: extend feedback with dictionary with time info, name of file, and so on
             rpi._to_serial(True)
         except:
             # error messages are handled in the specific functions. Provide feedback back to the main
