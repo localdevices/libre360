@@ -53,7 +53,7 @@ try:
             kwargs = p['kwargs']
             f = getattr(camera, method)
             # # execute function with kwargs provided
-            f(**kwargs)
+            response = f(**kwargs)
             # give feedback if everything worked out
             # TODO: extend feedback with dictionary with time info, name of file, and so on
             rpi._to_serial(camera.dst_fn)

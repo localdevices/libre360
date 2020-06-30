@@ -18,7 +18,7 @@ class Camera360Pi(PiCamera):
         super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
         self.src_fn = None  # path to currently made photo (source) inside the camera
-        self.dst_fn = None  # path to photo (destination) on drive
+        self.dst_fn = 'dummy.jpg'  # path to photo (destination) on drive
         self.logger = logger
         self.id = None  # TODO: give a uniue ID to each camera (once CameraRig is defined, complete)
         self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
@@ -30,7 +30,7 @@ class Camera360Pi(PiCamera):
         # camera may need time to warm up
         time.sleep(2)
         self.logger.info('Raspi camera initialized')
-	
+
     def exit(self):
         self.stop_preview()
         self.logger.info('Raspi camera stopped')
