@@ -36,14 +36,19 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
     camera.exit()
 
 
-def parent_serial(dt, root='.', timeout=1, logger=logger):
-    ports, descr = find_serial(wildcard='UART', logger=logger)
-    if len(ports) == 0:
-        raise IOError('No serial devices (raspberry pi) found, please connect at least one serial device')
+def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
+    ports = []
+    _start = time.time()
+    # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!
+    while (len(ports) < rig_size) and (time.time()-_start < 10):
+        ports, descr = find_serial(wildcard='UART', logger=logger)
+    if len(ports) < rig_size:
+        raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
+    logger.info(f'Found {len(ports)} cameras, initializing...')
+
     # TODO: turn this into a list of devices in a CameraRig object, for now only select the first found
-    # TODO: ensure this is tried several times until sufficient ports are found. It may take a while to boot the raspis
     port, descr = ports[0], descr[0]
-    logger.info(f'Device {descr} found on port {port}')
+    logger.debug(f'Device {descr} found on port {port}')
     try:
         # initiate a serial connection
         logger.info(f"Starting device via raspi connection.")
