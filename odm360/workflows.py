@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.camera360serial import Camera360Serial
-from odm360.camera360pi import Camera360Pi
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial
 
@@ -70,6 +69,8 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
         logger.exception(e)
 
 def child_rpi(dt, root='.', timeout=1., logger=logger):
+    # only lead Camera360Pi in a child. A parent may not have this library
+    from odm360.camera360pi import Camera360Pi
     if platform.node() == 'raspberrypi':
         port = '/dev/ttyS0'
     else:
