@@ -2,13 +2,13 @@ import logging
 import platform
 import time
 import schedule
-
 import gphoto2 as gp
-from odm360.camera360gphoto import Camera360G
+
 
 logger = logging.getLogger(__name__)
 
 # odm360 imports
+from odm360.timer import RepeatedTimer
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial
@@ -19,6 +19,8 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
     :param logger:
     :return:
     """
+    # only import gphoto2 when necessary
+    from odm360.camera360gphoto import Camera360G
     camera_list = list(gp.Camera.autodetect())
     rig = [Camera360G(addr=addr) for name, addr in camera_list]
     # TODO expand to a full rig and continuous photos
@@ -53,23 +55,20 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
         rpi._to_serial({'root': root})
         time.sleep(1)
         rpi.init()
-        # TODO: replace this scheduler with something like https://stackoverflow.com/questions/3393612/run-certain-code-every-n-seconds/13151299
-        schedule.every(dt).seconds.do(rpi.capture)
-        while True:
-            try:
-                schedule.run_pending()
-            except:
-                logger.info('Camera not responding or disconnected')
-
-        # rpi.capture()
-        rpi.exit()
-        rpi.close_serial_device()
+        # start timer
+        try:
+            timer = RepeatedTimer(dt, rpi.capture)
+        except:
+            logger.error('Camera not responding or disconnected')
+            timer.stop()
+            rpi.exit()
+            rpi.close_serial_device()
 
     except Exception as e:
         logger.exception(e)
 
 def child_rpi(dt, root='.', timeout=1., logger=logger):
-    # only lead Camera360Pi in a child. A parent may not have this library
+    # only lead Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     if platform.node() == 'raspberrypi':
         port = '/dev/ttyS0'
