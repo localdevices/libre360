@@ -48,9 +48,9 @@ class Camera360Serial(SerialDevice):
     def success(self, msg_true, msg_false):
         success = self._from_serial_until()
         if success is not None:
-            self.logger.info(msg_true)
+            self.logger.debug(msg_true)
         else:
-            self.logger.error(msg_false)
+            self.logger.debug(msg_false)
         return success
 
     # TODO: check if a file transfer method already exists
