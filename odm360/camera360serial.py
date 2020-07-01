@@ -9,7 +9,6 @@ class Camera360Serial(SerialDevice):
     Class creates a serial connection to a raspi with a raspi camera. Functionalities act similar to gphoto2
     functionalities so that an end user has the feeling cameras are local and the same as a normal photo camera.
     """
-    # def __init__(self, baud_rate=9600, timeout=1, parent=None, wildcard='UART', logger=logger):
     def __init__(self, port, logger=logger, **kwargs):
         super().__init__(port, logger=logger, **kwargs)   # baud_rate=baud_rate, timeout=timeout, parent=parent, wildcard=wildcard,
         self.logger.info('Serial camera initialized')
@@ -48,9 +47,9 @@ class Camera360Serial(SerialDevice):
     def success(self, msg_true, msg_false):
         success = self._from_serial_until()
         if success is not None:
-            self.logger.info(msg_true)
+            self.logger.debug(msg_true)
         else:
-            self.logger.error(msg_false)
+            self.logger.debug(msg_false)
         return success
 
     # TODO: check if a file transfer method already exists
