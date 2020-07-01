@@ -1,4 +1,5 @@
 import logging
+import platform
 import time
 import schedule
 
@@ -9,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.camera360serial import Camera360Serial
+from odm360.camera360pi import Camera360Pi
+from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
@@ -37,7 +40,7 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
     if len(ports) == 0:
         raise IOError('No serial devices (raspberry pi) found, please connect at least one serial device')
     # TODO: turn this into a list of devices in a CameraRig object, for now only select the first found
-    # TODO: ensure this is tried several times until sufficient ports are found. It takes a while to boot the raspis
+    # TODO: ensure this is tried several times until sufficient ports are found. It may take a while to boot the raspis
     port, descr = ports[0], descr[0]
     logger.info(f'Device {descr} found on port {port}')
     try:
@@ -67,4 +70,54 @@ def parent_serial(dt, root='.', timeout=1, logger=logger):
         logger.exception(e)
 
 def child_rpi(dt, root='.', timeout=1., logger=logger):
-    pass
+    if platform.node() == 'raspberrypi':
+        port = '/dev/ttyS0'
+    else:
+        raise OSError('This function must be deployed on a raspberry pi')
+    # initiate a  object
+    logger.info(f"Starting raspi object on {port}.")
+    try:
+        rpi = SerialDevice(port,
+                           timeout=0.01)  # let child communicate with 100Hz frequency so that no messages are missed
+        logger.info(f"Opening port {rpi.port} for listening.")
+        # # open the uart connection to raspi and see if we get a serial object back
+        rpi.open_serial()
+        # starting the Camera object once a {'root': <NAME>} is passed through
+        start = False
+        logger.info('Waiting for root folder to start camera')
+        while not (start):
+            try:
+                p = rpi._from_serial()
+                if 'root' in p:
+                    start = True
+                else:
+                    raise IOError('Received a wrong signal. Please restart the rig.')
+            except:
+                pass
+        logger.info(f'Root folder provided as {p["root"]}')
+        # now root folder is passed, open the camera
+        camera = Camera360Pi(root=p['root'], logger=logger)
+        _action = False  # when action is True, something should or should have been done, otherwise just listen
+        while True:
+            try:
+                p = rpi._from_serial()
+                _action = True
+                logger.info(f'Received command "{p}"')
+                # a method is received, pass it to the appropriate method in camera object
+                method = p['name']
+                kwargs = p['kwargs']
+                f = getattr(camera, method)
+                # execute function with kwargs provided
+                response = f(**kwargs)
+                # give feedback if everything worked out
+                # TODO: extend feedback with dictionary with time info, name of file, and so on, only file name so far
+                rpi._to_serial(camera.dst_fn)
+            except:
+                # error messages are handled in the specific functions. Provide feedback back to the main
+                if _action:
+                    # apparently an action was tried, but failed in the try loop
+                    rpi._to_serial(None)  #
+            _action = False  # set _action back to False to wait for the next action
+
+    except Exception as e:
+        logger.exception(e)

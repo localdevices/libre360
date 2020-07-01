@@ -40,19 +40,19 @@ try:
         except:
             pass
     logger.info(f"Root folder provided as {p['root']}")
+    # now root folder is passed, open the camera
     camera = Camera360Pi(root=p['root'], logger=logger)
     _action = False  # when action is True, something should or should have been done, otherwise just listen
     while True:
         try:
             p = rpi._from_serial()
             _action = True
-            # if p != "":
             logger.info(f'Received command "{p}"')
             # a method is received, pass it to the appropriate method in camera object
             method = p['name']
             kwargs = p['kwargs']
             f = getattr(camera, method)
-            # # execute function with kwargs provided
+            # execute function with kwargs provided
             response = f(**kwargs)
             # give feedback if everything worked out
             # TODO: extend feedback with dictionary with time info, name of file, and so on
