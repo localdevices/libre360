@@ -41,7 +41,7 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     _start = time.time()
     # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!
     while (len(ports) < rig_size) and (time.time()-_start < 10):
-        ports, descr = find_serial(wildcard='AMA', logger=logger)
+        ports, descr = find_serial(wildcard='UART', logger=logger)
     if len(ports) < rig_size:
         raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
     logger.info(f'Found {len(ports)} cameras, initializing...')
