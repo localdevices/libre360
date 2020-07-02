@@ -37,13 +37,15 @@ sudo apt install libgphoto2-dev
 ```
 Additional libraries that need installation in case raspbian lite is used are:
 ```
-sudo apt-get install libatlas-base-dev gfortran
+sudo apt-get install git libatlas-base-dev gfortran python3-pip
 ```
 If you are working on a isolated conda environment, then first activate it.
 ```
 conda activate odm360
 ```
-Then install odm360 as developer with
+Retrieve and install (as developer) this repository:
 ```
+git clone https://github.com/OpenDroneMap/odm360.git
+cd odm360
 pip3 install -e .
 ```
