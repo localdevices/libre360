@@ -19,7 +19,7 @@ import argparse
 import serial
 import serial.tools.list_ports
 
-def make_serial_reader(baud_rate = 38400, timeout = 5, port = None):
+def make_serial_reader(baud_rate, timeout, port = None):
     """Create a serial reader for a GNSS receiver."""
     if port:
         serial_reader = serial.Serial(port, baud_rate, timeout)
@@ -53,7 +53,7 @@ def validate_rinex_sentence(sentence):
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument('outfile', help = "Text file to write NMEA data to")
-    p.add_argument('-br', '--baud_rate', default = 9600,
+    p.add_argument('-br', '--baud_rate', default = 38400,
                    help = 'expected baud rate of the device')
     p.add_argument('-to', '--timeout', default = 5,
                    help = 'Time in seconds to wait before giving up on a port')
