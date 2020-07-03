@@ -61,8 +61,16 @@ if __name__ == "__main__":
                    help = 'Known serial port of device. Searches if omitted.')
 
     opts = vars(p.parse_args())
-    reader = make_serial_reader(int(opts['baud_rate']), int(opts['timeout']))
-    log_NMEA(reader, opts['outfile'])
+
+    br = int(opts['baud_rate'])
+    to = int(opts['timeout'])
+    pt = opts['port']
+    of = opts['outfile']
+    print(f'\nAttempting to create serial reader with: \nbaud rate: {br}'
+          f'\non port {pt}')
+    reader = make_serial_reader(br,to, pt)
+    print(f'Writing output to {of}')
+    log_NMEA(reader, of)
     
     
     
