@@ -23,13 +23,17 @@ def make_serial_reader(baud_rate, timeout, port = None):
     """Create a serial reader for a GNSS receiver."""
     if port:
         serial_reader = serial.Serial(port, baud_rate, timeout)
-        return serial_reader
+        for i in range(10):
+            if(validate_NMEA_sentence(serial_reader.readline())):
+                return serial_reader
+        return None
     ports = serial.tools.list_ports.comports()
     for port in ports:
         serial_reader = serial.Serial(port[0], baud_rate, timeout)
         for i in range(10):
             if(validate_NMEA_sentence(serial_reader.readline())):
                 return serial_reader
+        return None
 
 def log_NMEA(serial_reader, outfile):
     with open(outfile, 'wb') as of:
