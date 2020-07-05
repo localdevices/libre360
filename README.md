@@ -47,3 +47,10 @@ Then install odm360 as developer with
 ```
 pip3 install -e .
 ```
+
+## Enabling the raspberry pi camera
+To ensure you can communicate with a raspberry pi camera through a serial connection, please go through the following steps on a child node
+```
+sudo raspi-config
+```
+Select 

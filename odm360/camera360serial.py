@@ -30,6 +30,7 @@ class Camera360Serial(SerialDevice):
         Capture an image
         :param
         """
+        self.logger.debug('Asking child for capture')
         self._send_method(f"capture")
         # ask for success or no success
         self.photo = self.success('Image captured', 'Image capture failed')
