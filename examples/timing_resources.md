@@ -19,3 +19,4 @@
 
 ## Hardware and wiring
 - [Good diagrams of Pi Zero pinouts](https://pi4j.com/1.2/pins/model-zero-rev1.html)
+- Incredibly annoying how compicated it is just to [enable serial pin communicatcion](https://learn.adafruit.com/raspberry-pi-zero-creation/enable-uart).
