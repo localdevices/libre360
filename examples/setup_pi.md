@@ -13,9 +13,9 @@ We provide pre-configured images for the various components (Parent, Child, and 
   - If need be (for example if the only WiFi you can find has a captive portal) you can do it all tethered to a WiFi Hotspot from your phone.
 - You'll need a computer with an SD card reader.
 
-### Set up the base infrastructure of the Pi
+### Set up base infrastructure on the Pi
 - Download the Raspberry Pi OS (32-bit) Lite image from [here](https://www.raspberrypi.org/downloads/raspberry-pi-os/). The Lite image doesn't have a graphical interface (it's "headless") and is therefore smaller to download and will run more efficiently on the limited Pi hardware.
-- Unzip the archive and flash the image to your SD card using [Balena Etcher](https://www.balena.io/etcher/). Mess around with other ways to burn images if you are feeling a little masochistic; Etcher just works, and it's open source.
+- Unzip the archive and flash the image to your SD card using [Balena Etcher](https://www.balena.io/etcher/). You can mess around with other ways to burn images if you are feeling masochistic; Etcher just works, and it's open source.
 - Now you need to get the Pi on the WiFi, enable SSH, and connect to it. The SD card you just flashed should appear in your file explorer, open it up.
   - The SD card should now have two partitions, a small one called ```boot``` and a larger one called ```rootfs``` (if you're on Windows you might not see the ```rootfs``` partition; too bad for you—you should be using Linux anyway—but it doesn't matter for now). Put a ```wpa_supplicant.conf``` file in the ```boot``` partition of the SD card. Example of that file [here](https://www.raspberrypi.org/documentation/configuration/wireless/headless.md). I copy the contents of that example, navigate to the root of the ```boot``` partition on the SD card and type ```nano wpa_supplicant.conf``` and paste in the contents, replacing the SSID, password, and country code with the appropriate ones.
   - Also in the ```boot``` partition, you need to place a file called ```ssh```. It doesn't matter what's in it (an empty file is fine) and there's no extension on the filename. This enables [SSH](https://en.wikipedia.org/wiki/Secure_Shell) on the Pi (disabled by default). You can do this on Linux or Mac by navigating to the root of the ```boot``` partition and typing ```touch ssh```.
@@ -24,9 +24,45 @@ We provide pre-configured images for the various components (Parent, Child, and 
   - Didn't work? ```Could not resolve hostname...``` or something like it? Sigh. Ok, try to figure out if the Pi is on the WiFi. You can try [nmap](https://nmap.org/) to attempt to identify every device on your local subnet, but I recently found a lovely FOSS application called [Angry IP Scanner](https://angryip.org/); it's great. Try it. If you're lucky, you'll see the Pi on the network along with its IP address, and maybe you can ssh into it using the IP address instead of the ```raspberrypi.local``` alias. If not, you'll have to dive into the world of Google, StackExchange, and the Raspberry Pi forums until you get it sorted.
 - Log into the Pi using the default password, which is ```raspberry```. Once you're in, immediately type ```passwd``` (_without_ ```sudo```) and—at the prompts—enter first the old and then the new password (twice). Try not to forget the new password.
 - Get everything up to date with ```sudo apt update && sudo apt upgrade -y```. This will take a few minutes, more if your Internet connection is slow.
-- You might as well install a few more basic infrastructure bits while you're at it: ```sudo apt install -y git python3-pip```
+- You might as well install a few more basic infrastructure bits while you're at it:
+
+```
+sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
+```
+- Fetch and install the ODM360 code
+
+```
+https://github.com/OpenDroneMap/odm360
+cd odm360
+pip3 install -e
+
+```
+
 
 From here you have a basic Raspberry Pi configuration; you can make it into a Parent, a Child, or a TimeServer with the next steps.
 
 ### TimeServer
+
+The TimeServer is a dedicated Raspberry Pi that listens to the GNSS unit and syncs to the ([extremely precise](https://gssc.esa.int/navipedia/index.php/Precise_Time_Reference)) timing pulse from it and provides timing information via [Network Time Protocol (NTP)](https://en.wikipedia.org/wiki/Network_Time_Protocol) to the rest of the kit.
+
+All devices in the ODM360 kit need to have very precise time, _milliseconds count_. Even moving at a walking speed (around 1.5 m/s), more than a few tens of milliseconds of timing offset will already introduce errors larger than the accuracy of a well-functioning GNSS setup. On a vehicle (car, motorcycle, Bajaj, or drone) which moves faster, this is much worse. We aim for synchronization of less than 5ms. 
+
+To work well, the TimeServer must listen to both the [NMEA stream](https://en.wikipedia.org/wiki/NMEA_0183) coming from the GNSS, which provides timestamps per reading (not particularly accurate, but close enough for setting time to the second) as well as the [Pulse Per Second (PPS)](https://en.wikipedia.org/wiki/Pulse-per-second_signal) signal that is sub-millisecond precise.
+
+Once its own clock is set from the GNSS device (making it a [stratum 1 device](https://en.wikipedia.org/wiki/Network_Time_Protocol#Clock_strata)), it provides an NTP server to the other devices. This ideally requires a short-wire, very low-latency, symmetrical (same signal time both directions) network connection—we're still working on getting this right.
+
+The PPS signal needs to be on a separate pin (__TODO: PICTURES OF THE PIN WIRING__) and for best precision should use an interrupt instead of a loop.
+
+#### Steps to configure the Pi Zero as a TimeServer
+
+*Note: Much of this can be done while setting up the base Pi just after flashing. It's separated out here so that it can be scripted and eventually added to a [.deb package](https://en.wikipedia.org/wiki/Deb_(file_format)) specific to the TimeServer setup.*
+
+- Disable IPv6 ```sudo sed -i '$s/$/ ipv6.disable=1/' /boot/cmdline.txt```
+
+- Disable the default serial console to free up UART serial line ```sudo sed -i 's/console=serial0,115200 //g' /boot/cmdline.txt```
+
+- Enabling UART to recieve NMEA streams from the GNSS over serial pins ```echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt```
+
+- Install some GNSS libraries ```sudo apt install -y gpsd gpsd-clients python-gps pps-tools```
+
 
