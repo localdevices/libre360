@@ -62,10 +62,16 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
         # # open the uart connection to raspi and see if we get a serial object back
         rpi.open_serial()
         # let the raspi camera know that it can start by providing a root folder to store photos in
-        rpi._to_serial({'root': root})
-        time.sleep(1)
-        rpi.init()
-        # start timer
+        start = False
+        while not(start):
+            try:
+                rpi._to_serial({'root': root})
+                time.sleep(1)
+                if rpi._from_serial() == 'received':
+                    start = True
+                rpi.init()
+            except:
+                pass
         try:
             timer = RepeatedTimer(dt, rpi.capture)
         except:
@@ -100,6 +106,7 @@ def child_rpi(dt, root='.', timeout=1., logger=logger):
                 p = rpi._from_serial()
                 if 'root' in p:
                     start = True
+                    rpi._to_serial('received')
                 else:
                     raise IOError('Received a wrong signal. Please restart the rig.')
             except:
