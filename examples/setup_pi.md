@@ -34,7 +34,7 @@ sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
 ```
 git clone https://github.com/OpenDroneMap/odm360
 cd odm360
-pip3 install -e
+pip3 install -e .
 
 ```
 
