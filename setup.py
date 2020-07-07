@@ -26,7 +26,8 @@ setup(
         "pySerial",
         "numpy",
         "gphoto2",
-        "picamera"
+        "picamera",
+        "schedule"
 
     ],
     extras_require={
