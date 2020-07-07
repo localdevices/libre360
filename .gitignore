@@ -4,4 +4,9 @@
 
 #pycharm
 /.idea/
-/test_data/
+
+#logs
+odm360.log
+
+#cache
+odm360/__pycache__/

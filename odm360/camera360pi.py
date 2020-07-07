@@ -26,6 +26,7 @@ class Camera360Pi(PiCamera):
             os.makedirs(self._root)
 
     def init(self):
+        self.resolution = (4056, 3040)
         self.start_preview()
         # camera may need time to warm up
         time.sleep(2)

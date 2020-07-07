@@ -37,17 +37,22 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
 
 
 def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
-    ports = []
-    _start = time.time()
-    # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!
-    while (len(ports) < rig_size) and (time.time()-_start < 10):
-        ports, descr = find_serial(wildcard='UART', logger=logger)
-    if len(ports) < rig_size:
-        raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
-    logger.info(f'Found {len(ports)} cameras, initializing...')
+    ports = ['/dev/ttyS0']
+    descrs = ['raspberrypi']
+    if platform.node() != 'raspberrypi':
+        ports = []
+        descrs = []
+        _start = time.time()
+        # find all ports belonging to dialout group, and check these if they result in answers.
+        # After 120 seconds, we give up!
+        while (len(ports) < rig_size) and (time.time()-_start < 120):
+            ports, descrs = find_serial(wildcard='UART', logger=logger)
+        if len(ports) < rig_size:
+            raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
+        logger.info(f'Found {len(ports)} cameras, initializing...')
 
     # TODO: turn this into a list of devices in a CameraRig object, for now only select the first found
-    port, descr = ports[0], descr[0]
+    port, descr = ports[0], descrs[0]
     logger.debug(f'Device {descr} found on port {port}')
     try:
         # initiate a serial connection
@@ -57,10 +62,16 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
         # # open the uart connection to raspi and see if we get a serial object back
         rpi.open_serial()
         # let the raspi camera know that it can start by providing a root folder to store photos in
-        rpi._to_serial({'root': root})
-        time.sleep(1)
-        rpi.init()
-        # start timer
+        start = False
+        while not(start):
+            try:
+                rpi._to_serial({'root': root})
+                time.sleep(1)
+                if rpi._from_serial() == 'received':
+                    start = True
+                rpi.init()
+            except:
+                pass
         try:
             timer = RepeatedTimer(dt, rpi.capture)
         except:
@@ -95,6 +106,7 @@ def child_rpi(dt, root='.', timeout=1., logger=logger):
                 p = rpi._from_serial()
                 if 'root' in p:
                     start = True
+                    rpi._to_serial('received')
                 else:
                     raise IOError('Received a wrong signal. Please restart the rig.')
             except:
