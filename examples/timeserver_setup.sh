@@ -28,7 +28,7 @@ echo Enabling the GPSD service
 sudo systemctl enable gpsd
 
 echo Creating symlinks for GPSD to hook to the device
-echo KERNEL==\"ttyS0\", SUBSYSTEM==\"tty\", DRIVER==\"\", OWNER==\"root\", GROUP==\"tty\", MODE==\"0777\", SYMLINK+=\"gps0\" >> /etc/udev/rules.d/09-pps.rules
+echo KERNEL==\"ttyS0\", SUBSYSTEM==\"tty\", DRIVER==\"\", OWNER==\"root\", GROUP==\"tty\", MODE==\"0777\", SYMLINK+=\"gps0\" | sudo tee -a /etc/udev/rules.d/09-pps.rules
 
 echo Setting up pps-gpio module
 echo pps-gpio | sudo tee -a /etc/modules
