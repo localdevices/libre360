@@ -1,17 +1,18 @@
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 import platform
 import time
 import schedule
 import gphoto2 as gp
 
-
 logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.timer import RepeatedTimer
+from odm360.camera360server import Camera360Server
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
-from odm360.utils import find_serial
+from odm360.utils import find_serial, get_lan_ip
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
     """
@@ -34,6 +35,38 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
         except:
             logger.info('Camera not responding or disconnected')
     camera.exit()
+
+def parent_server(dt, root='.', timeout=0.02, logger=logger, n_cams=2, wait_time=12000, port=8000):
+    """
+
+    :param dt:
+    :param root:
+    :param timeout:
+    :param logger:
+    :param rig_size:
+    :return:
+    """
+    # https://docs.python.org/3/library/http.server.html
+    # https://www.afternerd.com/blog/python-http-server/
+    # https://gist.github.com/nitaku/10d0662536f37a087e1b seems the best case for our uses
+
+    children = []
+    _start = time.time()
+    # find own ip address
+    ip = get_lan_ip()
+    # all_ips = get_lan_devices(ip)
+    # sel = selectors.DefaultSelector()  # handler for multiplexing
+    n_clients = 0  # amount of connections
+    port = 8001
+
+    # set a number of properties to Camera360Server
+    Camera360Server.logger = logger
+    Camera360Server.n_cams = n_cams
+    Camera360Server.root = root
+    server_address = (ip, port)
+    httpd = HTTPServer(server_address, Camera360Server)
+    logger.info(f'odm360 listening on {ip}:{port}')
+    httpd.serve_forever()
 
 
 def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
