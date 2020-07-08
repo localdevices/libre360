@@ -20,8 +20,12 @@ def main():
             from odm360.workflows import parent_gphoto2 as workflow
 
         else:
-            # no gphoto2 compatible cameras found, assume serial connection rig
-            from odm360.workflows import parent_serial as workflow
+            # no gphoto2 compatible cameras found, assume serial or ip connection rig
+            if options.serial:
+                from odm360.workflows import parent_serial as workflow
+            else:
+                from odm360.workflows import parent_server as workflow
+
 
     else:
         from odm360.workflows import child_rpi as workflow
@@ -55,6 +59,9 @@ def create_parser():
     parser.add_option('-p', '--parent',
                       dest='parent', default=False, action='store_true',
                       help='Start odm360 as parent (default: run as child)')
+    parser.add_option('-s', '--serial',
+                      dest='serial', default=False, action='store_true',
+                      help='Start odm360 parent as serial connection (default: run with socket TCP connection, only used with parent)')
     parser.add_option('-d', '--destination',
                       dest='root', default='.', nargs=1,
                       help='Local path for storing photos')
