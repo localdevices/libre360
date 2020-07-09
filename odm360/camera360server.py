@@ -1,5 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import socketserver
+from http.server import BaseHTTPRequestHandler
 import json
 import cgi
 import logging
@@ -128,6 +127,10 @@ class Camera360Server(BaseHTTPRequestHandler):
         #
         # , if they all are ready, then set a time and start
         elif state == 'capture':
+            # camera is already capturing, so just wait for further instructions (stop)
+            return {'task': 'wait',
+                    'kwargs': {}
+                    }
 
     def activate_camera(self):
         # check how many cams have the state 'ready'
