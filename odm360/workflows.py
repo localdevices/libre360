@@ -1,4 +1,7 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import HTTPServer
+import requests
+import json
+
 import logging
 import platform
 import time
@@ -12,7 +15,7 @@ from odm360.timer import RepeatedTimer
 from odm360.camera360server import Camera360Server
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
-from odm360.utils import find_serial, get_lan_ip
+from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
     """
@@ -36,7 +39,7 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
-def parent_server(dt, root='.', timeout=0.02, logger=logger, n_cams=2, wait_time=12000, port=8000):
+def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000):
     """
 
     :param dt:
@@ -50,24 +53,21 @@ def parent_server(dt, root='.', timeout=0.02, logger=logger, n_cams=2, wait_time
     # https://www.afternerd.com/blog/python-http-server/
     # https://gist.github.com/nitaku/10d0662536f37a087e1b seems the best case for our uses
 
-    children = []
     _start = time.time()
+
     # find own ip address
     ip = get_lan_ip()
-    # all_ips = get_lan_devices(ip)
-    # sel = selectors.DefaultSelector()  # handler for multiplexing
-    n_clients = 0  # amount of connections
-    port = 8001
 
     # set a number of properties to Camera360Server
     Camera360Server.logger = logger
     Camera360Server.n_cams = n_cams
     Camera360Server.root = root
+
+    # setup server
     server_address = (ip, port)
     httpd = HTTPServer(server_address, Camera360Server)
-    logger.info(f'odm360 listening on {ip}:{port}')
+    logger.info(f'odm360 server listening on {ip}:{port}')
     httpd.serve_forever()
-
 
 def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     ports = []
@@ -105,8 +105,65 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     except Exception as e:
         logger.exception(e)
 
+def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
+    # only load Camera360Pi in a child. A parent may not have this lib
+    from odm360.camera360pi import Camera360Pi
+    ip = get_lan_ip()  # retrieve child's IP address
+    port = 8000
+    headers = {'Content-type=application/json'}
+    all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
+    # initiate the state of the child as 'idle'
+    state = 'idle'
+
+    get_root_msg = {'state': state,
+                    'req': 'ROOT'
+                    }
+    get_task_msg = {'state': state,
+                    'req': 'TASK'
+                    }
+    while True:
+        for host, status in all_ips:
+            try:
+                r = requests.get(f'{host}:{port}', data=json.dumps(get_root_msg),
+                                 headers=headers
+                                 )
+                logger.debug(f'Received {r.text}')
+                msg = r.json()
+                if 'root' in msg:
+                    # setup camera object
+                    camera = Camera360Pi(root=msg['root'], logger=logger)
+                    state = 'ready'
+                    break
+                else:
+                    # msg retrieved does not contain 'root', therefore throw error msg
+                    raise ValueError(f'Expected "root" as answer, but instead got {r.text}')
+                logger.info(f'Found host on {host}:{port}')
+            except:
+                pass
+    try:
+        # ask for a task
+        r = requests.get(f'{host}:{port}', data=json.dumps(get_task_msg),
+                         headers=headers
+                         )
+        logger.debug(f'Received {r.text}')
+        msg = r.json()
+        method = msg['task']
+        kwargs = msg['kwargs']
+        f = getattr(camera, method)
+        # execute function with kwargs provided
+        resp = f(**kwargs)
+        # TODO prepare log msg for server to display, and return that log msg
+        # ....
+        time.sleep(1)
+        # FIXME: loop for requests for tasks with 1 sec interval in between
+        # FIXME: implement capture_continuous method on Camera360Pi side
+    except Exception as e:
+        logger.exception(e)
+
+
+
 def child_rpi(dt, root='.', timeout=1., logger=logger):
-    # only lead Camera360Pi in a child. A parent may not have this lib
+    # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     if platform.node() == 'raspberrypi':
         port = '/dev/ttyS0'
