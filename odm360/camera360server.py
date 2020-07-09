@@ -3,14 +3,18 @@ import socketserver
 import json
 import cgi
 import logging
+import numpy as np
+import time
+import datetime
 
 # adapted from https://gist.github.com/nitaku/10d0662536f37a087e1b
 class Camera360Server(BaseHTTPRequestHandler):
-
+    # add a number of properties to class
     cam_state = {}  # status of cameras, always passed by cameras with GET requests
     cam_logs = {}  # last log of cameras, always passed by cameras with POST requests
     n_cams = None
     root = None
+    start_time = None
     logger = logging
     def _set_headers(self):
         self.send_response(200)
@@ -110,6 +114,39 @@ class Camera360Server(BaseHTTPRequestHandler):
         task: str - name of task method to be performed on child side
         kwargs: dict - set of key word arguments and their values to provide to that task
         """
+        cur_address = self.address_string()
+        state = self.cam_state[cur_address]
         # FIXME implement init (when camera is idle and asking for a task)
-        # FIXME implement wait (when camera is initialized, but not enough cameras are online)
-        # FIXME implement capture_until (only fire this when all cameras are online and initialized)
+        if state == 'idle':
+            # initialize the camera
+            return {'task': 'init',
+                    'kwargs': {}
+                    }
+        elif state == 'ready':
+            self.activate_camera()
+
+        #
+        # , if they all are ready, then set a time and start
+        elif state == 'capture':
+
+    def activate_camera(self):
+        # check how many cams have the state 'ready'
+        n_cams_ready = np.sum([self.cam_state[s] == 'ready' for s in self.cam_state])
+        if n_cams_ready == self.n_cams:
+            return self.activate_camera()
+            if self.start_time is None:
+                # no start time has been set yet, ready to start the time
+                self.logger.info('All cameras are ready, setting start time')
+                self.start_time = 5 * round((time.time() + 10) / 5)
+                self.start_datetime = datetime.datetime.fromtimestamp(self.start_time)
+                self.logger.info(f'start time is set to {self.start_datetime}')
+                self.logger.info(f'Sending capture command to {cur_address}')
+            return {'task': 'capture_continuous',
+                    'kwargs': {}
+                    }
+        else:
+            return {'task': 'wait',
+                    'kwargs': {}
+                    }
+        # TODO check wait
+        # TODO check capture_continuous
