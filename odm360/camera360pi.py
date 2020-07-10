@@ -15,8 +15,10 @@ class Camera360Pi(PiCamera):
     - enable transfer data to a root folder
     - enable modification of exif tags of photos
     """
-    def __init__(self, root=None, logger=logger):
-        super().__init__()
+    def __init__(self, root=None, logger=logger, debug=False):
+        self.debug = debug
+        if not(self.debug):
+            super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
         self.src_fn = None  # path to currently made photo (source) inside the camera
         self.dst_fn = 'dummy.jpg'  # path to photo (destination) on drive
@@ -27,7 +29,7 @@ class Camera360Pi(PiCamera):
             os.makedirs(self._root)
 
     def init(self):
-        self.start_preview()
+        #self.start_preview()
         # camera may need time to warm up
         time.sleep(2)
         self.logger.info('Raspi camera initialized')

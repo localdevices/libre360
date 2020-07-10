@@ -50,7 +50,7 @@ def main():
     logger = setuplog("odm360", "odm360.log", log_level=log_level)
     logger.info("starting...")
 
-    workflow(options.dt, root=options.root, logger=logger)
+    workflow(options.dt, root=options.root, logger=logger, debug=options.debug)
 
 def create_parser():
     usage = "usage: %prog [options]"
@@ -73,6 +73,9 @@ def create_parser():
     parser.add_option('-t', '--time',
                       dest='dt', default=5, nargs=1,
                       help='Number of seconds between each photo')
+    parser.add_option('-x', '--debug',
+                      dest='debug', default=False, action='store_true',
+                      help='Use debug mode. In this mode, no actual cameras are used yet, only the data flow is performed')
     return parser
 
 if __name__ == "__main__":
