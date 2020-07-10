@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
+from odm360.timer import RepeatedTimer
 
 class Camera360Pi(PiCamera):
     """
@@ -69,9 +70,25 @@ class Camera360Pi(PiCamera):
             # apparently the picture was not taken
             raise IOError('Timeout reached')
 
+    def dummy_capture(self):
+        fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
+        self.dst_fn = os.path.join(self._root, fn)
+        self.logger.info(f'Writing to {self.dst_fn}')
+        tic = time.time()
+        # super().capture(self.dst_fn)
+        toc = time.time()
+        self.logger.info(f'Photo took {toc-tic} seconds to take')
+
+    def capture_continuous(self, start_time=None, interval=5):
+        # FIXME: refactor RepeatedTimer so that a start_time can be passed
+        try:
+            timer = RepeatedTimer(interval, self.dummy_capture, start_time=start_time)
+        except:
+            logger.error('Camera not responding or disconnected')
+
+
+
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
         # FIXME
 
-    # TODO: check if a file transfer method already exists
-    # TODO: check if exif tag functionalities exist
