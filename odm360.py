@@ -28,8 +28,12 @@ def main():
 
 
     else:
-        from odm360.workflows import child_serial as workflow
         options.root = None # should come from server
+        if options.serial:
+            from odm360.workflows import child_serial as workflow
+        else:
+            from odm360.workflows import child_tcp_ip as workflow
+
         # you are a child, so act like one!
 
     # start a logger with defined log levels. This may be used in our main call
