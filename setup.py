@@ -26,8 +26,9 @@ setup(
         "pySerial",
         "numpy",
         "gphoto2",
-        "schedule",
-        
+        "picamera",
+        "schedule"
+
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],

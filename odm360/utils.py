@@ -1,5 +1,6 @@
 import serial
 import logging
+
 logger = logging.getLogger(__name__)
 
 def find_serial(wildcard='', logger=logger):
