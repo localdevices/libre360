@@ -17,6 +17,7 @@
 - More background on [GPSD](https://ozzmaker.com/using-python-with-a-gps-receiver-on-a-raspberry-pi/), which is the easiest way to sync time from the PPS pulse.
 - A Python library for [parsing NMEA](https://github.com/Knio/pynmea2); very useful and transparent. I have a high bar for using a library instead of writing my own code to parse this kind of data, but this is definitely worth using.
 - Turns out GPSD is terribly complicated. [Here's a FAQ](https://gpsd.gitlab.io/gpsd/faq.html#raspberry) that might help.
+- And a great writeup on PPP that includes some discussion of [how to control the ublox from GPSD tools](https://gpsd.gitlab.io/gpsd/ppp-howto.html)
 
 ## Hardware and wiring
 - [Good diagrams of Pi Zero pinouts](https://pi4j.com/1.2/pins/model-zero-rev1.html)
