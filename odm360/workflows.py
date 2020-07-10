@@ -113,6 +113,7 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
     headers = {'Content-type=application/json'}
     all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
     # initiate the state of the child as 'idle'
+    log_msg = ''  # start with an empty msg
     state = 'idle'
 
     get_root_msg = {'state': state,
@@ -121,6 +122,10 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
     get_task_msg = {'state': state,
                     'req': 'TASK'
                     }
+    post_log_msg = {'msg': log_msg,
+                    'req': 'LOG'
+                    }
+    # try to get in contact with the right host
     while True:
         for host, status in all_ips:
             try:
@@ -140,6 +145,7 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
                 logger.info(f'Found host on {host}:{port}')
             except:
                 pass
+    # we have contact, now continuously ask for information and report back
     try:
         # ask for a task
         r = requests.get(f'{host}:{port}', data=json.dumps(get_task_msg),
@@ -147,20 +153,22 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
                          )
         logger.debug(f'Received {r.text}')
         msg = r.json()
-        method = msg['task']
+        task = msg['task']
         kwargs = msg['kwargs']
-        f = getattr(camera, method)
+        f = getattr(camera, task)
         # execute function with kwargs provided
-        resp = f(**kwargs)
-        # TODO prepare log msg for server to display, and return that log msg
-        # ....
+        r = f(**kwargs)
+        r = requests.post(f'{host}:{port}', data=json.dumps(post_log_msg))
+        success = r.json()
+        if success['success']:
+            logger.info('POST was successful')
+        else:
+            logger.error('POST was not successful')
         time.sleep(1)
         # FIXME: loop for requests for tasks with 1 sec interval in between
         # FIXME: implement capture_continuous method on Camera360Pi side
     except Exception as e:
         logger.exception(e)
-
-
 
 def child_rpi(dt, root='.', timeout=1., logger=logger):
     # only load Camera360Pi in a child. A parent may not have this lib
