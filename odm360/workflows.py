@@ -17,7 +17,7 @@ from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
-def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
+def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
     """
 
     :param logger:
@@ -39,7 +39,7 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
-def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000):
+def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000, debug=False):
     """
 
     :param dt: time interval between photos
@@ -66,7 +66,7 @@ def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8
     logger.info(f'odm360 server listening on {ip}:{port}')
     httpd.serve_forever()
 
-def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
+def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False):
     ports = []
     _start = time.time()
     # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!
@@ -102,7 +102,7 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     except Exception as e:
         logger.exception(e)
 
-def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
+def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=False):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -116,8 +116,10 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
     # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     ip = get_lan_ip()  # retrieve child's IP address
-    headers = {'Content-type=application/json'}
-    all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
+    logger.debug(f'My IP address is {ip}')
+    headers = {'Content-type': 'application/json'}
+    #all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
+    all_ips = [('192.168.178.9', 'up')]
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
     state = 'idle'
@@ -132,19 +134,22 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
                     'req': 'LOG'
                     }
     # try to get in contact with the right host
-    while True:
+    logger.debug('Initializing search for server')
+    host_found = False
+    while not(host_found):
         for host, status in all_ips:
             try:
-                r = requests.get(f'{host}:{port}', data=json.dumps(get_root_msg),
+                r = requests.get(f'http://{host}:{port}', data=json.dumps(get_root_msg),
                                  headers=headers
                                  )
                 logger.debug(f'Received {r.text}')
                 msg = r.json()
                 if 'root' in msg:
                     # setup camera object
-                    camera = Camera360Pi(root=msg['root'], logger=logger)
+                    camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug)
                     state = 'ready'
                     logger.info(f'Found host on {host}:{port}')
+                    host_found = True
                     break
                 else:
                     # msg retrieved does not contain 'root', therefore throw error msg
@@ -154,7 +159,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
     # we have contact, now continuously ask for information and report back
     try:
         # ask for a task
-        r = requests.get(f'{host}:{port}', data=json.dumps(get_task_msg),
+        r = requests.get(f'http://{host}:{port}', data=json.dumps(get_task_msg),
                          headers=headers
                          )
         logger.debug(f'Received {r.text}')
@@ -164,7 +169,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
         f = getattr(camera, task)
         # execute function with kwargs provided
         r = f(**kwargs)
-        r = requests.post(f'{host}:{port}', data=json.dumps(post_log_msg))
+        r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg))
         success = r.json()
         if success['success']:
             logger.info('POST was successful')
@@ -175,7 +180,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
     except Exception as e:
         logger.exception(e)
 
-def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO'):
+def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO', deub=False):
     """
     Start a child in serial mode, instructed by parent through UART. Can currently only handle one child
     :param dt: time interval between photos
