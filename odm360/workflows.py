@@ -42,19 +42,16 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
 def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000):
     """
 
-    :param dt:
-    :param root:
-    :param timeout:
-    :param logger:
-    :param rig_size:
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in
+    :param logger: logger object
+    :param n_cams: number of cameras to expect (capturing will not commence before this amount is reached)
+    :param wait_time: time to wait until all cameras are online, stop when this is not reached in time
+    :param port: port number to host server
+
     :return:
     """
-    # https://docs.python.org/3/library/http.server.html
-    # https://www.afternerd.com/blog/python-http-server/
-    # https://gist.github.com/nitaku/10d0662536f37a087e1b seems the best case for our uses
-
     _start = time.time()
-
     # find own ip address
     ip = get_lan_ip()
 
@@ -105,11 +102,20 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     except Exception as e:
         logger.exception(e)
 
-def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
+def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000):
+    """
+    Start a child in tcp ip mode. Can handle multiplexing
+
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in (None, needs to come from server
+    :param timeout: time in seconds to wait until next call to server is made
+    :param logger: logger object
+    :param port: port number to host server
+    :return:
+    """
     # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     ip = get_lan_ip()  # retrieve child's IP address
-    port = 8000
     headers = {'Content-type=application/json'}
     all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
     # initiate the state of the child as 'idle'
@@ -138,11 +144,11 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
                     # setup camera object
                     camera = Camera360Pi(root=msg['root'], logger=logger)
                     state = 'ready'
+                    logger.info(f'Found host on {host}:{port}')
                     break
                 else:
                     # msg retrieved does not contain 'root', therefore throw error msg
                     raise ValueError(f'Expected "root" as answer, but instead got {r.text}')
-                logger.info(f'Found host on {host}:{port}')
             except:
                 pass
     # we have contact, now continuously ask for information and report back
@@ -164,17 +170,27 @@ def child_tcp_ip(dt, root='.', timeout=1., logger=logger):
             logger.info('POST was successful')
         else:
             logger.error('POST was not successful')
-        time.sleep(1)
-        # FIXME: loop for requests for tasks with 1 sec interval in between
+        time.sleep(timeout)
         # FIXME: implement capture_continuous method on Camera360Pi side
     except Exception as e:
         logger.exception(e)
 
-def child_rpi(dt, root='.', timeout=1., logger=logger):
+def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO'):
+    """
+    Start a child in serial mode, instructed by parent through UART. Can currently only handle one child
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in (None, needs to come from server
+    :param timeout: time in seconds to wait until next call to server is made
+    :param logger: logger object
+    :param port: port number to host server
+
+    :return:
+    """
+
     # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     if platform.node() == 'raspberrypi':
-        port = '/dev/ttyS0'
+        pass
     else:
         raise OSError('This function must be deployed on a raspberry pi')
     # initiate a  object
