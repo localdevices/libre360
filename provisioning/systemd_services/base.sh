@@ -53,7 +53,7 @@ success=
 
 while true
 do
-    for dev in "ttyS0" "ttyACM0" 
+    for dev in "ttyS0" "ttyACM0" "ttyAMA0"
     do
 	if [ ! "$success" = true ]
 	then
