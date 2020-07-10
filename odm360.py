@@ -37,6 +37,7 @@ def main():
     else:
         quiet = 0
     log_level = max(10, 30 - 10 * (verbose - quiet))
+    log_level = 10
 
     logger = setuplog("odm360", "odm360.log", log_level=log_level)
     logger.info("starting...")

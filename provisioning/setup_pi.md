@@ -32,9 +32,9 @@ sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
 - Fetch and install the ODM360 code
 
 ```
-https://github.com/OpenDroneMap/odm360
+git clone https://github.com/OpenDroneMap/odm360
 cd odm360
-pip3 install -e
+pip3 install -e .
 
 ```
 
