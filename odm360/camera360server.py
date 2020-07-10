@@ -73,8 +73,14 @@ class Camera360Server(BaseHTTPRequestHandler):
 
     # POST echoes the message adding a JSON field
     def do_POST(self):
+        """
+        POST API should provide a json with the following fields:
+        req: str - name of method for posting to call from server (e.g. log)
+        kwargs: dict - any kwargs that need to be parsed to method (can be left out if None)
+        the POST API then decides what action should be taken based on the POST request.
+        POST API will also return a result back
+        """
         ctype, pdict = cgi.parse_header(self.headers.get('content-type'))
-
         # refuse to receive non-json content
         if ctype != 'application/json':
             self.send_response(400)
@@ -83,15 +89,31 @@ class Camera360Server(BaseHTTPRequestHandler):
 
         # read the message and convert it into a python dictionary
         length = int(self.headers.get('content-length'))
-        message = json.loads(self.rfile.read(length))
+        msg = json.loads(self.rfile.read(length))
 
-        # add a property to the object, just to mess with data
-        self.logger.info('POST received')
-        message['received'] = 'ok'
+        # show request in log
+        log_msg = f'Cam {self.address_string()} - POST {msg["req"]}'
+        self.logger.info(log_msg)
+
+        # check if task exists and sent instructions back
+        method = f'post_{msg["req"].lower()}'
+        if hasattr(self, method):
+            if 'kwargs' in msg:
+                kwargs = msg['kwargs']
+            else:
+                kwargs = {}
+            task = getattr(self, method)
+            # execute with key-word arguments provided
+            r = task(**kwargs)
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+            # return r
 
         # send the message back
         self._set_headers()
-        self.wfile.write(json.dumps(message).encode())
+        self.wfile.write(json.dumps(r).encode())
 
     def get_root(self):
         """
@@ -131,6 +153,20 @@ class Camera360Server(BaseHTTPRequestHandler):
             return {'task': 'wait',
                     'kwargs': {}
                     }
+
+    def post_log(self, log):
+        """
+        Log message from current camera on logger
+        :return:
+        dict {'success': False or True}
+        """
+        try:
+            cur_address = self.address_string()
+            log_msg = f'Cam {self.address_string()} - {log}'
+            self.logger.info(log_msg)
+            return {'success': True}
+        except:
+            return {'success': False}
 
     def activate_camera(self):
         # check how many cams have the state 'ready'
