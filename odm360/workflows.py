@@ -130,7 +130,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     get_task_msg = {'state': state,
                     'req': 'TASK'
                     }
-    post_log_msg = {'msg': log_msg,
+    post_log_msg = {'kwargs': {'msg': log_msg},
                     'req': 'LOG'
                     }
     # try to get in contact with the right host
@@ -148,7 +148,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
                 if 'root' in msg:
                     # setup camera object
                     camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug)
-                    state = 'ready'
+                    state = camera.state
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
                     break
@@ -159,26 +159,34 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
                 pass
     # we have contact, now continuously ask for information and report back
     try:
-        # ask for a task
-        r = requests.get(f'http://{host}:{port}',
-                         data=json.dumps(get_task_msg),
-                         headers=headers
-                         )
-        logger.debug(f'Received {r.text}')
-        msg = r.json()
-        task = msg['task']
-        kwargs = msg['kwargs']
-        f = getattr(camera, task)
-        # execute function with kwargs provided
-        log_msg = f(**kwargs)
-        r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
-        success = r.json()
-        if success['success']:
-            logger.info('POST was successful')
-        else:
-            logger.error('POST was not successful')
-        time.sleep(timeout)
-        # FIXME: implement capture_continuous method on Camera360Pi side
+        while True:
+            # ask for a task
+            get_task_msg = {'state': camera.state,
+                            'req': 'TASK'
+                            }
+            r = requests.get(f'http://{host}:{port}',
+                             data=json.dumps(get_task_msg),
+                             headers=headers
+                             )
+            logger.debug(f'Received {r.text}')
+            msg = r.json()
+            task = msg['task']
+            kwargs = msg['kwargs']
+            f = getattr(camera, task)
+            # execute function with kwargs provided
+            log_msg = f(**kwargs)
+            state = camera.state
+            post_log_msg = {'kwargs': {'msg': log_msg},
+                            'req': 'LOG'
+                            }
+            r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
+            success = r.json()
+            if success['success']:
+                logger.debug('POST was successful')
+            else:
+                logger.error('POST was not successful')
+            time.sleep(timeout)
+            # FIXME: implement capture_continuous method on Camera360Pi side
     except Exception as e:
         logger.exception(e)
 

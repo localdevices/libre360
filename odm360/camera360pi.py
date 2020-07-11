@@ -17,6 +17,7 @@ class Camera360Pi(PiCamera):
     """
     def __init__(self, root=None, logger=logger, debug=False):
         self.debug = debug
+        self.state = 'idle'
         if not(self.debug):
             super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
@@ -29,11 +30,19 @@ class Camera360Pi(PiCamera):
             os.makedirs(self._root)
 
     def init(self):
-        #self.start_preview()
-        # camera may need time to warm up
-        time.sleep(2)
-        self.logger.info('Raspi camera initialized')
-
+        try:
+            if not(self.debug):
+                self.start_preview()
+                # camera may need time to warm up
+                time.sleep(2)
+            msg = 'Raspi camera initialized'
+            self.logger.info(msg)
+            self.state = 'ready'
+        except:
+            msg = 'Raspi camera could not be initialized'
+            self.logger.error(msg)
+        return msg
+    
     def exit(self):
         self.stop_preview()
         self.logger.info('Raspi camera stopped')
@@ -86,8 +95,11 @@ class Camera360Pi(PiCamera):
         try:
             timer = RepeatedTimer(interval, self.dummy_capture, start_time=start_time)
         except:
-            logger.error('Camera not responding or disconnected')
-        return f'Camera is now capturing avery {interval} seconds'
+            msg = 'Camera not responding or disconnected'
+            logger.error(msg)
+        msg = f'Camera is now capturing avery {interval} seconds'
+        logger.info(msg)
+        return msg
 
 
     def set_dst_fn(self):
