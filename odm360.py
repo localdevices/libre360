@@ -13,7 +13,6 @@ from optparse import OptionParser
 def main():
     parser = create_parser()
     (options, args) = parser.parse_args()
-    print(options.n_cams)
     # start a logger with defined log levels. This may be used in our main call
     logger = start_logger(options.verbose, options.quiet)
 
@@ -22,7 +21,7 @@ def main():
             raise OSError('Parent needs a number of cameras, please define with -n or --number')
         camera_list = list(gp.Camera.autodetect())
         kwargs = {
-                  'n_cams': options.n_cams,
+                  'n_cams': int(options.n_cams),
                   'dt': options.dt,
                   'root': options.root,
                   'logger': logger,
@@ -60,7 +59,7 @@ def create_parser():
     parser.add_option('-q', '--quiet',
                       dest='quiet', default=False, action='store_false',
                       help='do not print status messages to stdout')
-    parser.add_option('-n', '--number', default=None, nargs=1,x
+    parser.add_option('-n', '--number', default=None, nargs=1,
                       dest='n_cams', help='Number of cameras to connect')
     parser.add_option('-v', '--verbose',
                       dest='verbose', default=False, action='store_true',
