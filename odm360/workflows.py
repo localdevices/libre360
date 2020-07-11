@@ -170,10 +170,8 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
         kwargs = msg['kwargs']
         f = getattr(camera, task)
         # execute function with kwargs provided
-        r = f(**kwargs)
-        r = requests.post(f'http://{host}:{port}',
-                          data=json.dumps(post_log_msg),
-                          headers=headers)
+        log_msg = f(**kwargs)
+        r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
         success = r.json()
         if success['success']:
             logger.info('POST was successful')

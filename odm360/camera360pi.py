@@ -87,7 +87,7 @@ class Camera360Pi(PiCamera):
             timer = RepeatedTimer(interval, self.dummy_capture, start_time=start_time)
         except:
             logger.error('Camera not responding or disconnected')
-
+        return f'Camera is now capturing avery {interval} seconds'
 
 
     def set_dst_fn(self):
