@@ -120,6 +120,7 @@ class Camera360Server(BaseHTTPRequestHandler):
         :return:
         dict representation of the root folder
         """
+        self.logger.info(f'Giving root {self.root} to Cam {self.address_string()}')
         return {'root': self.root}
 
     def get_task(self):
@@ -137,24 +138,21 @@ class Camera360Server(BaseHTTPRequestHandler):
         """
         cur_address = self.address_string()
         state = self.cam_state[cur_address]
-        # FIXME implement init (when camera is idle and asking for a task)
         if state == 'idle':
             # initialize the camera
+            self.logger.info('Sending camera initialization ')
             return {'task': 'init',
                     'kwargs': {}
                     }
         elif state == 'ready':
-            self.activate_camera()
-
-        #
-        # , if they all are ready, then set a time and start
+            return self.activate_camera()
         elif state == 'capture':
             # camera is already capturing, so just wait for further instructions (stop)
             return {'task': 'wait',
                     'kwargs': {}
                     }
 
-    def post_log(self, log):
+    def post_log(self, msg):
         """
         Log message from current camera on logger
         :return:
@@ -162,17 +160,18 @@ class Camera360Server(BaseHTTPRequestHandler):
         """
         try:
             cur_address = self.address_string()
-            log_msg = f'Cam {self.address_string()} - {log}'
+            log_msg = f'Cam {self.address_string()} - {msg}'
             self.logger.info(log_msg)
             return {'success': True}
         except:
             return {'success': False}
 
     def activate_camera(self):
-        # check how many cams have the state 'ready'
+        cur_address = self.address_string()
+        # check how many cams have the state 'ready', only start when the full rig is ready
         n_cams_ready = np.sum([self.cam_state[s] == 'ready' for s in self.cam_state])
         if n_cams_ready == self.n_cams:
-            return self.activate_camera()
+            self.logger.info(f'All cameras ready. Start capturing on {cur_address}')
             if self.start_time is None:
                 # no start time has been set yet, ready to start the time
                 self.logger.info('All cameras are ready, setting start time')
@@ -181,9 +180,10 @@ class Camera360Server(BaseHTTPRequestHandler):
                 self.logger.info(f'start time is set to {self.start_datetime}')
                 self.logger.info(f'Sending capture command to {cur_address}')
             return {'task': 'capture_continuous',
-                    'kwargs': {}
+                    'kwargs': {'start_time': self.start_time}
                     }
         else:
+            self.logger.info(f'Only {n_cams_ready} out of {self.n_cams} ready for capture, waiting...')
             return {'task': 'wait',
                     'kwargs': {}
                     }
