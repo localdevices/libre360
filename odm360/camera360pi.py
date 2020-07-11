@@ -18,6 +18,7 @@ class Camera360Pi(PiCamera):
     def __init__(self, root=None, logger=logger, debug=False):
         self.debug = debug
         self.state = 'idle'
+        self.timer = None
         if not(self.debug):
             super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
@@ -59,9 +60,13 @@ class Camera360Pi(PiCamera):
         return msg
 
     def stop(self):
-        # FIXME: kill capture daemon
-        self.state = 'ready'
-        msg = 'Camera capture stopped'
+        # TODO: debug stop capture daemon
+        if self.timer is not None:
+            self.timer.stop()
+            self.state = 'ready'
+            msg = 'Camera capture stopped'
+        else:
+            msg = 'No capturing taking place, do nothing'
         self.logger.info(msg)
         return msg
 
@@ -103,7 +108,7 @@ class Camera360Pi(PiCamera):
     def capture_continuous(self, start_time=None, interval=5):
         # FIXME: refactor RepeatedTimer so that a start_time can be passed
         try:
-            timer = RepeatedTimer(interval, self.capture, start_time=start_time)
+            self.timer = RepeatedTimer(interval, self.capture, start_time=start_time)
             self.state = 'capture'
         except:
             msg = 'Camera not responding or disconnected'

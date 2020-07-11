@@ -11,10 +11,11 @@ class Camera360Server(BaseHTTPRequestHandler):
     # add a number of properties to class
     cam_state = {}  # status of cameras, always passed by cameras with GET requests
     cam_logs = {}  # last log of cameras, always passed by cameras with POST requests
-    n_cams = None
-    root = None
-    start_time = None
-    logger = logging
+    n_cams = None  # number of cameras to expect
+    root = None  # root folder to store photos
+    start_time = None  # start time of capture thread
+    logger = logging  # logger object
+    stop = False  # stop sign (TODO implement this with a GPIO push button)
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -136,6 +137,9 @@ class Camera360Server(BaseHTTPRequestHandler):
         task: str - name of task method to be performed on child side
         kwargs: dict - set of key word arguments and their values to provide to that task
         """
+        # TODO replace by push button, now stopping after 30 secs
+        if time.time() > self.start_time + 30:
+            self.stop = True
         cur_address = self.address_string()
         state = self.cam_state[cur_address]
         if state == 'idle':
@@ -147,6 +151,10 @@ class Camera360Server(BaseHTTPRequestHandler):
         elif state == 'ready':
             return self.activate_camera()
         elif state == 'capture':
+            if self.stop:
+                return {'task': 'stop',
+                        'kwargs': {}
+                        }
             # camera is already capturing, so just wait for further instructions (stop)
             return {'task': 'wait',
                     'kwargs': {}
