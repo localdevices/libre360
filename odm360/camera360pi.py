@@ -42,17 +42,36 @@ class Camera360Pi(PiCamera):
             msg = 'Raspi camera could not be initialized'
             self.logger.error(msg)
         return msg
-    
+   
+    def wait(self):
+        """
+        Basically do not do anything, just let the server know you understood the msg
+        """
+        msg = 'Raspi camera will wait for further instructions'
+        self.logger.debug(msg)  # better only show this in debug mode
+        return msg
+
     def exit(self):
         self.stop_preview()
-        self.logger.info('Raspi camera stopped')
+        self.state = 'idle'
+        msg = 'Raspi camera shutdown'
+        self.logger.info(msg)
+        return msg
+
+    def stop(self):
+        # FIXME: kill capture daemon
+        self.state = 'ready'
+        msg = 'Camera capture stopped'
+        self.logger.info(msg)
+        return msg
 
     def capture(self, timeout=1.):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
         self.dst_fn = os.path.join(self._root, fn)
         self.logger.info(f'Writing to {self.dst_fn}')
         tic = time.time()
-        super().capture(self.dst_fn)
+        if not(self.debug):
+            super().capture(self.dst_fn)
         toc = time.time()
         self.logger.info(f'Photo took {toc-tic} seconds to take')
 
@@ -81,19 +100,11 @@ class Camera360Pi(PiCamera):
             # apparently the picture was not taken
             raise IOError('Timeout reached')
 
-    def dummy_capture(self):
-        fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
-        self.dst_fn = os.path.join(self._root, fn)
-        self.logger.info(f'Writing to {self.dst_fn}')
-        tic = time.time()
-        # super().capture(self.dst_fn)
-        toc = time.time()
-        self.logger.info(f'Photo took {toc-tic} seconds to take')
-
     def capture_continuous(self, start_time=None, interval=5):
         # FIXME: refactor RepeatedTimer so that a start_time can be passed
         try:
-            timer = RepeatedTimer(interval, self.dummy_capture, start_time=start_time)
+            timer = RepeatedTimer(interval, self.capture, start_time=start_time)
+            self.state = 'capture'
         except:
             msg = 'Camera not responding or disconnected'
             logger.error(msg)

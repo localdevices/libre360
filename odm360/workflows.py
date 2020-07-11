@@ -119,7 +119,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     logger.debug(f'My IP address is {ip}')
     headers = {'Content-type': 'application/json'}
     #all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
-    all_ips = [('192.168.178.9', 'up')]
+    all_ips = [('192.168.178.174', 'up')]
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
     state = 'idle'
