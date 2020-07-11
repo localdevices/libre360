@@ -139,7 +139,8 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     while not(host_found):
         for host, status in all_ips:
             try:
-                r = requests.get(f'http://{host}:{port}', data=json.dumps(get_root_msg),
+                r = requests.get(f'http://{host}:{port}',
+                                 data=json.dumps(get_root_msg),
                                  headers=headers
                                  )
                 logger.debug(f'Received {r.text}')
@@ -159,7 +160,8 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     # we have contact, now continuously ask for information and report back
     try:
         # ask for a task
-        r = requests.get(f'http://{host}:{port}', data=json.dumps(get_task_msg),
+        r = requests.get(f'http://{host}:{port}',
+                         data=json.dumps(get_task_msg),
                          headers=headers
                          )
         logger.debug(f'Received {r.text}')
@@ -169,7 +171,9 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
         f = getattr(camera, task)
         # execute function with kwargs provided
         r = f(**kwargs)
-        r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg))
+        r = requests.post(f'http://{host}:{port}',
+                          data=json.dumps(post_log_msg),
+                          headers=headers)
         success = r.json()
         if success['success']:
             logger.info('POST was successful')
