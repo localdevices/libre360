@@ -27,3 +27,4 @@ class RepeatedTimer:
     def stop(self):
         self.event.set()
         self.thread.join()
+        raise Exception('Thread stopped')
