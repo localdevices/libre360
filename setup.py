@@ -27,7 +27,8 @@ setup(
         "numpy",
         "gphoto2",
         "schedule",
-        
+        "picamera",
+        "python-nmap"
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],
@@ -36,7 +37,7 @@ setup(
     entry_points="""
     """,
     include_package_data=True,
-    license="???",
+    license="MIT",
     zip_safe=False,
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
