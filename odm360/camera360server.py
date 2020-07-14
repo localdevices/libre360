@@ -163,7 +163,7 @@ def make_Camera360Server(parent):
                     'kwargs': {}
                     }
 
-        def post_log(self, msg):
+        def post_log(self, msg, level='info'):
             """
             Log message from current camera on logger
             :return:
@@ -171,8 +171,8 @@ def make_Camera360Server(parent):
             """
             try:
                 cur_address = self.address_string()
-                log_msg = f'Cam {self.address_string()} - {msg["msg"]}'
-                log_method = getattr(self.parent.logger, msg['level'])
+                log_msg = f'Cam {self.address_string()} - {msg}'
+                log_method = getattr(self.parent.logger, level)
                 log_method(log_msg)
                 return {'success': True}
             except:

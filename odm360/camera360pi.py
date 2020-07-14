@@ -2,6 +2,8 @@ import os
 from picamera import PiCamera
 import time
 import logging
+import json
+import requests
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -15,7 +17,7 @@ class Camera360Pi(PiCamera):
     - enable transfer data to a root folder
     - enable modification of exif tags of photos
     """
-    def __init__(self, root=None, logger=logger, debug=False):
+    def __init__(self, root=None, logger=logger, debug=False, host=None, port=None):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
@@ -23,10 +25,12 @@ class Camera360Pi(PiCamera):
             super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
         self.src_fn = None  # path to currently made photo (source) inside the camera
-        self.dst_fn = 'dummy.jpg'  # path to photo (destination) on drive
+        self.dst_fn = ''  # path to photo (destination) on drive
         self.logger = logger
         self.id = None  # TODO: give a uniue ID to each camera (once CameraRig is defined, complete)
         self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
+        self.host = host
+        self.port = port
         if not(os.path.isdir(self._root)):
             os.makedirs(self._root)
 
@@ -89,7 +93,11 @@ class Camera360Pi(PiCamera):
         if not(self.debug):
             super().capture(self.dst_fn)
         toc = time.time()
-        self.logger.info(f'Photo took {toc-tic} seconds to take')
+        self.logger.debug(f'Photo took {toc-tic} seconds to take')
+        post_capture = {'kwargs': {'msg': f'Taken photo {self.dst_fn}', 'level': 'info'},
+                        'req': 'LOG',
+                        }
+        self.post(post_capture)
 
     def capture_until(self, timeout=1.):
         """
@@ -130,6 +138,14 @@ class Camera360Pi(PiCamera):
                 'level': 'info'
                 }
 
+    def post(self, msg):
+        """
+
+        :param msg: dict
+        :return:
+        """
+        headers = {'Content-type': 'application/json'}
+        r = requests.post(f'http://{self.host}:{self.port}', data=json.dumps(msg), headers=headers)
 
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
