@@ -147,15 +147,8 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
     state = 'idle'
-
     get_root_msg = {'state': state,
                     'req': 'ROOT'
-                    }
-    get_task_msg = {'state': state,
-                    'req': 'TASK'
-                    }
-    post_log_msg = {'kwargs': {'msg': log_msg},
-                    'req': 'LOG'
                     }
     # try to get in contact with the right host
     logger.debug('Initializing search for server')
@@ -171,7 +164,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
                 msg = r.json()
                 if 'root' in msg:
                     # setup camera object
-                    camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug)
+                    camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug, host=host, port=port)
                     state = camera.state
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
@@ -200,7 +193,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
             # execute function with kwargs provided
             log_msg = f(**kwargs)
             state = camera.state
-            post_log_msg = {'kwargs': {'msg': log_msg},
+            post_log_msg = {'kwargs': log_msg,
                             'req': 'LOG'
                             }
             r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
