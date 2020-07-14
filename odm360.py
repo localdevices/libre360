@@ -42,7 +42,8 @@ def main():
             'dt': options.dt,
             'root': None,
             'logger': logger,
-            'debug': options.debug
+            'debug': options.debug,
+            'host': options.host,
         }
         if options.serial:
             from odm360.workflows import child_serial as workflow
@@ -76,6 +77,10 @@ def create_parser():
     parser.add_option('-t', '--time',
                       dest='dt', default=5, nargs=1,
                       help='Number of seconds between each photo')
+    parser.add_option('-i', '--ip',
+                      dest='host', default=None, nargs=1,
+                      help='Ip address of host (only relevant for tcp ip child). If not given, child will search for it')
+
     parser.add_option('-x', '--debug',
                       dest='debug', default=False, action='store_true',
                       help='Use debug mode. In this mode, no actual cameras are used yet, only the data flow is performed')
