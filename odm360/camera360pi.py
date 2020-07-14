@@ -42,7 +42,9 @@ class Camera360Pi(PiCamera):
         except:
             msg = 'Raspi camera could not be initialized'
             self.logger.error(msg)
-        return msg
+        return {'msg': msg,
+                'level': 'info'
+                }
    
     def wait(self):
         """
@@ -50,14 +52,18 @@ class Camera360Pi(PiCamera):
         """
         msg = 'Raspi camera will wait for further instructions'
         self.logger.debug(msg)  # better only show this in debug mode
-        return msg
+        return {'msg': msg,
+                'level': 'debug'
+                }
 
     def exit(self):
         self.stop_preview()
         self.state = 'idle'
         msg = 'Raspi camera shutdown'
         self.logger.info(msg)
-        return msg
+        return {'msg': msg,
+                'level': 'info'
+                }
 
     def stop(self):
         # TODO: debug stop capture daemon
@@ -68,7 +74,9 @@ class Camera360Pi(PiCamera):
         else:
             msg = 'No capturing taking place, do nothing'
         self.logger.info(msg)
-        return msg
+        return {'msg': msg,
+                'level': 'info'
+                }
 
     def capture(self, timeout=1.):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
@@ -115,7 +123,9 @@ class Camera360Pi(PiCamera):
             logger.error(msg)
         msg = f'Camera is now capturing avery {interval} seconds'
         logger.info(msg)
-        return msg
+        return {'msg': msg,
+                'level': 'info'
+                }
 
 
     def set_dst_fn(self):
