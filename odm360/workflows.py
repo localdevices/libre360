@@ -126,7 +126,7 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=F
     except Exception as e:
         logger.exception(e)
 
-def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=False):
+def child_tcp_ip(dt, root=None, timeout=1., logger=logger, host=None, port=8000, debug=False):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -142,8 +142,10 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, port=8000, debug=Fals
     ip = get_lan_ip()  # retrieve child's IP address
     logger.debug(f'My IP address is {ip}')
     headers = {'Content-type': 'application/json'}
-    #all_ips = get_lan_devices(ip)  # find all IPs on the current network interface
-    all_ips = [('192.168.178.174', 'up')]
+    if host is None:
+        all_ips = get_lan_devices(ip)  # find all IPs on the current network interface and loop over them
+    else:
+        all_ips = [(host, 'up')]
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
     state = 'idle'
