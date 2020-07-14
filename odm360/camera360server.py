@@ -140,7 +140,6 @@ def make_Camera360Server(parent):
             # TODO replace by push button, now stopping after 30 secs
             if self.parent.start_time is not None:
                 if time.time() > self.parent.start_time + 10:
-                    print(time.time(), self.parent.start_time)
                     self.parent.stop = True
             cur_address = self.address_string()
             state = self.parent.cam_state[cur_address]
