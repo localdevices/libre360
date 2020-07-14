@@ -68,7 +68,10 @@ class Camera360Pi(PiCamera):
     def stop(self):
         # TODO: debug stop capture daemon
         if self.timer is not None:
-            self.timer.stop()
+            try:
+                self.timer.stop()
+            except:
+                pass
             self.state = 'ready'
             msg = 'Camera capture stopped'
         else:
