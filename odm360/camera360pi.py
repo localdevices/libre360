@@ -21,8 +21,6 @@ class Camera360Pi(PiCamera):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
-        if not(self.debug):
-            super().__init__()
         self._root = root  # root folder where to store photos from this specific camera instance
         self.src_fn = None  # path to currently made photo (source) inside the camera
         self.dst_fn = ''  # path to photo (destination) on drive
@@ -33,6 +31,10 @@ class Camera360Pi(PiCamera):
         self.port = port
         if not(os.path.isdir(self._root)):
             os.makedirs(self._root)
+        if not(self.debug):
+            super().__init__()
+        # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken
+        self.resolution = (4056, 3040)
 
     def init(self):
         try:
@@ -45,6 +47,7 @@ class Camera360Pi(PiCamera):
             self.state = 'ready'
         except:
             msg = 'Raspi camera could not be initialized'
+            self.state = 'broken'
             self.logger.error(msg)
         return {'msg': msg,
                 'level': 'info'
