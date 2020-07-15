@@ -30,7 +30,6 @@ def main():
         if len(camera_list) > 0:
             # gphoto2 compatible cameras are found, assume a gphoto2 rig
             from odm360.workflows import parent_gphoto2 as workflow
-
         else:
             # no gphoto2 compatible cameras found, assume serial or ip connection rig
             if options.serial:
