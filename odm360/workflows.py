@@ -101,7 +101,7 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=F
     logger.info(f'Found {len(ports)} cameras, initializing...')
 
     # TODO: turn this into a list of devices in a CameraRig object, for now only select the first found
-    port, descr = ports[0], descr[0]
+    port, descr = ports[0], descrs[0]
     logger.debug(f'Device {descr} found on port {port}')
     try:
         # initiate a serial connection
@@ -111,10 +111,16 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=F
         # # open the uart connection to raspi and see if we get a serial object back
         rpi.open_serial()
         # let the raspi camera know that it can start by providing a root folder to store photos in
-        rpi._to_serial({'root': root})
-        time.sleep(1)
-        rpi.init()
-        # start timer
+        start = False
+        while not(start):
+            try:
+                rpi._to_serial({'root': root})
+                time.sleep(1)
+                if rpi._from_serial() == 'received':
+                    start = True
+                rpi.init()
+            except:
+                pass
         try:
             timer = RepeatedTimer(dt, rpi.capture)
         except:
@@ -243,6 +249,7 @@ def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO', de
                 p = rpi._from_serial()
                 if 'root' in p:
                     start = True
+                    rpi._to_serial('received')
                 else:
                     raise IOError('Received a wrong signal. Please restart the rig.')
             except:
