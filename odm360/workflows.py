@@ -1,19 +1,45 @@
+from http.server import HTTPServer
+import requests
+import json
+
 import logging
 import platform
 import time
 import schedule
 import gphoto2 as gp
 
-
 logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.timer import RepeatedTimer
+from odm360.camera360server import make_Camera360Server
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
-from odm360.utils import find_serial
+from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
-def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
+class CameraRig():
+    def __init__(self, ip, port, root='.', n_cams=1, logger=logger):
+        # add a number of properties to CameraRig
+        self.ip = ip
+        self.port = port
+        self.root = root  # root folder to store photos
+        self.n_cams = n_cams  # number of cameras to expect
+        self.logger = logger  # logger object
+        # initialize camera states
+        self.start_time = None  # start time of capture thread
+        self.stop = False  # stop sign (TODO implement this with a GPIO push button)
+        self.cam_state = {}  # status of cameras, always passed by cameras with GET requests
+        self.cam_logs = {}  # last log of cameras, always passed by cameras with POST requests
+
+    def start_server(self):
+        server_handler = make_Camera360Server(self)
+        httpd = HTTPServer((self.ip, self.port), server_handler)
+        logger.info(f'odm360 server listening on {self.ip}:{self.port}')
+        httpd.serve_forever()
+
+
+
+def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
     """
 
     :param logger:
@@ -35,21 +61,44 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
+def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000, debug=False):
+    """
 
-def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
-    ports = ['/dev/ttyS0']
-    descrs = ['raspberrypi']
-    if platform.node() != 'raspberrypi':
-        ports = []
-        descrs = []
-        _start = time.time()
-        # find all ports belonging to dialout group, and check these if they result in answers.
-        # After 120 seconds, we give up!
-        while (len(ports) < rig_size) and (time.time()-_start < 120):
-            ports, descrs = find_serial(wildcard='UART', logger=logger)
-        if len(ports) < rig_size:
-            raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
-        logger.info(f'Found {len(ports)} cameras, initializing...')
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in
+    :param logger: logger object
+    :param n_cams: number of cameras to expect (capturing will not commence before this amount is reached)
+    :param wait_time: time to wait until all cameras are online, stop when this is not reached in time
+    :param port: port number to host server
+
+    :return:
+    """
+    _start = time.time()
+    # find own ip address
+    ip = get_lan_ip()
+
+    # # set a number of properties to Camera360Server
+    # server_props =
+    # Camera360Server.logger = logger
+    # Camera360Server.n_cams = n_cams
+    # Camera360Server.root = root
+    # Camera360Server.stop = True
+
+    # setup server
+    server_address = (ip, port)
+    rig = CameraRig(ip, port, root=root, n_cams=n_cams, logger=logger)
+    rig.start_server()
+
+
+def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False):
+    ports = []
+    _start = time.time()
+    # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!
+    while (len(ports) < rig_size) and (time.time()-_start < 10):
+        ports, descr = find_serial(wildcard='UART', logger=logger)
+    if len(ports) < rig_size:
+        raise IOError(f'Found only {len(ports)} cameras to connect to. Please connect at least {rig_size} cameras')
+    logger.info(f'Found {len(ports)} cameras, initializing...')
 
     # TODO: turn this into a list of devices in a CameraRig object, for now only select the first found
     port, descr = ports[0], descrs[0]
@@ -83,11 +132,105 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1):
     except Exception as e:
         logger.exception(e)
 
-def child_rpi(dt, root='.', timeout=1., logger=logger):
-    # only lead Camera360Pi in a child. A parent may not have this lib
+def child_tcp_ip(dt, root=None, timeout=1., logger=logger, host=None, port=8000, debug=False):
+    """
+    Start a child in tcp ip mode. Can handle multiplexing
+
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in (None, needs to come from server
+    :param timeout: time in seconds to wait until next call to server is made
+    :param logger: logger object
+    :param port: port number to host server
+    :return:
+    """
+    # only load Camera360Pi in a child. A parent may not have this lib
+    from odm360.camera360pi import Camera360Pi
+    ip = get_lan_ip()  # retrieve child's IP address
+    logger.debug(f'My IP address is {ip}')
+    headers = {'Content-type': 'application/json'}
+    if host is None:
+        all_ips = get_lan_devices(ip)  # find all IPs on the current network interface and loop over them
+    else:
+        all_ips = [(host, 'up')]
+    # initiate the state of the child as 'idle'
+    log_msg = ''  # start with an empty msg
+    state = 'idle'
+    get_root_msg = {'state': state,
+                    'req': 'ROOT'
+                    }
+    # try to get in contact with the right host
+    logger.debug('Initializing search for server')
+    host_found = False
+    while not(host_found):
+        for host, status in all_ips:
+            try:
+                r = requests.get(f'http://{host}:{port}',
+                                 data=json.dumps(get_root_msg),
+                                 headers=headers
+                                 )
+                logger.debug(f'Received {r.text}')
+                msg = r.json()
+                if 'root' in msg:
+                    # setup camera object
+                    camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug, host=host, port=port)
+                    state = camera.state
+                    logger.info(f'Found host on {host}:{port}')
+                    host_found = True
+                    break
+                else:
+                    # msg retrieved does not contain 'root', therefore throw error msg
+                    raise ValueError(f'Expected "root" as answer, but instead got {r.text}')
+            except:
+                pass
+    # we have contact, now continuously ask for information and report back
+    try:
+        while True:
+            # ask for a task
+            get_task_msg = {'state': camera.state,
+                            'req': 'TASK'
+                            }
+            r = requests.get(f'http://{host}:{port}',
+                             data=json.dumps(get_task_msg),
+                             headers=headers
+                             )
+            logger.debug(f'Received {r.text}')
+            msg = r.json()
+            task = msg['task']
+            kwargs = msg['kwargs']
+            f = getattr(camera, task)
+            # execute function with kwargs provided
+            log_msg = f(**kwargs)
+            state = camera.state
+            post_log_msg = {'kwargs': log_msg,
+                            'req': 'LOG'
+                            }
+            r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
+            success = r.json()
+            if success['success']:
+                logger.debug('POST was successful')
+            else:
+                logger.error('POST was not successful')
+            time.sleep(timeout)
+            # FIXME: implement capture_continuous method on Camera360Pi side
+    except Exception as e:
+        logger.exception(e)
+
+def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO', deub=False):
+    """
+    Start a child in serial mode, instructed by parent through UART. Can currently only handle one child
+    :param dt: time interval between photos
+    :param root: name of root folder to store photos in (None, needs to come from server
+    :param timeout: time in seconds to wait until next call to server is made
+    :param logger: logger object
+    :param port: port number to host server
+
+    :return:
+    """
+
+    # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
     if platform.node() == 'raspberrypi':
-        port = '/dev/ttyS0'
+        pass
     else:
         raise OSError('This function must be deployed on a raspberry pi')
     # initiate a  object
