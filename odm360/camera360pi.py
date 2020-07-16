@@ -52,7 +52,7 @@ class Camera360Pi(PiCamera):
         return {'msg': msg,
                 'level': 'info'
                 }
-   
+
     def wait(self):
         """
         Basically do not do anything, just let the server know you understood the msg
@@ -153,4 +153,3 @@ class Camera360Pi(PiCamera):
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
         # FIXME
-

@@ -101,4 +101,3 @@ def start_logger(verbose, quiet):
 
 if __name__ == "__main__":
     main()
-

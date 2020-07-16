@@ -1,5 +1,6 @@
 import serial
 import logging
+
 logger = logging.getLogger(__name__)
 import socket
 import nmap
