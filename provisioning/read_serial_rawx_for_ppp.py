@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Read serial NMEA data from a device to a file.
+Read serial raw GNSS data from a device to a file.
 One positional argument: output file to write.
 Two flag arguments:
 -br or --baud_rate: the expected baud rate of the device. Default 38400.
@@ -32,14 +32,7 @@ def make_serial_reader(baud_rate, timeout, port = None):
                 return serial_reader
         return None
 
-def log_NMEA(serial_reader, outfile):
-    with open(outfile, 'wb') as of:
-        while True:
-            sentence = serial_reader.readline()
-            if(validate_NMEA_sentence(sentence)):
-               of.write(serial_reader.readline())
-
-def log_ubx(serial_reader, outfile):
+def log_raw_GNSS(serial_reader, outfile):
     ```Write binary data from a serial port to a file```
     with open(outfile, 'wb') as of:
         while True:
@@ -47,22 +40,10 @@ def log_ubx(serial_reader, outfile):
             block = serial_reader.read(1024)
             of.write(block)
 
-def validate_NMEA_sentence(sentence):
-    """Check for a valid NMEA sentence."""
-    # TODO: Check for valid NMEA sentence structure, calculate checksums
-    # At the moment this only checks for a leading '$' char (ASCII 36)
-    if(sentence.strip()[0] == 36):
-       return True
-
-def validate_rinex_sentence(sentence):
-    """Check for a valid Rinex sentence (for now in .ubx format)"""
-    # TODO: actually validate something
-    return True # just assume it's ok so anything not NMEA gets passed for now
-
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
-    p.add_argument('outfile', help = "Text file to write NMEA data to")
-    p.add_argument('-br', '--baud_rate', default = 38400,
+    p.add_argument('outfile', help = "Text file to write GNSS data to")
+    p.add_argument('-br', '--baud_rate', default = 460800,
                    help = 'expected baud rate of the device')
     p.add_argument('-to', '--timeout', default = 5,
                    help = 'Time in seconds to wait before giving up on a port')
@@ -79,4 +60,4 @@ if __name__ == "__main__":
           f'\non port {pt}')
     reader = make_serial_reader(br,to, pt)
     print(f'Writing output to {of}')
-    log_NMEA(reader, of)
+    log_raw_GNSS(reader, of)
