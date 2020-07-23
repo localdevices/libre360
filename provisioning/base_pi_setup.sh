@@ -18,6 +18,6 @@ echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
 echo fetching and installing the ODM360 code
 git clone https://github.com/OpenDroneMap/odm360
 cd odm360
-pip3 install -e
+pip3 install -e .
 
 echo Now you should have a Raspberry Pi set up with the basic infrastructure common to all devices in the kit. The next steps depend whether this device is intended to be a Parent, Child, or TimeServer.
