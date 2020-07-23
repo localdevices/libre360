@@ -33,7 +33,7 @@ def make_serial_reader(baud_rate, timeout, port = None):
         return None
 
 def log_raw_GNSS(serial_reader, outfile):
-    ```Write binary data from a serial port to a file```
+    """Write binary data from a serial port to a file"""
     with open(outfile, 'wb') as of:
         while True:
             # Using a KiB as a default size; unoptimized 
