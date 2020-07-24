@@ -42,7 +42,7 @@ if __name__ == "__main__":
                    help = 'expected baud rate of the device')
     p.add_argument('-to', '--timeout', default = 5,
                    help = 'Seconds to wait before giving up on port')
-    p.add_argument('-p', '--port', default = None,
+    p.add_argument('-p', '--port', default = '/dev/ttyS0',
                    help = 'Known serial port of device.')
 
     opts = vars(p.parse_args())
