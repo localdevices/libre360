@@ -16,7 +16,7 @@ import argparse
 import serial
 import serial.tools.list_ports
 
-def make_serial_reader(port = None, baud_rate, timeout):
+def make_serial_reader(port, baud_rate, timeout):
     """Create a serial reader for a GNSS receiver."""
     if port:
         serial_reader = serial.Serial(port = "/dev/ttyS0",
