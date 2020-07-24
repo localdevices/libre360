@@ -52,7 +52,7 @@ if __name__ == "__main__":
     to = int(opts['timeout'])
     of = opts['outfile']
     print(f'\nAttempting to create serial reader with:'
-          '\nbaud rate: {br}'
+          f'\nbaud rate: {br}'
           f'\non port {pt}')
     reader = make_serial_reader(pt, br,to)
     print(f'Writing output to {of}')
