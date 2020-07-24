@@ -18,7 +18,7 @@ import serial.tools.list_ports
 
 def make_serial_reader(port, baud_rate, timeout):
     """Create a serial reader for a GNSS receiver."""
-    if port:
+    try:
         serial_reader = serial.Serial(port = "/dev/ttyS0",
                                       baudrate = 460800,
                                       bytesize = serial.EIGHTBITS,
@@ -26,6 +26,9 @@ def make_serial_reader(port, baud_rate, timeout):
                                       parity = serial.PARITY_NONE,
                                       stopbits = serial.STOPBITS_ONE)
         return serial_reader
+    except Exception as e:
+        print(e)
+        print('Didn\'t manage to create a serial reader')
     
 def log_raw_GNSS(serial_reader, outfile):
     """Write binary data from a serial port to a file"""
