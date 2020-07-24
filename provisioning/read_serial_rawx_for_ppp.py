@@ -19,16 +19,18 @@ import serial.tools.list_ports
 def make_serial_reader(baud_rate, timeout, port = None):
     """Create a serial reader for a GNSS receiver."""
     if port:
-        serial_reader = serial.Serial(port, baud_rate, timeout)
-        for i in range(10):
-            if(validate_NMEA_sentence(serial_reader.readline())):
-                return serial_reader
-        return None
+        serial_reader = serial.Serial(port = "/dev/ttyS0",
+                                      baudrate = 460800,
+                                      bytesize = serial.EIGHTBITS,
+                                      timeout = 5,
+                                      parity = serial.PARITY_NONE,
+                                      stopbits = serial.STOPBITS_ONE)
+        return serial_reader
     ports = serial.tools.list_ports.comports()
     for port in ports:
         serial_reader = serial.Serial(port[0], baud_rate, timeout)
         for i in range(10):
-            if(validate_NMEA_sentence(serial_reader.readline())):
+            if(validate_sentence(serial_reader.readline())):
                 return serial_reader
         return None
 
