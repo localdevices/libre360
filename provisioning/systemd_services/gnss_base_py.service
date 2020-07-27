@@ -3,7 +3,7 @@ Description=GNSS logging
 After=multi-user.target
 
 [Service]
-ExecStart=/home/pi/log_ubx.py
+ExecStart=/usr/bin/python3 /home/pi/log_ubx.py
 WorkingDirectory=/home/pi/
 User=pi
 Restart=on-abort
