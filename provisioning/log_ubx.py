@@ -30,12 +30,13 @@ def make_serial_reader(port, baud_rate, timeout):
 def log_raw_GNSS(serial_reader, outfile):
     """Write binary data from a serial port to a file"""
     if outfile:
-        of = outfile
+        ofname = outfile
     else:
         import time
         timestr = time.strftime('%Y-%m-%d_%H-%H-%S')
+        ofname = f'ubx_log_{timestr}.ubx'
         
-    with open(outfile, 'wb') as of:
+    with open(ofname, 'wb') as of:
         while True:
             # Using a KiB as a default size; unoptimized 
             block = serial_reader.read(1024)
