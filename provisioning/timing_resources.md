@@ -7,6 +7,7 @@
 - And a [slightly more lightweight recipe](https://www.satsignal.eu/ntp/Raspberry-Pi-quickstart.html) from the same guy
 - Would you have expected Florida Man to be helpful here? Me neither. Nevertheless, the South Florida Amateur Astronomers Association has provided a nice write-up of a [Pi-based, GPS PPS-driven NTP server](https://www.slsmk.com/how-to-setup-a-gps-pps-ntp-time-server-on-raspberry-pi/)
 - We could also use an Arduino. Here's [a forum post with some leads on that, plus a downloadable sketch](https://forum.arduino.cc/index.php?topic=197870.0)
+- Here's a [recent blog on building a stratum 1 NTP server that doesn't require compiling NTP](https://blog.thelifeofkenneth.com/2020/03/building-raspberry-pi-stratum-1-ntp.html?m=1)
 
 ## Testing and syncing
 - Here is a [recipe for building a test rig with a millisecond-precise time display](https://www.instructables.com/id/High-speed-Clock-for-Slow-motion-Videos/)
