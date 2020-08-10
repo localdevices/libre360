@@ -58,12 +58,13 @@ From here you have a basic Raspberry Pi configuration; you can make it into a Pa
 
 ### Physical wiring
 
-You may want to set up a nice clean wiring harness to connect the GNSS receiver to the Raspberry Pi Zero (or other Raspberry Pi). Here's an example with an Ardusimple connected to a Zero.
+You will need to connect the serial communication and power pins on the GNSS receiver to the Raspberry Pi Zero (or other Raspberry Pi). Here's an example with an Ardusimple connected to a Zero (note: this cable harness was made with a kit of DuPont connecters and a crimper, which is the way to go if you are doing more than a little of this).
 
 ![Pi_wiring](Photos/Pi_wiring.jpg)
 ![ublox_wiring](Photos/ublox_wiring.jpg)
 ![Pi_and_ublox_wiring](Photos/Pi_and_ublox_wiring.jpg)
 
+*TODO: photo of Ardusimple with header soldered onto PPS pin and connected to an appropriate Pi GPIO pin*
 
 
 ### TimeServer
