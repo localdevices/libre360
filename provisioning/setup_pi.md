@@ -56,6 +56,16 @@ pip3 install -e .
 
 From here you have a basic Raspberry Pi configuration; you can make it into a Parent, a Child, or a TimeServer with the next steps.
 
+### Physical wiring
+
+You may want to set up a nice clean wiring harness to connect the GNSS receiver to the Raspberry Pi Zero (or other Raspberry Pi). Here's an example with an Ardusimple connected to a Zero.
+
+![Pi_wiring](Photos/Pi_wiring.jpg)
+![ublox_wiring](Photos/ublox_wiring.jpg)
+![Pi_and_ublox_wiring](Photos/Pi_and_ublox_wiring.jpg)
+
+
+
 ### TimeServer
 
 The TimeServer is a dedicated Raspberry Pi that listens to the GNSS unit and syncs to the ([extremely precise](https://gssc.esa.int/navipedia/index.php/Precise_Time_Reference)) timing pulse from it and provides timing information via [Network Time Protocol (NTP)](https://en.wikipedia.org/wiki/Network_Time_Protocol) to the rest of the kit.
