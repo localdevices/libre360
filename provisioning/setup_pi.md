@@ -16,6 +16,7 @@ We provide pre-configured images for the various components (Parent, Child, and 
 ### Set up base infrastructure on the Pi
 - Download the Raspberry Pi OS (32-bit) Lite image from [here](https://www.raspberrypi.org/downloads/raspberry-pi-os/). The Lite image doesn't have a graphical interface (it's "headless") and is therefore smaller to download and will run more efficiently on the limited Pi hardware.
 - Unzip the archive and flash the image to your SD card using [Balena Etcher](https://www.balena.io/etcher/). You can mess around with other ways to burn images if you are feeling masochistic; Etcher just works, and it's open source.
+- After flashing the image, it's a good idea to eject the card. You'll need to put it back in momentarily, but it seems that sometimes things go wrong if you don't eject and re-insert the card.
 - Now you need to get the Pi on the WiFi, enable SSH, and connect to it. The SD card you just flashed should appear in your file explorer, open it up.
   - The SD card should now have two partitions, a small one called ```boot``` and a larger one called ```rootfs``` (if you're on Windows you might not see the ```rootfs``` partition; too bad for you—you should be using Linux anyway—but it doesn't matter for now). Put a ```wpa_supplicant.conf``` file in the ```boot``` partition of the SD card. Explanation of that file [here](https://www.raspberrypi.org/documentation/configuration/wireless/headless.md).
 
