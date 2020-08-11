@@ -89,6 +89,12 @@ The PPS signal needs to be on a separate pin (__TODO: PICTURES OF THE PIN WIRING
 
 - Disable the default serial console to free up UART serial line ```sudo sed -i 's/console=serial0,115200 //g' /boot/cmdline.txt```
 
+## Current path
+- Compile GPSD
+- Works when called with ```gpsd -N -D3 -b @RUNDIR/gpsd.sock /dev/ttyS0```
+
+## Dead end stuff?
+
 - Enable UART to recieve NMEA streams from the GNSS over serial pins ```echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt```
 
 - Enable a GPIO pin to receive the PPS signal ```echo dtoverlay=pps-gpio,gpiopin=4 | sudo tee -a /boot/config.txt```
