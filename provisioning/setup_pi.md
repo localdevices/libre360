@@ -66,6 +66,60 @@ You will need to connect the serial communication and power pins on the GNSS rec
 
 *TODO: photo of Ardusimple with header soldered onto PPS pin and connected to an appropriate Pi GPIO pin*
 
+### Setting up NTP for a server and client device on the local network
+
+For some reason, it seems necessary to issue a bunch of NTP configuration commands as root (not just as a user with sudo privileges). I'd like to figure out why this is before I script this install. 
+
+#### On all devices
+
+Raspberry Pi OS comes with a lightweight version of NTP client called systemc-timesyncd. We want the full NTP service. Set it up with ```sudo apt install ntp```.
+
+Then become root ```sudo su -``` (you should now be root, and have a hashmark rather than a dollar sign as your terminal prompt).
+
+Stop the default lightweight NTP service (systemd-timesyncd) and start the full NTP:
+
+```
+systemctl stop systemd-timesyncd
+systemctl disable systemd-timesyncd
+​/etc/init.d/ntp stop
+​/etc/init.d/ntp start
+```
+
+Test it with ```ntpq -pn```. You should see an infodump that lists what timeservers are being contacted and which of them is the reference being used, marked with an asterisk (*). It may take a few minutes after starting NTP for the asterisk to appear (it takes a while for NTP to be sure of the timing over a network; there's actually a lot of sophisticated stuff going on under the hood to account for network latency)
+
+The configuration to choose other timeservers (which we'll use on the client Pi's to select the timeserver Pi), you edit ```/etc/ntp.conf```.
+
+Stop being root with ```exit``` (you should now be the pi user again).
+
+#### Server-specific setup (to share time with others)
+
+Again you have to log in as the root user with ```sudo su -``` (and ```exit``` when you're done).
+
+Edit the ```/etc/ntp.conf``` file again, adding the lines:
+```
+restrict 192.168.1.0 mask 255.255.255.0
+
+broadcast 192.168.1.255
+broadcast 224.0.1.1
+```
+
+#### Client-specific setup (assuming you already have a server on the network)
+
+Again you have to log in as the root user with ```sudo su -``` (and ```exit``` when you're done).
+
+You should already have the IP address of the timeserver on your network (if not, you can use the hostname).
+
+Edit the ```/etc/ntp.conf``` file, commenting out the existing servers (which will probably be listed as a pool rather than specific servers). Comment them out, and add a line directing NTP to the server on the network. The relevant section of the ```/etc/ntp.conf``` file should look like this when you're done (of course with the correct IP address at the end):
+
+```
+#pool 0.debian.pool.ntp.org iburst
+#pool 1.debian.pool.ntp.org iburst
+#pool 2.debian.pool.ntp.org iburst
+#pool 3.debian.pool.ntp.org iburst 
+server 192.168.1.15
+```
+
+Test with ```ntpq -p```. It may take a few minutes for the client to sync with the server, but when it does, the results of this command should show an asterisk (*) in front of the line for the timeserver.
 
 ### TimeServer
 
