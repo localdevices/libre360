@@ -7,10 +7,10 @@ arguments:
 -d or --destination: provide a path name to
 """
 import os
-from odm360.log import setuplog
+from odm360.log import setuplog, start_logger
+from odm360.utils import parse_config
 import gphoto2 as gp
 from optparse import OptionParser
-from configparser import ConfigParser
 
 def main():
     parser = create_parser()
@@ -18,7 +18,7 @@ def main():
     # start a logger with defined log levels. This may be used in our main call
     logger = start_logger(options.verbose, options.quiet)
     logger.info(f'Parsing project config from {os.path.abspath(options.config)}')
-    config = parseconfig(options.config)
+    config = parse_config(options.config)
     # override config if command line options dictate this
     if options.dt is not None:
         config.set('main', 'dt', options.dt)
@@ -103,28 +103,6 @@ def create_parser():
                       dest='debug', default=False, action='store_true',
                       help='Use debug mode. In this mode, no actual cameras are used yet, only the data flow is performed')
     return parser
-
-def parseconfig(settings_path):
-    """
-        Parse the config file with interpolation=None or it will break run_cast.sh
-    """
-    config = ConfigParser(interpolation=None)
-    config.read(settings_path)
-    return config
-
-def start_logger(verbose, quiet):
-    if verbose:
-        verbose = 2
-    else:
-        verbose = 1
-    if quiet:
-        quiet = 1
-    else:
-        quiet = 0
-    log_level = max(10, 30 - 10 * (verbose - quiet))
-    logger = setuplog("odm360", "odm360.log", log_level=log_level)
-    logger.info("starting...")
-    return logger
 
 if __name__ == "__main__":
     main()

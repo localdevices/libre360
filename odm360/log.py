@@ -34,3 +34,17 @@ def add_filehandler(logger, path, log_level=20, fmt=FMT):
         logger.debug(f"Overwriting log messages in file {path}.")
     else:
         logger.debug(f"Writing log messages to new file {path}.")
+
+def start_logger(verbose, quiet):
+    if verbose:
+        verbose = 2
+    else:
+        verbose = 1
+    if quiet:
+        quiet = 1
+    else:
+        quiet = 0
+    log_level = max(10, 30 - 10 * (verbose - quiet))
+    logger = setuplog("odm360", "odm360.log", log_level=log_level)
+    logger.info("starting...")
+    return logger
