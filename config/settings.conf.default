@@ -10,3 +10,4 @@ dt=
 root=
 # verbose level logging (default False, meaning INFO level, True is DEBUG level)
 verbose=
+quiet=
