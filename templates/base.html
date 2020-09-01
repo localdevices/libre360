@@ -12,13 +12,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap.min.css') }}">
     {% endblock %}
 
-    <title>RTKBase</title>
+    <title>ODM 360</title>
     {% endblock %}
   </head>
   <body style="min-height: 100vh; display:flex; flex-direction: column;">
     <div class="container">
       <ul class="nav nav-pills nav-justified bg-light font-weight-bolder text-uppercase">
-        <li class="nav-item">{{ render_nav_item('status_page', 'Status') }}</li>
+        <li class="nav-item">{{ render_nav_item('gps_page', 'GPS status') }}</li>
+        <li class="nav-item">{{ render_nav_item('cam_page', 'Camera status') }}</li>
         <li class="nav-item">{{ render_nav_item('settings_page', 'Settings') }}</li>
         <li class="nav-item">{{ render_nav_item('logs_page', 'Logs') }}</li>
       </ul>
@@ -28,7 +29,7 @@
     {% block content %}{% endblock %}
   </main>
     <footer style="flex-grow: 0; display: block;"></footer>
-      <div class="container text-center bg-light"><span class="text-muted small">RTKBase v{{ g.version }}</span></div>
+      <div class="container text-center bg-light"><span class="text-muted small">ODM360 v{{ g.version }}</span></div>
     </footer>
 
     {% block scripts %}
