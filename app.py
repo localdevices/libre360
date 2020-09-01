@@ -9,7 +9,7 @@ from odm360.log import start_logger
 default_config_fn = 'config/settings.conf.default'
 config = parse_config(default_config_fn)
 logger = start_logger(config.get('main', 'verbose'), config.get('main', 'quiet'))
-logger.info(f'Parsing project config from {}') # TODO read last config option, if not available start fresh
+logger.info(f'Parsing project config from ...') # TODO read last config option, if not available start fresh
 
 # TODO introduce checks to see if the information is complete enough to already start up a workflow
 kwargs = {
