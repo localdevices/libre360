@@ -31,8 +31,7 @@ setup(
         "python-nmap",
         "Flask",
         "Flask-Login",
-        
-
+        "Bootstrap-Flask"
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],

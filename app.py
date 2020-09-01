@@ -6,15 +6,11 @@ app = Flask(__name__)
 bootstrap = Bootstrap(app)
 
 @app.route("/")
-def status_page():
+def gps_page():
     """
         The status web page with the gnss satellites levels and a map
     """
-    # base_position = rtkbaseconfig.get("main", "position").replace("'", "").split()
-    # base_coordinates = {"lat" : base_position[0], "lon" : base_position[1]}
-    base_coordinates = {"lat" : 52, "lon" : 4}
-    return render_template("status.html", base_coordinates=base_coordinates, tms_key={"maptiler_key" : None})
-    # return render_template("status.html", base_coordinates=base_coordinates, tms_key={"maptiler_key" : rtkbaseconfig.get("general", "maptiler_key")})
+    return render_template("status.html")
 
 # def home():
 #     return render_template("index.html.j2")
@@ -40,6 +36,13 @@ def logs_page():
         The data web pages where you can download/delete the raw gnss data
     """
     return render_template("logs.html")
+
+@app.route('/cams')
+def cam_page():
+    """
+        The data web pages where you can download/delete the raw gnss data
+    """
+    return render_template("cam_status.html")
 
 def run():
     app.run(debug=True, port=5001, host="0.0.0.0")
