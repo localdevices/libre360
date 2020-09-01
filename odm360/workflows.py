@@ -132,7 +132,7 @@ def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=F
     except Exception as e:
         logger.exception(e)
 
-def child_tcp_ip(dt, root=None, timeout=1., logger=logger, host=None, port=8000, debug=False):
+def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -215,7 +215,7 @@ def child_tcp_ip(dt, root=None, timeout=1., logger=logger, host=None, port=8000,
     except Exception as e:
         logger.exception(e)
 
-def child_serial(dt, root=None, timeout=1., logger=logger, port='/dev/ttySO', deub=False):
+def child_serial(timeout=1., logger=logger, port='/dev/ttySO', deub=False):
     """
     Start a child in serial mode, instructed by parent through UART. Can currently only handle one child
     :param dt: time interval between photos

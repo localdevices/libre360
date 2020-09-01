@@ -15,19 +15,21 @@ from optparse import OptionParser
 def main():
     parser = create_parser()
     (options, args) = parser.parse_args()
-    # start a logger with defined log levels. This may be used in our main call
-    logger = start_logger(options.verbose, options.quiet)
-    logger.info(f'Parsing project config from {os.path.abspath(options.config)}')
     config = parse_config(options.config)
     # override config if command line options dictate this
+    if options.verbose:
+        config.set('main', 'verbose', True)
+    if options.quiet:
+        config.set('main', 'quiet', True)
+    # start a logger with defined log levels. This may be used in our main call
+    logger = start_logger(config.get('main', 'verbose'), config.get('main', 'quiet'))
+    logger.info(f'Parsing project config from {os.path.abspath(options.config)}')
     if options.dt is not None:
         config.set('main', 'dt', options.dt)
     if options.n_cams is not None:
         config.set('main', 'n_cams', options.n_cams)
     if options.root is not None:
         config.set('main', 'root', options.root)
-    if options.verbose:
-        config.set('main', 'verbose', True)
 
     if options.parent:
         if config.get('main', 'n_cams') == '':
@@ -53,9 +55,8 @@ def main():
             else:
                 from odm360.workflows import parent_server as workflow
     else:
+        # you are a child, so act like one!
         kwargs = {
-            'dt': options.dt,
-            'root': None,
             'logger': logger,
             'debug': options.debug,
             'host': options.host,
@@ -64,8 +65,6 @@ def main():
             from odm360.workflows import child_serial as workflow
         else:
             from odm360.workflows import child_tcp_ip as workflow
-
-        # you are a child, so act like one!
 
     workflow(**kwargs)
 
