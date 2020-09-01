@@ -1,6 +1,7 @@
 from http.server import HTTPServer
 import requests
 import json
+import os
 
 import logging
 import platform
@@ -62,7 +63,7 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
-def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000, debug=False):
+def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000, debug=False, auto_start=False):
     """
 
     :param dt: time interval between photos
@@ -77,13 +78,21 @@ def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8
     _start = time.time()
     # find own ip address
     ip = get_lan_ip()
+    # load existing projects and files from hard-coded master.json
+    database_fn = 'database/projects.json'
+    if os.path.isfile(database_fn):
+        dbase = json.load(database_fn)
+    # check if current project exists, if not make
+    if project not in dbase:
+        # this is a new project, so we'll start a fresh project entry
+        dbase[project] = {}
     # setup server
     server_address = (ip, port)
-    rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=True, logger=logger)
+    rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=auto_start, logger=logger)
     rig.start_server()
 
 
-def parent_serial(dt, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False):
+def parent_serial(dt, project, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False, auto_start=False):
     ports = []
     _start = time.time()
     # we are looking for a specified number of cams, default set to 1. After 60 seconds, we give up!

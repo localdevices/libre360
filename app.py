@@ -1,6 +1,28 @@
 # Server is setup here
 from flask import Flask, render_template, request
 from flask_bootstrap import Bootstrap
+from odm360.workflows import parent_server
+from odm360.utils import parse_config
+from odm360.log import start_logger
+
+# start with a parent server immediately. Make a new one when a new project is initiated
+default_config_fn = 'config/settings.conf.default'
+config = parse_config(default_config_fn)
+logger = start_logger(config.get('main', 'verbose'), config.get('main', 'quiet'))
+logger.info(f'Parsing project config from {}') # TODO read last config option, if not available start fresh
+
+# TODO introduce checks to see if the information is complete enough to already start up a workflow
+kwargs = {
+    'project': config.get('main', 'project'),
+    'n_cams': int(config.get('main', 'n_cams')),
+    'dt': int(config.get('main', 'dt')),
+    'root': config.get('main', 'root'),
+    'logger': logger,
+    'debug': config.get('main', 'verbose'),
+    'auto_start': True
+}
+
+# TODO prepare a daemon object that runs parent_server until it is killed
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)

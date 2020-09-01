@@ -39,11 +39,13 @@ def main():
 
         camera_list = list(gp.Camera.autodetect())
         kwargs = {
+                  'project': config.get('main', 'project'),
                   'n_cams': int(config.get('main', 'n_cams')),
                   'dt': int(config.get('main', 'dt')),
                   'root': config.get('main', 'root'),
                   'logger': logger,
-                  'debug': config.get('main', 'verbose')
+                  'debug': config.get('main', 'verbose'),
+                  'auto_start': True
                   }
         if len(camera_list) > 0:
             # gphoto2 compatible cameras are found, assume a gphoto2 rig
