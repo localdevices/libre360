@@ -18,7 +18,7 @@ from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
 class CameraRig():
-    def __init__(self, ip, port, root='.', n_cams=1, logger=logger):
+    def __init__(self, ip, port, root='.', n_cams=1, auto_start=False, logger=logger):
         # add a number of properties to CameraRig
         self.ip = ip
         self.port = port
@@ -27,7 +27,10 @@ class CameraRig():
         self.logger = logger  # logger object
         # initialize camera states
         self.start_time = None  # start time of capture thread
-        self.stop = False  # stop sign (TODO implement this with a GPIO push button)
+        if auto_start:
+            self.stop = False  # stop sign, automatically start capturing (TODO implement this with a GPIO push button)
+        else:
+            self.stop = True # initialize rig without starting capturing of pics, until called from interface
         self.cam_state = {}  # status of cameras, always passed by cameras with GET requests
         self.cam_logs = {}  # last log of cameras, always passed by cameras with POST requests
 
@@ -36,8 +39,6 @@ class CameraRig():
         httpd = HTTPServer((self.ip, self.port), server_handler)
         logger.info(f'odm360 server listening on {self.ip}:{self.port}')
         httpd.serve_forever()
-
-
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
     """
@@ -76,17 +77,9 @@ def parent_server(dt, root='.', logger=logger, n_cams=2, wait_time=12000, port=8
     _start = time.time()
     # find own ip address
     ip = get_lan_ip()
-
-    # # set a number of properties to Camera360Server
-    # server_props =
-    # Camera360Server.logger = logger
-    # Camera360Server.n_cams = n_cams
-    # Camera360Server.root = root
-    # Camera360Server.stop = True
-
     # setup server
     server_address = (ip, port)
-    rig = CameraRig(ip, port, root=root, n_cams=n_cams, logger=logger)
+    rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=True, logger=logger)
     rig.start_server()
 
 
