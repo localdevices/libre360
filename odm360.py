@@ -6,26 +6,42 @@ arguments:
 -p or --parent: run as parent (if not set, run as child)
 -d or --destination: provide a path name to
 """
+import os
 from odm360.log import setuplog
 import gphoto2 as gp
 from optparse import OptionParser
+from configparser import ConfigParser
 
 def main():
     parser = create_parser()
     (options, args) = parser.parse_args()
     # start a logger with defined log levels. This may be used in our main call
     logger = start_logger(options.verbose, options.quiet)
+    logger.info(f'Parsing project config from {os.path.abspath(options.config)}')
+    config = parseconfig(options.config)
+    # override config if command line options dictate this
+    if options.dt is not None:
+        config.set('main', 'dt', options.dt)
+    if options.n_cams is not None:
+        config.set('main', 'n_cams', options.n_cams)
+    if options.root is not None:
+        config.set('main', 'root', options.root)
+    if options.verbose:
+        config.set('main', 'verbose', True)
 
     if options.parent:
-        if options.n_cams is None:
-            raise OSError('Parent needs a number of cameras, please define with -n or --number')
+        if config.get('main', 'n_cams') == '':
+            raise OSError('Parent needs a number of cameras, please define in config file (n_cams) or with -n or --number')
+        if config.get('main', 'dt') == '':
+            raise OSError('Parent needs a time step to work with, provide in config file (dt) or with -t or --time')
+
         camera_list = list(gp.Camera.autodetect())
         kwargs = {
-                  'n_cams': int(options.n_cams),
-                  'dt': options.dt,
-                  'root': options.root,
+                  'n_cams': int(config.get('main', 'n_cams')),
+                  'dt': int(config.get('main', 'dt')),
+                  'root': config.get('main', 'root'),
                   'logger': logger,
-                  'debug': options.debug
+                  'debug': config.get('main', 'verbose')
                   }
         if len(camera_list) > 0:
             # gphoto2 compatible cameras are found, assume a gphoto2 rig
@@ -71,19 +87,30 @@ def create_parser():
                       dest='serial', default=False, action='store_true',
                       help='Start odm360 parent as serial connection (default: run with socket TCP connection, only used with parent)')
     parser.add_option('-d', '--destination',
-                      dest='root', default='.', nargs=1,
+                      dest='root', default=None, nargs=1,
                       help='Local path for storing photos')
     parser.add_option('-t', '--time',
-                      dest='dt', default=5, nargs=1,
+                      dest='dt', default=None, nargs=1,
                       help='Number of seconds between each photo')
     parser.add_option('-i', '--ip',
                       dest='host', default=None, nargs=1,
                       help='Ip address of host (only relevant for tcp ip child). If not given, child will search for it')
+    parser.add_option('-c', '--config',
+                      dest='config', default='config/settings.conf.default', nargs=1,
+                      help='name of configuration file')
 
     parser.add_option('-x', '--debug',
                       dest='debug', default=False, action='store_true',
                       help='Use debug mode. In this mode, no actual cameras are used yet, only the data flow is performed')
     return parser
+
+def parseconfig(settings_path):
+    """
+        Parse the config file with interpolation=None or it will break run_cast.sh
+    """
+    config = ConfigParser(interpolation=None)
+    config.read(settings_path)
+    return config
 
 def start_logger(verbose, quiet):
     if verbose:
