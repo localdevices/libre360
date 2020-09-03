@@ -1,6 +1,7 @@
 {% from 'bootstrap/nav.html' import render_nav_item %}
 <meta http-equiv="refresh" content="5" >
 <!doctype html>
+
 <html lang="en" style="position:relative; min-height: 100%;">
   <head>
     {% block head %}
@@ -9,8 +10,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     {% block styles %}
+
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap.min.css') }}">
+
     {% endblock %}
 
     <title>ODM 360</title>
