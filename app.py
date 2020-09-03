@@ -37,8 +37,8 @@ def gps_page():
 # def home():
 #     return render_template("index.html.j2")
 
-@app.route('/settings')
-def settings_page():
+@app.route('/project', methods=['GET', 'POST'])
+def project_page():
     """
         The settings page where you can manage the various services, the parameters, update, power...
     """
@@ -46,11 +46,18 @@ def settings_page():
     # ntrip_settings = rtkbaseconfig.get_ntrip_settings()
     # file_settings = rtkbaseconfig.get_file_settings()
     # rtcm_svr_settings = rtkbaseconfig.get_rtcm_svr_settings()
+    if request.method == 'POST':
+        request.form
+        return render_template("status.html") #, main_settings = main_settings,
+                                                # ntrip_settings = ntrip_settings,
+                                                # file_settings = file_settings,
+                                                # rtcm_svr_settings = rtcm_svr_settings)
 
-    return render_template("settings.html") #, main_settings = main_settings,
-                                            # ntrip_settings = ntrip_settings,
-                                            # file_settings = file_settings,
-                                            # rtcm_svr_settings = rtcm_svr_settings)
+    else:
+        return render_template("project.html") #, main_settings = main_settings,
+                                                # ntrip_settings = ntrip_settings,
+                                                # file_settings = file_settings,
+                                                # rtcm_svr_settings = rtcm_svr_settings)
 
 @app.route('/logs')
 def logs_page():
@@ -58,6 +65,13 @@ def logs_page():
         The data web pages where you can download/delete the raw gnss data
     """
     return render_template("logs.html")
+
+@app.route('/settings')
+def settings_page():
+    """
+        The data web pages where you can download/delete the raw gnss data
+    """
+    return render_template("settings.html")
 
 @app.route('/cams')
 def cam_page():

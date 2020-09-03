@@ -9,17 +9,46 @@
 <!-- TODO: establish a connection with satellite reception -->
 <div class="container">
     <div id="bar-chart"></div>
+
+    <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>Select project</b>
+              <select name="project" id="project">
+                <option value="project_1">Project 1</option>
+                <option value="project_2">Project 2</option>
+                <option value="project_3">Project 3</option>
+              </select>
+        </div>
+    </div>
     <div class="row">
         <div class="col py-3 border bg-light"><b>Latitude: </b><span id="lat_value"></span></div>
+    </div>
+    <div class="row">
         <div class="col py-3 border bg-light"><b>Longitude: </b><span id="lon_value"></span></div>
+    </div>
+    <div class="row">
         <div class="col py-3 border bg-light"><b>Height: </b><span id="height_value"></span></div>
     </div>
     <div class="row">
         <div class="col py-3 border bg-light"><b>Solution type: </b><span id="solution_value"></span></div>
+    </div>
+    <div class="row">
         <div class="col py-3 border bg-light"><b>PDOP: </b><span id="pdop_value"></span></div>
+    </div>
+    <div class="row">
         <div class="col py-3 border bg-light"><b>Satellites: </b><span id="sat_nr"></span></div>
     </div>
-
+    <div class="row">
+        <div class="col py-3 border bg-light"><b>Cameras:</b><span id="cam_summary"></span></div>
+        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>
+    </div>
+    <div id="main_service_space" class="form-group row">
+        <div class="col">
+            <label for="main-switch" class="col-4 col-form-label col-form-label-lg">Main service</label>
+            <input id="main-switch" type="checkbox" data-toggle="toggle" data-onstyle="success" data-offstyle="outline-secondary">
+            <button class="btn btn-secondary" type="button" data-toggle="collapse" aria-expanded="false" aria-controls="main_service_options">Options</button>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
@@ -27,6 +56,7 @@
 {% block scripts %}
 {{super()}}
 <!-- TODO consider reusing parts of stuff below -->
+<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
 <!--<script type="text/javascript" src="{{ url_for('static', filename='graph.js') }}" charset="utf-8"></script>-->
 <!--<script type="text/javascript" src="{{ url_for('static', filename='status.js') }}" charset="utf-8"></script>-->
 {% endblock %}
