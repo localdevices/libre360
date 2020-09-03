@@ -7,12 +7,22 @@
 
 {% block content %}
 <!-- TODO: establish a connection with satellite reception -->
-<div class="container">
-    <div class="row">
+{% if n_cams %}
+    {% for cam in n_cams %}
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <b>Camera: {{ cam }}</b>
+            </div>
+            <div class="col">
+                <b>STATUSS!!!</b>
+            </div>
+        </div>
+        <div class="row">
+        </div>
     </div>
-    <div class="row">
-    </div>
-</div>
+    {% endfor %}
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

@@ -64,7 +64,11 @@ def cam_page():
     """
         The data web pages where you can download/delete the raw gnss data
     """
-    return render_template("cam_status.html")
+    return render_template("cam_status.html", n_cams=range(6))
+
+@app.route('/file_page')
+def file_page():
+    return render_template("file_page.html")
 
 def run():
     app.run(debug=True, port=5001, host="0.0.0.0")
