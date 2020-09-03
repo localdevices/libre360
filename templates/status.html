@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block styles %}
-{{super()}}
-<!--<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}">-->
+    {{super()}}
+    <link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
 {% endblock %}
 
 {% block content %}
 <!-- TODO: establish a connection with satellite reception -->
+<br>
 <div class="container">
     <div id="bar-chart"></div>
-
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
@@ -40,13 +40,16 @@
     </div>
     <div class="row">
         <div class="col py-3 border bg-light"><b>Cameras:</b><span id="cam_summary"></span></div>
-        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>
+<!--        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>-->
     </div>
-    <div id="main_service_space" class="form-group row">
+    <br>
+    <div class="row">
+        <div class="col"><b>Main service:</b></div>
         <div class="col">
-            <label for="main-switch" class="col-4 col-form-label col-form-label-lg">Main service</label>
-            <input id="main-switch" type="checkbox" data-toggle="toggle" data-onstyle="success" data-offstyle="outline-secondary">
-            <button class="btn btn-secondary" type="button" data-toggle="collapse" aria-expanded="false" aria-controls="main_service_options">Options</button>
+            <label class="switch">
+              <input type="checkbox">
+              <span class="slider round"></span>
+            </label>
         </div>
     </div>
 </div>
