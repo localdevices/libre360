@@ -1,7 +1,7 @@
 # settings template for app.py (web) or odm360.py (CLI)
 [main]
 # name of project (string)
-name=default 
+project=default 
 # number of cameras (int)
 n_cams=
 # time interval between photos (s)
