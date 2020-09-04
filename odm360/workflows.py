@@ -8,7 +8,7 @@ import platform
 import time
 import schedule
 import gphoto2 as gp
-
+import threading
 logger = logging.getLogger(__name__)
 
 # odm360 imports
@@ -26,10 +26,11 @@ class CameraRig():
         self.root = root  # root folder to store photos
         self.n_cams = n_cams  # number of cameras to expect
         self.logger = logger  # logger object
+        self.auto_start = auto_start  # True: automatically start server forever, False: allow interaction with server object
         # initialize camera states
         self.start_time = None  # start time of capture thread
         if auto_start:
-            self.stop = False  # stop sign, automatically start capturing (TODO implement this with a GPIO push button)
+            self.stop = False  # stop sign, automatically start capturing (TODO implement this with interactive server)
         else:
             self.stop = True # initialize rig without starting capturing of pics, until called from interface
         self.cam_state = {}  # status of cameras, always passed by cameras with GET requests
@@ -37,9 +38,15 @@ class CameraRig():
 
     def start_server(self):
         server_handler = make_Camera360Server(self)
-        httpd = HTTPServer((self.ip, self.port), server_handler)
+        self.httpd = HTTPServer((self.ip, self.port), server_handler)
         logger.info(f'odm360 server listening on {self.ip}:{self.port}')
-        httpd.serve_forever()
+        self.thread = threading.Thread(target=self.httpd.serve_forever)
+        if not(self.auto_start):
+            self.thread.daemon = True
+        self.thread.start()
+
+    def stop_server(self):
+        self.httpd.shutdown()
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
     """
@@ -82,6 +89,8 @@ def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=1200
     database_fn = 'database/projects.json'
     if os.path.isfile(database_fn):
         dbase = json.load(database_fn)
+    else:
+        dbase = {}
     # check if current project exists, if not make
     if project not in dbase:
         # this is a new project, so we'll start a fresh project entry
@@ -90,7 +99,7 @@ def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=1200
     server_address = (ip, port)
     rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=auto_start, logger=logger)
     rig.start_server()
-
+    return rig
 
 def parent_serial(dt, project, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False, auto_start=False):
     ports = []
