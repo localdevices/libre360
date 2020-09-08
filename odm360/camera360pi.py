@@ -1,5 +1,4 @@
 import os
-from picamera import PiCamera
 import time
 import logging
 import json
@@ -8,14 +7,20 @@ import requests
 logger = logging.getLogger(__name__)
 from datetime import datetime
 from odm360.timer import RepeatedTimer
+try:
+    from picamera import PiCamera
+except:
+    class PiCamera:
+        pass
+
+
+
+
 
 class Camera360Pi(PiCamera):
     """
-    This class is for increasing the functionalities of the Camera class of gphoto2 specifically for
-    the 360 camera use case. Additional functionalities are:
-    - enable selecting a camera on a specific address (so that use of multiple cameras is warranted)
-    - enable transfer data to a root folder
-    - enable modification of exif tags of photos
+    This class is for increasing the functionalities of the Camera class of PiCamera specifically for
+    the 360 camera use case.
     """
     def __init__(self, root=None, logger=logger, debug=False, host=None, port=None):
         self.debug = debug

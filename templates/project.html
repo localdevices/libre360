@@ -9,42 +9,44 @@
 {% block content %}
 <div class="container">
 <br><br>
-<div id="main_service_space" class="form-group">
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Project name: </b>
-            <div class="form-group" id="proj_name">
-                <input type="text" class="form-control" placeholder="string">
+<form action="/project" method="POST">
+    <div id="main_service_space" class="form-group">
+        <div class="row">
+            <div class="col py-3 border bg-light">
+                <b>Project name: </b>
+                <div class="form-group" id="proj_name">
+                    <input type="text" class="form-control" name="project" placeholder="string">
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Amount of cameras </b>
-            <div class="form-group">
-                <input type="number" class="form-control" placeholder="whole number" min="2" max="10">
+        <div class="row">
+            <div class="col py-3 border bg-light">
+                <b>Amount of cameras </b>
+                <div class="form-group">
+                    <input type="number" class="form-control" placeholder="whole number" name="n_cams" min="2" max="10">
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Photo time interval</b>
-            <div class="form-group">
-                <input type="number" class="form-control" placeholder="interval in (s)" min="0" max="100">
+        <div class="row">
+            <div class="col py-3 border bg-light">
+                <b>Photo time interval</b>
+                <div class="form-group">
+                    <input type="number" class="form-control" placeholder="interval in (s)" name="dt" min="0" max="100">
+                </div>
             </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Debug log level</b>
-              <select name="loglevel" id="loglevel">
-                <option value="debug">DEBUG</option>
-                <option value="info">INFO</option>
-              </select>
+        <div class="row">
+            <div class="col py-3 border bg-light">
+                <b>Debug log level</b>
+                  <select name="loglevel" id="loglevel">
+                    <option value="debug">DEBUG</option>
+                    <option value="info">INFO</option>
+                  </select>
+            </div>
         </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
-</div>
+</form>
 </div>
 
 
