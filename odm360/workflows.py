@@ -1,52 +1,21 @@
-from http.server import HTTPServer
 import requests
 import json
-import os
 
 import logging
 import platform
 import time
 import schedule
-import gphoto2 as gp
-import threading
 logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.timer import RepeatedTimer
-from odm360.camera360server import make_Camera360Server
+from odm360.camera360rig import CameraRig
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
-class CameraRig():
-    def __init__(self, ip, port, root='.', n_cams=1, auto_start=False, logger=logger):
-        # add a number of properties to CameraRig
-        self.ip = ip
-        self.port = port
-        self.root = root  # root folder to store photos
-        self.n_cams = n_cams  # number of cameras to expect
-        self.logger = logger  # logger object
-        self.auto_start = auto_start  # True: automatically start server forever, False: allow interaction with server object
-        # initialize camera states
-        self.start_time = None  # start time of capture thread
-        if auto_start:
-            self.stop = False  # stop sign, automatically start capturing (TODO implement this with interactive server)
-        else:
-            self.stop = True # initialize rig without starting capturing of pics, until called from interface
-        self.cam_state = {}  # status of cameras, always passed by cameras with GET requests
-        self.cam_logs = {}  # last log of cameras, always passed by cameras with POST requests
 
-    def start_server(self):
-        server_handler = make_Camera360Server(self)
-        self.httpd = HTTPServer((self.ip, self.port), server_handler)
-        logger.info(f'odm360 server listening on {self.ip}:{self.port}')
-        self.thread = threading.Thread(target=self.httpd.serve_forever)
-        if not(self.auto_start):
-            self.thread.daemon = True
-        self.thread.start()
-
-    def stop_server(self):
-        self.httpd.shutdown()
+# TODO: clean up CameraRig after camera_rig is fully integrated in Flask
 
 def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
     """
@@ -70,7 +39,7 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
-def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=12000, port=8000, debug=False, auto_start=False):
+def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=12000, port=5000, debug=False, auto_start=False):
     """
 
     :param dt: time interval between photos
@@ -85,20 +54,8 @@ def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=1200
     _start = time.time()
     # find own ip address
     ip = get_lan_ip()
-    # load existing projects and files from hard-coded master.json
-    database_fn = 'database/projects.json'
-    if os.path.isfile(database_fn):
-        dbase = json.load(database_fn)
-    else:
-        dbase = {}
-    # check if current project exists, if not make
-    if project not in dbase:
-        # this is a new project, so we'll start a fresh project entry
-        dbase[project] = {}
     # setup server
-    server_address = (ip, port)
     rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=auto_start, logger=logger)
-    rig.start_server()
     return rig
 
 def parent_serial(dt, project, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False, auto_start=False):
@@ -143,7 +100,7 @@ def parent_serial(dt, project, root='.', timeout=0.02, logger=logger, rig_size=1
     except Exception as e:
         logger.exception(e)
 
-def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
+def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -154,8 +111,9 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
     :param port: port number to host server
     :return:
     """
-    # only load Camera360Pi in a child. A parent may not have this lib
     from odm360.camera360pi import Camera360Pi
+
+    # only load Camera360Pi in a child. A parent may not have this lib
     ip = get_lan_ip()  # retrieve child's IP address
     logger.debug(f'My IP address is {ip}')
     headers = {'Content-type': 'application/json'}
@@ -175,11 +133,11 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
     while not(host_found):
         for host, status in all_ips:
             try:
-                r = requests.get(f'http://{host}:{port}',
+                r = requests.get(f'http://{host}:{port}/picam',
                                  data=json.dumps(get_root_msg),
                                  headers=headers
                                  )
-                logger.debug(f'Received {r.text}')
+                # logger.debug(f'Received {r.text}')
                 msg = r.json()
                 if 'root' in msg:
                     # setup camera object
@@ -200,7 +158,7 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
             get_task_msg = {'state': camera.state,
                             'req': 'TASK'
                             }
-            r = requests.get(f'http://{host}:{port}',
+            r = requests.get(f'http://{host}:{port}/picam',
                              data=json.dumps(get_task_msg),
                              headers=headers
                              )
@@ -215,7 +173,7 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=8000, debug=False):
             post_log_msg = {'kwargs': log_msg,
                             'req': 'LOG'
                             }
-            r = requests.post(f'http://{host}:{port}', data=json.dumps(post_log_msg), headers=headers)
+            r = requests.post(f'http://{host}:{port}/picam', data=json.dumps(post_log_msg), headers=headers)
             success = r.json()
             if success['success']:
                 logger.debug('POST was successful')

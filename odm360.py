@@ -18,11 +18,11 @@ def main():
     config = parse_config(options.config)
     # override config if command line options dictate this
     if options.verbose:
-        config.set('main', 'verbose', True)
+        config.set('main', 'verbose', "True")
     if options.quiet:
-        config.set('main', 'quiet', True)
+        config.set('main', 'quiet', "True")
     # start a logger with defined log levels. This may be used in our main call
-    logger = start_logger(config.get('main', 'verbose'), config.get('main', 'quiet'))
+    logger = start_logger(str_to_bool(config.get('main', 'verbose')), str_to_bool(config.get('main', 'quiet')))
     logger.info(f'Parsing project config from {os.path.abspath(options.config)}')
     if options.dt is not None:
         config.set('main', 'dt', options.dt)
@@ -104,6 +104,14 @@ def create_parser():
                       dest='debug', default=False, action='store_true',
                       help='Use debug mode. In this mode, no actual cameras are used yet, only the data flow is performed')
     return parser
+
+def str_to_bool(s):
+    if s == 'True':
+         return True
+    elif s == 'False':
+         return False
+    else:
+         return False
 
 if __name__ == "__main__":
     main()

@@ -5,3 +5,4 @@ from odm360 import log
 from odm360 import camera360gphoto
 from odm360 import workflows
 from odm360 import timer
+from odm360 import camera360rig
