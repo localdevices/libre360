@@ -58,3 +58,15 @@ def parse_config(settings_path):
     config.read(settings_path)
     return config
 
+def make_config(settings):
+    """
+    Writes a config to a file
+
+    :param settings_path:
+    :return:
+    """
+    config = ConfigParser()
+    config.add_section('main')
+    for setting in settings:
+        config.set('main', setting, settings[setting])
+    return config
