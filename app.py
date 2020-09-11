@@ -151,7 +151,7 @@ def project_page():
             conf_obj.write(f)
         with open('current_config', 'w') as f:
             f.write(config_fn)
-        initialize_config(config_fn)
+        initialize_config(os.path.join('config', config_fn))
         # start the rig, after this, the rig is in current_app.config['rig'], if start_parent is true
         if current_app.config['start_parent']:
             camrig.start_rig()
