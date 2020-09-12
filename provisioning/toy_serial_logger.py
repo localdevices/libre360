@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """
-Read serial NMEA data from a device to a file.
+Read serial GNSS data from a device to a file.
 
 One positional argument: output file to write.
 
@@ -42,6 +42,10 @@ def log_NMEA(serial_reader, outfile):
             if(validate_NMEA_sentence(sentence)):
                of.write(serial_reader.readline())   
 
+def log_UBX(serial_reader, outfile):
+    # TODO launch RTKLIB str2str
+    pass
+
 def validate_NMEA_sentence(sentence):
     """Check for a valid NMEA sentence."""
     # TODO: Check for valid NMEA sentence structure, calculate checksums
@@ -70,6 +74,7 @@ if __name__ == "__main__":
     to = int(opts['timeout'])
     pt = opts['port']
     of = opts['outfile']
+    
     print(f'\nAttempting to create serial reader with: \nbaud rate: {br}'
           f'\non port {pt}')
     reader = make_serial_reader(br,to, pt)

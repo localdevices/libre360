@@ -9,6 +9,6 @@
 odm360.log
 
 #cache
-odm360/__pycache__/
+__pycache__/
 
 test_data
