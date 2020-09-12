@@ -1,12 +1,11 @@
 # Server is setup here
-from flask import Flask, session, render_template, request, jsonify
+from flask import Flask, session, render_template, request, jsonify, current_app
 from flask_bootstrap import Bootstrap
-from flask_session import Session
 import time, os
 
-from odm360.utils import parse_config
+from odm360.utils import parse_config, make_config
 from odm360.log import start_logger
-from odm360.camera360rig import CameraRig
+import odm360.camera360rig as camrig
 from odm360.utils import get_lan_ip
 
 # API for picam is defined below
@@ -24,12 +23,11 @@ def do_GET():
     the GET API then decides what action should be taken given the state.
     Client is responsible for updating its status to the current
     """
-    global rig
     try:
         msg = request.get_json()
         print(msg)
         # Create or update state of current camera
-        session['rig'].cam_state[request.remote_addr] = msg['state']
+        current_app.config['rig'].cam_state[request.remote_addr] = msg['state']
         log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
         logger.debug(log_msg)
         # check if task exists and sent instructions back
@@ -39,7 +37,7 @@ def do_GET():
             kwargs = msg['kwargs']
         else:
             kwargs = {}
-        task = getattr(session['rig'], method)
+        task = getattr(current_app.config['rig'], method)
         # execute with key-word arguments provided
         r = task(**kwargs)
         return r
@@ -62,16 +60,16 @@ def do_POST():
     # show request in log
     log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
 
-    session['rig'].logger.debug(log_msg)
+    logger.debug(log_msg)
 
     # check if task exists and sent instructions back
     method = f'post_{msg["req"].lower()}'
-    if hasattr(session['rig'], method):
+    if hasattr(current_app.config['rig'], method):
         if 'kwargs' in msg:
             kwargs = msg['kwargs']
         else:
             kwargs = {}
-        task = getattr(session['rig'], method)
+        task = getattr(current_app.config['rig'], method)
         # execute with key-word arguments provided
         r = task(**kwargs)
         return r
@@ -84,25 +82,8 @@ def cleanopts(optsin):
         opts[key] = optsin[key].lower().replace(' ', '_')
     return opts
 
-app = Flask(__name__)
-app.secret_key = 'odm360'
-bootstrap = Bootstrap(app)
-
-logger = start_logger("True", "False")
-
-
-@app.route("/")
-def gps_page():
-    # start with a parent server immediately. Make a new one when a new project is initiated
-    # TODO: only do this if there is no rig initialized yet.
-    if os.path.isfile('current_config'):
-        with open('current_config', 'r') as f:
-            config_fn = os.path.join('config', f.read())
-    else:
-        config_fn = 'config/settings.conf.default'
-    logger.info(f'Parsing project config from {os.path.abspath(config_fn)}')
+def initialize_config(config_fn):
     config = parse_config(config_fn)
-
     # test if we are ready to start devices or not
     start_parent = True
     if config.get('main', 'n_cams') == '':
@@ -117,76 +98,65 @@ def gps_page():
     if config.get('main', 'root') == '':
         start_parent = False
         logger.info('root is missing in config, starting without a running parent server')
-    session['config'] = config
-    session['ip'] = get_lan_ip()
+    current_app.config['config'] = dict(config.items('main'))
+    current_app.config['ip'] = get_lan_ip()
+    current_app.config['start_parent'] = start_parent
 
-    if start_parent:
+app = Flask(__name__)
+app.secret_key = 'odm360'
+bootstrap = Bootstrap(app)
+
+logger = start_logger("True", "False")
+
+@app.route("/")
+def gps_page():
+    # start with a parent server immediately. Make a new one when a new project is initiated
+    # TODO: only do this if there is no rig initialized yet.
+    if not('config' in current_app.config):
+        if os.path.isfile('current_config'):
+            with open('current_config', 'r') as f:
+                config_fn = os.path.join('config', f.read())
+        else:
+            config_fn = 'config/settings.conf.default'
+        logger.info(f'Parsing project config from {os.path.abspath(config_fn)}')
+        initialize_config(config_fn)
+    if current_app.config['start_parent']:
         logger.info('Starting parent server')
-        kwargs = {
-            'ip': session['ip'],
-            'project': config.get('main', 'project'),
-            'root': config.get('main', 'root'),
-            'n_cams': int(config.get('main', 'n_cams')),
-            'dt': int(config.get('main', 'dt')),
-            'logger': logger,
-            'auto_start': False
-        }
-        # start a rig server object with the current settings
-        # find own ip address
-        # setup server
-        session['rig'] = CameraRig(**kwargs)
-        print('Server started')
-    else:
-        session['rig'] = None
+        camrig.start_rig()
+
     """
         The status web page with the gnss satellites levels and a map
     """
     return render_template("status.html")
-
-# def home():
-#     return render_template("index.html.j2")
 
 @app.route('/project', methods=['GET', 'POST'])
 def project_page():
     """
         The settings page where you can manage the various services, the parameters, update, power...
     """
-    # main_settings = rtkbaseconfig.get_main_settings()
-    # ntrip_settings = rtkbaseconfig.get_ntrip_settings()
-    # file_settings = rtkbaseconfig.get_file_settings()
-    # rtcm_svr_settings = rtkbaseconfig.get_rtcm_svr_settings()
     if request.method == 'POST':
-        config = session['config']
+        # config = current_app.config['config']
         form = cleanopts(request.form)
+        config = {}
         # set the config options as provided
-        config.set('main', 'project', form['project'])
-        config.set('main', 'n_cams', form['n_cams'])
-        config.set('main', 'dt', form['dt'])
-        config.set('main', 'root', os.path.join('photos', form['project']))
-        config.set('main', 'verbose', "True" if form['loglevel']=='debug' else "False")
-        config.set('main', 'quiet', "False")
+        config['project'] = form['project']
+        config['n_cams'] = form['n_cams']
+        config['dt'] = form['dt']
+        config['root'] = os.path.join('photos', form['project'])
+        config['verbose'] = "True" if form['loglevel']=='debug' else "False"
+        config['quiet'] = "False"
         config_fn = f'{form["project"]}.ini'
+        conf_obj = make_config(config)
         with open(os.path.abspath(os.path.join('config', config_fn)), 'w') as f:
-            config.write(f)
+            conf_obj.write(f)
         with open('current_config', 'w') as f:
             f.write(config_fn)
-        # store current project to cur_settings file
-        # make new rig object
-        kwargs = {
-            'ip': session['ip'],
-            'project': config.get('main', 'project'),
-            'root': config.get('main', 'root'),
-            'n_cams': int(config.get('main', 'n_cams')),
-            'dt': int(config.get('main', 'dt')),
-            'logger': logger,
-            'auto_start': False
-        }
-        session['config'] = config
-        session['rig'] = CameraRig(**kwargs)
-        print('stop here')
+        initialize_config(os.path.join('config', config_fn))
+        # start the rig, after this, the rig is in current_app.config['rig'], if start_parent is true
+        if current_app.config['start_parent']:
+            camrig.start_rig()
 
-
-        return render_template("status.html") #, main_settings = main_settings,
+        return render_template("status.html")   #, main_settings = main_settings,
                                                 # ntrip_settings = ntrip_settings,
                                                 # file_settings = file_settings,
                                                 # rtcm_svr_settings = rtcm_svr_settings)
