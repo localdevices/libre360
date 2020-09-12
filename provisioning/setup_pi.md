@@ -2,7 +2,7 @@
 
 We provide pre-configured images for the various components (Parent, Child, and Timeserver) of the ODM360 kit __(TODO: THAT)__, but for developers or people wishing to customize their setup, this is the full install procedure.
 
-### Buy stuff and get ready
+## Buy stuff and get ready
 - Get a the appropriate Raspberry Pi for the component you are making.
   - For a TimeServer or a Child, this is a Raspberry Pi Zero W (or the WH, which is the same device but has pre-soldered headers, which will save you some work).
     - Note that the non-W version does not have a WiFi chip, and will be more complicated to set up (it can be done, specifically by sharing network over USB from your computer, but you don't want to).
@@ -13,7 +13,7 @@ We provide pre-configured images for the various components (Parent, Child, and 
   - If need be (for example if the only WiFi you can find has a captive portal) you can do it all tethered to a WiFi Hotspot from your phone.
 - You'll need a computer with an SD card reader.
 
-### Set up base infrastructure on the Pi
+## Set up base infrastructure on the Pi
 - Download the Raspberry Pi OS (32-bit) Lite image from [here](https://www.raspberrypi.org/downloads/raspberry-pi-os/). The Lite image doesn't have a graphical interface (it's "headless") and is therefore smaller to download and will run more efficiently on the limited Pi hardware.
 - Unzip the archive and flash the image to your SD card using [Balena Etcher](https://www.balena.io/etcher/). You can mess around with other ways to burn images if you are feeling masochistic; Etcher just works, and it's open source.
 - After flashing the image, it's a good idea to eject the card. You'll need to put it back in momentarily, but it seems that sometimes things go wrong if you don't eject and re-insert the card.
@@ -56,7 +56,75 @@ pip3 install -e .
 
 From here you have a basic Raspberry Pi configuration; you can make it into a Parent, a Child, or a TimeServer with the next steps.
 
-### Physical wiring
+## Postgresql and accessing it from Python
+
+Install posgresql:
+
+```
+sudo apt install postgresql postgresql-contrib
+```
+
+Set up a user and database.
+
+- Create a postgres user by
+```
+sudo su postgres
+createuser --interactive
+```
+Give the user a sensible name like ```odm360``` and make it a superuser
+
+- Run psql and set up that user and a database
+```
+psql
+# GIVE USER A PASSWORD, CREATE A DATABASE, SET DATABASE OWNER TO THE USER, ETC
+```
+
+Install psycopg2, an adapter (sort of like a driver) for Python to connect to Postgres
+
+```
+sudo apt install libpq-dev
+pip3 install psycopg2
+```
+
+Try connecting to the database in Python with a connection and a cursor. Proper documentation [here[(https://www.psycopg.org/docs/usage.html). Sample code:
+
+```
+import psycopg2
+
+con = psycopg2.connect('dbname=odm360 user=odm360 host=localhost password=mypassword')
+cur = con.cursor()
+```
+
+Try making a table with the cursor:
+
+```
+cur.execute("CREATE TABLE photos(uuid serial PRIMARY KEY, project VARCHAR (50) NOT NULL, survey_run VARCHAR (50) NOT NULL, device VARCHAR (50) NOT NULL, photo_filename VARCHAR (100) NOT NULL, photo_id VARCHAR (50) NOT NULL)")
+con.commit()
+```
+
+Try sticking some data into that table:
+
+```
+cur.execute("INSERT INTO photos VALUES (1,'stonetown', '2020-09-11', 'cam3', 'in/that/folder', 'DCIM123456.jpg');")
+con.commit()
+```
+
+Try reading it:
+
+```
+cur.execute("SELECT * FROM photos")
+data = cur.fetchall()
+data
+```
+
+Clean up after yerself:
+```
+cur.close()
+con.close()
+```
+
+
+## Physical wiring
 
 You will need to connect the serial communication and power pins on the GNSS receiver to the Raspberry Pi Zero (or other Raspberry Pi). Here's an example with an Ardusimple connected to a Zero (note: this cable harness was made with a kit of DuPont connecters and a crimper, which is the way to go if you are doing more than a little of this).
 
@@ -66,11 +134,9 @@ You will need to connect the serial communication and power pins on the GNSS rec
 
 *TODO: photo of Ardusimple with header soldered onto PPS pin and connected to an appropriate Pi GPIO pin*
 
-### Setting up NTP for a server and client device on the local network
+## Setting up NTP for a server and client device on the local network
 
-For some reason, it seems necessary to issue a bunch of NTP configuration commands as root (not just as a user with sudo privileges). I'd like to figure out why this is before I script this install. 
-
-#### On all devices
+### On all devices
 
 Raspberry Pi OS comes with a lightweight version of NTP client called systemc-timesyncd. We want the full NTP service. Set it up with ```sudo apt install ntp```.
 
@@ -91,7 +157,7 @@ The configuration to choose other timeservers (which we'll use on the client Pi'
 
 Stop being root with ```exit``` (you should now be the pi user again).
 
-#### Server-specific setup (to share time with others)
+### Server-specific setup (to share time with others)
 
 Again you have to log in as the root user with ```sudo su -``` (and ```exit``` when you're done).
 
@@ -103,7 +169,7 @@ broadcast 192.168.1.255
 broadcast 224.0.1.1
 ```
 
-#### Client-specific setup (assuming you already have a server on the network)
+### Client-specific setup (assuming you already have a server on the network)
 
 Again you have to log in as the root user with ```sudo su -``` (and ```exit``` when you're done).
 
@@ -121,7 +187,7 @@ server 192.168.1.15
 
 Test with ```ntpq -p```. It may take a few minutes for the client to sync with the server, but when it does, the results of this command should show an asterisk (*) in front of the line for the timeserver.
 
-### TimeServer
+## TimeServer (now implemented on the Parent)
 
 The TimeServer is a dedicated Raspberry Pi that listens to the GNSS unit and syncs to the ([extremely precise](https://gssc.esa.int/navipedia/index.php/Precise_Time_Reference)) timing pulse from it and provides timing information via [Network Time Protocol (NTP)](https://en.wikipedia.org/wiki/Network_Time_Protocol) to the rest of the kit.
 
@@ -133,7 +199,7 @@ Once its own clock is set from the GNSS device (making it a [stratum 1 device](h
 
 The PPS signal needs to be on a separate pin (__TODO: PICTURES OF THE PIN WIRING__) and for best precision should use an interrupt instead of a loop.
 
-#### Steps to configure the Pi Zero as a TimeServer
+### Steps to configure the Pi Zero as a TimeServer
 
 *Note: Much of this can be done while setting up the base Pi just after flashing. It's separated out here so that it can be scripted and eventually added to a [.deb package](https://en.wikipedia.org/wiki/Deb_(file_format)) specific to the TimeServer setup.*
 
@@ -143,33 +209,3 @@ The PPS signal needs to be on a separate pin (__TODO: PICTURES OF THE PIN WIRING
 
 - Disable the default serial console to free up UART serial line ```sudo sed -i 's/console=serial0,115200 //g' /boot/cmdline.txt```
 
-## Current path
-- Compile GPSD
-- Works when called with ```gpsd -N -D3 -b @RUNDIR/gpsd.sock /dev/ttyS0```
-
-## Dead end stuff?
-
-- Enable UART to recieve NMEA streams from the GNSS over serial pins ```echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt```
-
-- Enable a GPIO pin to receive the PPS signal ```echo dtoverlay=pps-gpio,gpiopin=4 | sudo tee -a /boot/config.txt```
-
-- Install some GNSS libraries ```sudo apt install -y gpsd gpsd-clients python-gps pps-tools```
-
-- Configure GPSD to use the serial port instead of searching for a USB device
-
-```
-sudo sed -i 's/USBAUTO="true"/USBAUTO="false"/g' /etc/default/gpsd
-sudo sed -i 's:DEVICES="":DEVICES="/dev/ttyS0 /dev/pps0":g' /etc/default/gpsd
-sudo sed -i 's:GPSD_OPTIONS="":GPSD_OPTIONS="-n":g' /etc/default/gpsd
-```
-
-- Start the GPSD service on boot ```sudo systemctl enable gpsd```
-
-- Create symlinks for GPSD to hook to the device ```echo KERNEL==\"ttyS0\", SUBSYSTEM==\"tty\", DRIVER==\"\", OWNER==\"root\", GROUP==\"tty\", MODE==\"0777\", SYMLINK+=\"gps0\" >> /etc/udev/rules.d/09-pps.rules```
-
-- Enable a GPIO pin to receive the PPS signal
-```echo $'\n# Enable GPIO for PPS signal\ndtoverlay=pps-gpio,gpiopin=4' | sudo tee -a /boot/config.txt```
-
-- Set up the pps-gpio module ```echo pps-gpio | sudo tee -a /etc/modules```
-
-- Kick the GPS daemon on startup ```sed -i '$ s/exit 0/gpspipe -r -n 1 \&/g' /etc/rc.local``` and ```echo exit 0 | sudo tee -a /etc/rc.local```
