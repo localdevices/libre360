@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
+{{super()}}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <table id="logtable" data-toggle="table">
+        <thead>
+          <tr>
+            <th data-field="name" data-sortable="true">File name</th>
+            <th data-field="format" data-sortable="true">type</th>
+            <th data-field="size" data-sortable="true">size (MB)</th>
+<!--            <th data-field="actions" data-formatter="actionFormatter" data-events="operateEvents">actions</th>-->
+          </tr>
+        </thead>
+      </table>
+    We only show the files relevant for the project
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
+<
+<!-- TODO consider reusing parts of stuff below -->
+{% endblock %}

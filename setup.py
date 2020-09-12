@@ -28,7 +28,10 @@ setup(
         "gphoto2",
         "schedule",
         "picamera",
-        "python-nmap"
+        "python-nmap",
+        "Flask",
+        "Flask-Login",
+        "Bootstrap-Flask"
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],
