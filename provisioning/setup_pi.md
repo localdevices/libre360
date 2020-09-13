@@ -2,6 +2,16 @@
 
 We provide pre-configured images for the various components (Parent, Child, and Timeserver) of the ODM360 kit __(TODO: THAT)__, but for developers or people wishing to customize their setup, this is the full install procedure.
 
+## Quick overview
+- Buy Pis, SD cards, cameras, wires, GNSS receivers, etc
+- Solder, jumper, assemble, etc
+- Flash parent SD card with Raspberry Pi OS
+- Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
+- SSH into the pi. Update, upgrade, and install Git.
+- Clone odm360 repo, cd into the folder
+- Run provisioning/base_pi_setup.sh
+
+
 ## Buy stuff and get ready
 - Get a the appropriate Raspberry Pi for the component you are making.
   - For a TimeServer or a Child, this is a Raspberry Pi Zero W (or the WH, which is the same device but has pre-soldered headers, which will save you some work).
