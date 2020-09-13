@@ -13,7 +13,7 @@ echo Installing emacs because it is the best editor and IDE. You are welcome.
 sudo apt install -y emacs-nox
 
 echo Installing posgresql
-sudo apt install -y postgresql postgresql-contrib
+sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 # TODO check if already done before sedding in the disable flag
 echo Disabling IPv6
