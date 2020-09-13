@@ -7,9 +7,10 @@ We provide pre-configured images for the various components (Parent, Child, and 
 - Solder, jumper, assemble, etc
 - Flash parent SD card with Raspberry Pi OS
 - Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
-- SSH into the pi. Update, upgrade, and install Git.
-- Clone odm360 repo, cd into the folder
-- Run provisioning/base_pi_setup.sh
+- SSH into the pi ```ssh pi@raspberrypi.local``` with password ```raspberry```.
+- Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git```.
+- Clone odm360 repo ```git clone https://github.com/OpenDroneMap/odm360```, cd into the folder ```cd odm360```
+- Run provisioning/base_pi_setup.sh ```provisioning/base_pi_setup.sh```
 
 
 ## Buy stuff and get ready
@@ -46,7 +47,7 @@ I copy the contents of that example, navigate to the root of the ```boot``` part
   - Also in the ```boot``` partition, you need to place a file called ```ssh```. It doesn't matter what's in it (an empty file is fine) and there's no extension on the filename. This enables [SSH](https://en.wikipedia.org/wiki/Secure_Shell) on the Pi (disabled by default). You can do this on Linux or Mac by navigating to the root of the ```boot``` partition and typing ```touch ssh```.
 - Eject the SD card and remove it from your computer, put it in the Pi, and power it up. Wait about 90 seconds to make sure it has time to boot up before you try to connect to it.
 - Make sure your computer is connected to the same WiFi network as the Pi, open a terminal, and type ```ssh pi@raspberrypi.local```.
-  - Didn't work? ```Could not resolve hostname...``` or something like it? Sigh. Ok, try to figure out if the Pi is on the WiFi. You can try [nmap](https://nmap.org/) to attempt to identify every device on your local subnet, but I recently found a lovely FOSS application called [Angry IP Scanner](https://angryip.org/); it's great. Try it. If you're lucky, you'll see the Pi on the network along with its IP address, and maybe you can ssh into it using the IP address instead of the ```raspberrypi.local``` alias. If not, you'll have to dive into the world of Google, StackExchange, and the Raspberry Pi forums until you get it sorted.
+  - Didn't work? ```Could not resolve hostname...``` or something like it? Sigh. Ok, try to figure out if the Pi is on the WiFi. You can try [nmap](https://nmap.org/) to attempt to identify every device on your local subnet with ```nmap -sP 192.168.X.0/24```, but I recently found a lovely FOSS application called [Angry IP Scanner](https://angryip.org/); it's great. Try it. If you're lucky, you'll see the Pi on the network along with its IP address, and maybe you can ssh into it using the IP address instead of the ```raspberrypi.local``` alias. If not, you'll have to dive into the world of Google, StackExchange, and the Raspberry Pi forums until you get it sorted.
 - Log into the Pi using the default password, which is ```raspberry```. Once you're in, immediately type ```passwd``` (_without_ ```sudo```) and—at the prompts—enter first the old and then the new password (twice). Try not to forget the new password.
 - Get everything up to date with ```sudo apt update && sudo apt upgrade -y```. This will take a few minutes, more if your Internet connection is slow.
 - You might as well install a few more basic infrastructure bits while you're at it:
