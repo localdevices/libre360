@@ -31,7 +31,9 @@ setup(
         "python-nmap",
         "Flask",
         "Flask-Login",
-        "Bootstrap-Flask"
+        "Bootstrap-Flask",
+        "uwsgi",
+        "psycopg2",
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],

@@ -1,0 +1,14 @@
+[Unit]
+Description=uWSGI instance to serve ODM360 dashboard
+After=network.target
+
+[Service]
+ExecStart=/home/pi/odm360/uwsgi --ini odm360.ini
+WorkingDirectory=/home/pi/odm360/
+User=www-data
+Group=www-data
+StandardOutput=file:/home/pi/log.txt
+StandardError=file:/home/pi/error.log
+
+[Install]
+WantedBy=multi-user.target
