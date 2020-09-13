@@ -12,6 +12,9 @@ sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
 echo Installing emacs because it is the best editor and IDE. You are welcome.
 sudo apt install -y emacs-nox
 
+echo Installing posgresql
+sudo apt install -y postgresql postgresql-contrib
+
 echo Disabling IPv6
 sudo sed -i '$s/$/ ipv6.disable=1/' /boot/cmdline.txt
 
