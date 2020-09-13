@@ -2,7 +2,7 @@
 
 We provide pre-configured images for the various components (Parent, Child, and Timeserver) of the ODM360 kit __(TODO: THAT)__, but for developers or people wishing to customize their setup, this is the full install procedure.
 
-## Quick overview
+## Quickstart
 - Buy Pis, SD cards, cameras, wires, GNSS receivers, etc
 - Solder, jumper, assemble, etc
 - Flash parent SD card with [Raspberry Pi OS](https://www.raspberrypi.org/downloads/raspberry-pi-os/)
