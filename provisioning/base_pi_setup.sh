@@ -24,10 +24,7 @@ sudo sed -i 's/console=serial0,115200 //g' /boot/cmdline.txt
 echo enabling UART
 echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
 
-echo fetching the ODM360 code and installing the requirements
-git clone https://github.com/OpenDroneMap/odm360
-cd odm360
+echo Installing requirements from setup.py using pip
 pip3 install -e .
-cd ../
 
 echo Now you should have a Raspberry Pi set up with the basic infrastructure common to all devices in the kit. The next steps depend whether this device is intended to be a Parent or Child.
