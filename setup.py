@@ -31,10 +31,10 @@ setup(
         "python-nmap",
         "Flask",
         "Flask-Login",
-        "Bootstrap-Flask"
-        "uwsgi"
-        "libpq-dev"
-        "psycopg2"
+        "Bootstrap-Flask",
+        "uwsgi",
+        "libpq-dev",
+        "psycopg2",
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],
