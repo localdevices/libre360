@@ -27,7 +27,7 @@ See also: https://www.opendronemap.org/2020/05/360-cameras/
 This project is built around raspbian, but can likely be deployed on almost any linux flavor.
 
 If you wish to test and develop code, we recommend establishing a Miniconda environment.
-When deploying on a raspberry pi, you can skip this part.
+When deploying on a raspberry pi, you can skip this part. To deploy on a pi, [here is a set of instructions](provisioning/setup_pi.md)
 ```
 conda env create -f environment.yml
 ```
