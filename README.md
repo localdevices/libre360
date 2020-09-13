@@ -23,7 +23,7 @@ From the 360 data, we can get detailed 3D reconstructions in OpenDroneMap:
 See also: https://www.opendronemap.org/2020/05/360-cameras/
 
 ## Quickstart on Raspberry Pi
-This is a quick listing of install steps, intended for someone who already knows most of the what's needed and just needs a checklist/reminder. [Full instructions here](provisioning/setup_pi.md).
+This is a quick listing of install steps, intended for someone who already knows most of what's needed and just needs a checklist/reminder. [Full instructions here](provisioning/setup_pi.md).
 
 - Buy Pis, SD cards, cameras, wires, GNSS receivers, etc. [Parts list here](provisioning/setup_pi.md).
 - Solder, jumper, assemble, etc. [Instructions here](provisioning/setup_pi.md).
