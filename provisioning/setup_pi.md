@@ -5,11 +5,11 @@ We provide pre-configured images for the various components (Parent, Child, and 
 ## Quick overview
 - Buy Pis, SD cards, cameras, wires, GNSS receivers, etc
 - Solder, jumper, assemble, etc
-- Flash parent SD card with Raspberry Pi OS
-- Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
+- Flash parent SD card with [Raspberry Pi OS](https://www.raspberrypi.org/downloads/raspberry-pi-os/)
+- Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` [like this]((https://www.raspberrypi.org/documentation/configuration/wireless/headless.md) with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
 - SSH into the pi ```ssh pi@raspberrypi.local``` with password ```raspberry```.
-- Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git```.
-- Clone odm360 repo ```git clone https://github.com/OpenDroneMap/odm360```, cd into the folder ```cd odm360```
+- Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git -y```.
+- Clone odm360 repo ```git clone https://github.com/OpenDroneMap/odm360.git```, cd into the folder ```cd odm360```
 - Run provisioning/base_pi_setup.sh ```provisioning/base_pi_setup.sh```
 
 
