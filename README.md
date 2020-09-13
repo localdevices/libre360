@@ -33,6 +33,8 @@ This is a quick listing of install steps, intended for someone who already knows
 - Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git -y```.
 - Clone odm360 repo ```git clone https://github.com/OpenDroneMap/odm360.git```, cd into the folder ```cd odm360```
 - Run provisioning/base_pi_setup.sh ```provisioning/base_pi_setup.sh```
+- Run the web app with ```python3 -m flask run --host=0.0.0.0```
+- See the dashboard by going to [http://raspberrypi.local:5000/](http://raspberrypi.local:5000/) in your browser
 
 ## Requirements
 
