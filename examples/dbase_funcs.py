@@ -37,7 +37,7 @@ def create_table_status(cur):
     :param cur: cursor
     :return:
     """
-    sql_command = "CREATE TABLE device_status(device varchar (50) NOT NULL, status integer NOT NULL, last_photo varchar (100))"
+    sql_command = "CREATE TABLE device_status(device varchar (50) NOT NULL, status integer NOT NULL, last_photo varchar (100), last_thumb BYTEA)"
     create_table(cur, sql_command)
 
 def drop_table(cur, table_name):
@@ -110,6 +110,10 @@ def is_table(cur, table_name):
     return cur.fetchall()[0][0]
 
 
+def is_device(cur, device):
+    cur.execute(f"SELECT EXISTS ( SELECT 1 FROM device_status WHERE device='{device}')")
+    return cur.fetchall()[0][0]
+
 def query_photos(cur, project):
     """
     queries all photos for a given project name
@@ -136,7 +140,7 @@ def query_projects(cur):
     cur.execute("SELECT DISTINCT(project) FROM photos")
     return [x[0] for x in cur.fetchall()]
 
-def update_device(cur, device, status, last_photo=""):
+def update_device(cur, device, status, last_photo="", last_thumb=None):
     """
 
     :param cur: cursor
@@ -147,7 +151,12 @@ def update_device(cur, device, status, last_photo=""):
     :return:
     """
     # FIXME: implement update function
-    raise NotImplemented('Not yet implemented')
+    if not(is_device(cur, device)):
+        raise KeyError(f'device "{device}" does not exist in table "device_status"')
+    _thumb = psycopg2.Binary(last_thumb)
+    sql_command = f"UPDATE device_status SET status={status}, last_photo='{last_photo}', last_thumb={_thumb} WHERE device='{device}'"
+    cur.execute(sql_command)
+    # raise NotImplemented('Not yet implemented')
 
 con = psycopg2.connect('dbname=odm360 user=odm360 host=localhost password=zanzibar')
 cur = con.cursor()
@@ -161,17 +170,22 @@ cur = con.cursor()
 # print(query_projects(cur))
 # print(query_photos(cur, 'dar'))
 print(is_table(cur, 'device_status'))
-if not(is_table(cur, 'device_status')):
-    create_table_status(cur)
+if is_table(cur, 'device_status'):
+    drop_table(cur, 'device_status')
+create_table_status(cur)
 print(is_table(cur, 'device_status'))
-insert_device(cur, 'some_camera1', 5)
-insert_device(cur, 'another_camera1', 6)
+insert_device(cur, 'some_camera1', 0)
+insert_device(cur, 'another_camera1', 0)
 
 cur.execute("SELECT * FROM device_status")
 print(cur.fetchall())
+update_device(cur, 'some_camera1', 99, last_photo="/some/photo/whatever.jpg")
+cur.execute("SELECT * FROM device_status")
+print(cur.fetchall())
 
-drop_table(cur, 'device_status')
-print(is_table(cur, 'device_status'))
+
+# drop_table(cur, 'device_status')
+# print(is_table(cur, 'device_status'))
 
 #
 
