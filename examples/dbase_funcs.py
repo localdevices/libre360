@@ -1,6 +1,7 @@
 import psycopg2
 import numpy as np
 
+# to not jeopardize Ivan's health, we use functions rather than classes to approah our databse
 
 def create_table(cur, sql_command):
     """
