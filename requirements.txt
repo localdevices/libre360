@@ -1,0 +1,4 @@
+# Don't install binary packages.
+--no-binary=:all:
+# Get requirements from setup.py
+.
