@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+%:
+	# --with python-virtualenv allows us to build a package from a Python
+	#  virtualenv
+	# --with systemd tells dh to copy the systemd unit files into the right
+	#  places after installation. Those files live in debian/<pkg>.service
+	dh $@ --with python-virtualenv --with systemd
+
+override_dh_virtualenv:
+	# * --python python3 tells dh_virtualenv to use Python 3
+	# * DH_VIRTUALENV_INSTALL_ROOT and --install-suffix lead to the virtualenv
+	#   being installed in `/opt/odm360`.
+	# * The READTHEDOCS env is needed to get picamera to build on a system that
+	#   isn't a Pi. See https://github.com/waveform80/picamera/issues/578#issuecomment-523997913
+	READTHEDOCS=True DH_VIRTUALENV_INSTALL_ROOT=/opt python2 $(shell which dh_virtualenv) --package odm360-base \
+		--install-suffix odm360 --python python3 --use-system-packages

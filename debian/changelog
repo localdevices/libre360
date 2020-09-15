@@ -1,0 +1,5 @@
+odm360 (0.0.0-1) UNRELEASED; urgency=low
+
+  * Initial Debian packaging materials.
+
+ -- Schuyler Erle <schuyler@nocat.net>  Tue, 15 Sep 2020 05:38:36 +0000
