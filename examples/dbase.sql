@@ -31,14 +31,15 @@ CREATE TABLE IF NOT EXISTS photos
 );
 	
 DROP TABLE IF EXISTS device_status;
-CREATE TABLE IF NOT EXISTS device_status(
+CREATE TABLE IF NOT EXISTS device_status
+(
 	deviceid BIGINT GENERATED ALWAYS AS IDENTITY
 	,devicename text NOT NULL
 	,status integer NOT NULL
-	,last_photo photoid
+	,last_photo BIGINT
 	,PRIMARY KEY(deviceid)
-	,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
-         FOREIGN KEY(photoid) 
+	,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
+         FOREIGN KEY(last_photo) 
     	   REFERENCES photos(photoid)
 	   ON DELETE CASCADE	
-	);
+);
