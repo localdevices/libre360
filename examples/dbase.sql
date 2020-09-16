@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS photos
 	photoid BIGINT GENERATED ALWAYS AS IDENTITY  --renamed: UUID usually is usually a universally unique identifier, and this is a serial
 	--,project varchar (50) NOT NULL -- Removing: this only belongs in the project file and will be joined using a foreign key
 	,projectid INT
-	,survey_run VARCHAR (50) NOT NULL
-	,device VARCHAR (50) NOT NULL
-	,photo_filename VARCHAR (100) NOT NULL
+	,survey_run text NOT NULL
+	,device text NOT NULL
+	,photo_filename text NOT NULL
 	,photo BYTEA NOT NULL
 	,thumbnail BYTEA
 	,PRIMARY KEY(photoid)
