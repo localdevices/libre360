@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS projects
 (
 	projectid BIGINT GENERATED ALWAYS AS IDENTITY -- rather than serial, we will comply with the SQL standard
 	,projectname text NOT NULL -- I assuming this is a project name and have renamed as such
-	,root varchar (100) NOT NULL
+	,root text NOT NULL
 	,n_cams integer NOT NULL
-	,dt integer NOT NULL
+	,dt BIGINT NOT NULL
 	,PRIMARY KEY(projectid) 
 	-- just to keep constraints to the end of the table creation process,we call out the primary key separately
 );
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS photos
 (
 	photoid BIGINT GENERATED ALWAYS AS IDENTITY  --renamed: UUID usually is usually a universally unique identifier, and this is a serial
 	--,project varchar (50) NOT NULL -- Removing: this only belongs in the project file and will be joined using a foreign key
-	,projectid INT
+	,projectid BIGINT
 	,survey_run text NOT NULL
 	,device text NOT NULL
 	,photo_filename text NOT NULL
