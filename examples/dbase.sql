@@ -12,7 +12,20 @@ CREATE TABLE IF NOT EXISTS projects
 	-- just to keep constraints to the end of the table creation process,we call out the primary key separately
 );
 
-DROP TABLE IF EXISTS photos;
+-- Lists the current active project ID and that's it... .
+DROP TABLE IF EXISTS project_active CASCADE;
+CREATE TABLE IF NOT EXISTS projectactive
+(
+	projectid BIGINT
+	,CONSTRAINT fk_projecta
+        FOREIGN KEY(projectid) 
+    	  REFERENCES projects(projectid)
+	  ON DELETE CASCADE	
+);
+
+-- References the project and has a delete cascade, so if the project gets deleted, the photos get deleted
+-- Yay! Tidy databases
+DROP TABLE IF EXISTS photos CASCADE;
 CREATE TABLE IF NOT EXISTS photos 
 (
 	photoid BIGINT GENERATED ALWAYS AS IDENTITY  --renamed: UUID usually is usually a universally unique identifier, and this is a serial
@@ -29,13 +42,14 @@ CREATE TABLE IF NOT EXISTS photos
     	   REFERENCES projects(projectid)
 	   ON DELETE CASCADE
 );
-	
-DROP TABLE IF EXISTS device_status;
-CREATE TABLE IF NOT EXISTS device_status
+
+
+DROP TABLE IF EXISTS devices CASCADE;
+CREATE TABLE IF NOT EXISTS devices
 (
 	deviceid BIGINT GENERATED ALWAYS AS IDENTITY
 	,devicename text NOT NULL
-	,status integer NOT NULL
+	,status integer NOT NULL -- what are our status codes?
 	,last_photo BIGINT
 	,PRIMARY KEY(deviceid)
 	,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
