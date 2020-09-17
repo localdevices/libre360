@@ -28,7 +28,7 @@ def create_table_photos(cur):
     (photo_uuid uuid DEFAULT uuid_generate_v4 () 
     ,project_id INT
     ,survey_run text NOT NULL
-    ,device text NOT NULL
+    ,device_name text NOT NULL
     ,photo_filename text NOT NULL
     ,photo BYTEA NOT NULL
     ,thumbnail BYTEA
@@ -138,7 +138,7 @@ def insert_device(cur, device_name, status):
     """
     insert a new device in table (leave out last_photo since it is not available yet).
     :param cur: cursor
-    :param device: string - id of device
+    :param device_name: string - id of device (auto-generated on child side)
     :param status: int - status of device, each int has a specific meaning
     :return:
     """
@@ -147,6 +147,14 @@ def insert_device(cur, device_name, status):
 
 
 def insert_project(cur, project_name, n_cams, dt):
+    """
+
+    :param cur: cursor
+    :param project_name: str - (user defined) name of project (note: id is provided automatically)
+    :param n_cams: int - nr of cameras in project
+    :param dt: int - time interval between photos
+    :return:
+    """
     sql_command = f"""
     INSERT INTO projects
     (
@@ -162,13 +170,13 @@ def insert_project(cur, project_name, n_cams, dt):
     """
     insert(cur, sql_command)
 
-def insert_photo(cur, project_id, survey_run, device, fn, photo, thumb):
+def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb):
     """
 
     :param cur: cursor
-    :param project: string - project name
-    :param survey: string - id of survey within project
-    :param device: string - id of device
+    :param project_id: int - project id
+    :param survey_run: string - id of survey within project
+    :param device_name: string - id of device
     :param folder: string - folder containing photos on child
     :param fn: string - filename
     :param photo: numpy-array with photo TODO: check how photos are returned and revise if needed
@@ -185,7 +193,7 @@ def insert_photo(cur, project_id, survey_run, device, fn, photo, thumb):
     (
     project_id
     ,survey_run
-    ,device
+    ,device_name
     ,photo_filename
     ,photo
     ,thumbnail
@@ -193,22 +201,33 @@ def insert_photo(cur, project_id, survey_run, device, fn, photo, thumb):
     (
     '{project_id}'
     ,'{survey_run}'
-    ,'{device}'
+    ,'{device_name}'
     ,'{fn}'
     ,{_photo}
     ,{_thumb}
     );"""
-    # sql_command = f"INSERT INTO photos(project, survey_run, device, photo_filename, photo_id, photo, thumbnail) VALUES ('{project}', '{survey}', '{device}', '{folder}', '{fn}', {_photo}, {_thumb});"
     insert(cur, sql_command)
 
 
 def is_table(cur, table_name):
+    """
+    Simple check to see if table exists or not
+    :param cur: cursor
+    :param table_name: str - name of table
+    :return: True/False
+    """
     sql_command = f"SELECT EXISTS ( SELECT FROM information_schema.tables WHERE table_name = '{table_name}' );"
     cur.execute(sql_command)
     return cur.fetchall()[0][0]
 
 
 def is_device(cur, device_name):
+    """
+    Simple check to see if device exists
+    :param cur: cursor
+    :param device_name: str - name of device
+    :return: True/False
+    """
     cur.execute(f"SELECT EXISTS ( SELECT 1 FROM devices WHERE device_name='{device_name}')")
     return cur.fetchall()[0][0]
 
@@ -217,7 +236,7 @@ def query_photos(cur, project_id=None):
     """
     queries all photos for a given project name
     :param cur: cursor
-    :param project: string - project name
+    :param project_id: int - project id
     :return: list of results
     """
     if project_id is None:
@@ -249,15 +268,14 @@ def update_device(cur, device_name, status, last_photo=""):
     :param cur: cursor
     :param device_name: str - id of device
     :param status: int - status indicator
-    :param last_photo: str - local filename of last photo
+    :param last_photo: str - uuid of last photo (error returned if uuid does not exist in database)
     :return:
     """
-    # FIXME: implement update function
     if not(is_device(cur, device_name)):
         raise KeyError(f'device "{device_name}" does not exist in table "device_status"')
     sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_name='{device_name}'"
     cur.execute(sql_command)
-    # raise NotImplemented('Not yet implemented')
+
 
 con = psycopg2.connect('dbname=odm360 user=odm360 host=localhost password=zanzibar')
 cur = con.cursor()
