@@ -8,7 +8,7 @@ from odm360.utils import parse_config, make_config
 from odm360.log import start_logger
 import odm360.camera360rig as camrig
 from odm360.utils import get_lan_ip
-from app import app
+from app import app as application
 
 # API for picam is defined below
 def do_GET():
@@ -211,4 +211,4 @@ def picam():
     return jsonify(r)    
 
 if __name__ == "__main__":
-    app.run(debug = False, port = 5000, host = "0.0.0.0")
+    application.run(debug = False, port = 5000, host = "0.0.0.0")
