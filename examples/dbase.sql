@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS photos
          FOREIGN KEY(projectid) 
     	   REFERENCES projects(projectid)
 	   ON DELETE CASCADE
-	,CONSTRAINT fk_devicephoto -- add foreign key constraint referencing the project ID
+	,CONSTRAINT fk_devicephoto -- add foreign key constraint referencing device ID
         FOREIGN KEY(deviceid) 
             REFERENCES devices(deviceid)
-        ON DELETE CASCADE
+        --ON DELETE CASCADE
 );
 
 
