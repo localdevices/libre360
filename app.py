@@ -207,10 +207,7 @@ def picam():
     else:
         # print(request.get_json())
         r = do_GET()  # response is passed back to client
-    return jsonify(r)
-
-def run(app):
-    app.run(debug=False, host="0.0.0.0")
+    return jsonify(r)    
 
 if __name__ == "__main__":
-    run(app)
+    app.run(host="0.0.0.0")
