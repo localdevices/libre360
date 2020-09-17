@@ -33,6 +33,7 @@ def create_table_photos(cur):
     ,photo_filename text NOT NULL
     ,photo BYTEA NOT NULL
     ,thumbnail BYTEA
+    ,device_id BIGINT
     ,PRIMARY KEY(photo_uuid)
     ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
         FOREIGN KEY(project_id) 
@@ -41,6 +42,7 @@ def create_table_photos(cur):
     );
 
     """
+
     create_table(cur, sql_command)
 
 
