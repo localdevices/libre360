@@ -4,6 +4,9 @@
 # Normally followed by a second script which sets up either a Parent or Child
 
 echo checking if this is running on a Raspberry Pi
+# for some reason this produces a cryptic Bash error
+# warning: command substitution: ignored null byte in input
+# but it works so I am ignoring it for now
 model="$( cat /proc/device-tree/model )"
 onpi="no"
 if [[ "$model" == *"Raspberry Pi"* ]]; then
@@ -41,7 +44,7 @@ if [[ onpi == "yes" ]]; then
     echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
 fi
 
-echo ##########################################################
-echo Now you should have a $model set up with the basic infrastructure common to all devices in the kit. The next steps depend whether this device is intended to be a Parent or Child.
-echo ##########################################################
+echo ************************************
+echo Now you should have a $model set up with the basic infrastructure common to all devices in the ODM360 rig. The next steps depend whether this device is intended to be a Parent or Child.
+echo ************************************
 echo
