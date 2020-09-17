@@ -2,6 +2,7 @@
 from flask import Flask, session, render_template, request, jsonify, current_app
 from flask_bootstrap import Bootstrap
 import time, os
+import psycopg2
 
 from odm360.utils import parse_config, make_config
 from odm360.log import start_logger
@@ -24,6 +25,7 @@ def do_GET():
     Client is responsible for updating its status to the current
     """
     try:
+        # TODO: pass full project details from dbase to child
         msg = request.get_json()
         print(msg)
         # Create or update state of current camera
@@ -82,6 +84,7 @@ def cleanopts(optsin):
         opts[key] = optsin[key].lower().replace(' ', '_')
     return opts
 
+# TODO: remove when database connection is function
 def initialize_config(config_fn):
     config = parse_config(config_fn)
     # test if we are ready to start devices or not
@@ -102,16 +105,19 @@ def initialize_config(config_fn):
     current_app.config['ip'] = get_lan_ip()
     current_app.config['start_parent'] = start_parent
 
+db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
+conn = psycopg2.connect(db)
+cur = conn.cursor()
+
 app = Flask(__name__)
-app.secret_key = 'odm360'
 bootstrap = Bootstrap(app)
 
 logger = start_logger("True", "False")
 
 @app.route("/")
 def gps_page():
-    # start with a parent server immediately. Make a new one when a new project is initiated
     # TODO: only do this if there is no rig initialized yet.
+    # FIXME: replace by checking for projects in database
     if not('config' in current_app.config):
         if os.path.isfile('current_config'):
             with open('current_config', 'r') as f:
@@ -136,6 +142,7 @@ def project_page():
     """
     if request.method == 'POST':
         # config = current_app.config['config']
+        # FIXME: put inputs into the database and remove config stuff below
         form = cleanopts(request.form)
         config = {}
         # set the config options as provided
@@ -149,7 +156,7 @@ def project_page():
         conf_obj = make_config(config)
         with open(os.path.abspath(os.path.join('config', config_fn)), 'w') as f:
             conf_obj.write(f)
-        with open('current_config', 'w') as f:
+        with open('current_config', 'w') as f:      
             f.write(config_fn)
         initialize_config(os.path.join('config', config_fn))
         # start the rig, after this, the rig is in current_app.config['rig'], if start_parent is true
