@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- It is useful to create the projects table first,
 -- since it's primary key will be used in the photos table.
 DROP TABLE IF EXISTS projects CASCADE;
@@ -5,9 +7,9 @@ CREATE TABLE IF NOT EXISTS projects
 (
 	projectid BIGINT GENERATED ALWAYS AS IDENTITY -- rather than serial, we will comply with the SQL standard
 	,projectname text NOT NULL -- I assuming this is a project name and have renamed as such
-	,root text NOT NULL
+	,root varchar (100) NOT NULL
 	,n_cams integer NOT NULL
-	,dt BIGINT NOT NULL
+	,dt integer NOT NULL
 	,PRIMARY KEY(projectid) 
 	-- just to keep constraints to the end of the table creation process,we call out the primary key separately
 );
@@ -28,15 +30,15 @@ CREATE TABLE IF NOT EXISTS projectactive
 DROP TABLE IF EXISTS photos CASCADE;
 CREATE TABLE IF NOT EXISTS photos 
 (
-	photoid BIGINT GENERATED ALWAYS AS IDENTITY  --renamed: UUID usually is usually a universally unique identifier, and this is a serial
+	photouuid uuid DEFAULT uuid_generate_v4 ()
 	--,project varchar (50) NOT NULL -- Removing: this only belongs in the project file and will be joined using a foreign key
-	,projectid BIGINT
+	,projectid INT
 	,survey_run text NOT NULL
 	,device text NOT NULL
 	,photo_filename text NOT NULL
 	,photo BYTEA NOT NULL
 	,thumbnail BYTEA
-	,PRIMARY KEY(photoid)
+	,PRIMARY KEY(photouuid)
 	,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
          FOREIGN KEY(projectid) 
     	   REFERENCES projects(projectid)
@@ -50,10 +52,10 @@ CREATE TABLE IF NOT EXISTS devices
 	deviceid BIGINT GENERATED ALWAYS AS IDENTITY
 	,devicename text NOT NULL
 	,status integer NOT NULL -- what are our status codes?
-	,last_photo BIGINT
+	,last_photo uuid
 	,PRIMARY KEY(deviceid)
 	,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
          FOREIGN KEY(last_photo) 
-    	   REFERENCES photos(photoid)
+    	   REFERENCES photos(photouuid)
 	   ON DELETE CASCADE	
 );
