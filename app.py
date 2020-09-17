@@ -199,7 +199,7 @@ def cam_page():
 def file_page():
     return render_template("file_page.html")
 
-@app.route('/picam', methods=['GET', 'POST'])
+@app.route('/picam', methods = ['GET', 'POST'])
 def picam():
     if request.method == 'POST':
 
@@ -210,4 +210,4 @@ def picam():
     return jsonify(r)    
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0")
+    app.run(debug = False, port = 5000, host = "0.0.0.0")
