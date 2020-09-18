@@ -182,6 +182,12 @@ def project_page():
         # set the config options as provided
 
         dbase.insert_project(cur, form['project_name'], n_cams=int(form['n_cams']), dt=int(form['dt']))
+        # remove the current project selection and make a fresh table
+        dbase.create_table_project_active(cur, drop=True)
+        # set project to current by retrieving its id and inserting that in current project table
+        project_id = dbase.query_projects(cur, project_name=form['project_name'])[0][0]
+        dbase.insert_project_active(cur, project_id=project_id)
+
         return redirect("/")
 
     else:
