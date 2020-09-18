@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Set up a Raspberry Pi with the basic infrastructure used by ODM360
-# Normally followed by a second script which sets up either a Parent or Child
+# Set up a Raspberry Pi as a Child for an ODM360 rig
 
 echo checking if this is running on a Raspberry Pi
 # for some reason this produces a cryptic Bash error
@@ -20,51 +19,12 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-
-echo updating
-sudo apt update && sudo apt upgrade -y
-
-echo Installing ODM infrastructure
-sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
-
-echo Installing emacs because it is the best editor and IDE. You are welcome.
-sudo apt install -y emacs-nox
-
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
-echo Installing requirements from setup.py using pip
-pip3 install -e .
-
-echo putting ~/.local/bin on PATH for flask
-export PATH="$HOME/.local/bin:$PATH"
-echo and appending line to .bashrc to always do that
-# TODO check if already done
-echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
-
-# Check if on RPi before doing stuff specific to Pi
-if [[ onpi == "yes" ]]; then
-    # TODO check if already done before sedding in the disable flag
-    echo Disabling IPv6
-    sudo sed -i '$s/$/ ipv6.disable=1/' /boot/cmdline.txt
-    
-    echo Disabling serial console to free up UART serial line
-    sudo sed -i 's/console=serial0,115200 //g' /boot/cmdline.txt
-    
-    # TODO check if already done before pushing this line into the file
-    echo enabling UART
-    echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
-
-    echo Making perl shut up about locales
-    echo by setting to en_US.UTF-8
-    export LANGUAGE=en_US.UTF-8
-    export LANG=en_US.UTF-8
-    export LC_ALL=en_US.UTF-8
-    sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
-    sudo locale-gen
-fi
+# TODO set up the database specifically for a child
 
 echo ************************************
-echo Now you should have a $model set up with the basic infrastructure common to all devices in the ODM360 rig. The next steps depend whether this device is intended to be a Parent or Child.
+echo Now you should have a $model set up as Child for an ODM360 rig.
 echo ************************************
 echo
