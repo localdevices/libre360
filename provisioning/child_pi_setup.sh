@@ -24,7 +24,7 @@ sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 # TODO set up the database specifically for a child
 
-echo ************************************
+echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
-echo ************************************
+echo "************************************"
 echo

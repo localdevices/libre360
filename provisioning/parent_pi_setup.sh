@@ -30,7 +30,7 @@ echo and appending line to .bashrc to always do that
 # TODO check if already done
 echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
 
-echo ************************************
+echo "************************************"
 echo Now you should have a $model set up as a Parent for an ODM360 rig.
-echo ************************************
+echo "************************************"
 echo
