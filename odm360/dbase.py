@@ -90,6 +90,12 @@ def create_table_devices(cur):
 
 
 def create_table_project_active(cur, drop=False):
+    """
+    Create a table for just the project that is currently active, only holding the project_id and a status
+    :param cur: cursor
+    :param drop: bool - default False, if set to True, any existing table will be dropped first, before (re)creation
+    :return:
+    """
     if drop:
         sql_command = """
         -- Lists the current active project ID and that's it... .
@@ -121,6 +127,15 @@ def create_table_project_active(cur, drop=False):
     create_table(cur, sql_command)
 
 def delete_project(cur, project_name=None, project_id=None):
+    """
+    Deletes a indicated project and all relations from database (inc. photos, so be careful with this one!)
+    Either a project name, or id has to be provided, both default to None.
+
+    :param cur: cursor
+    :param project_name: str - default None - if set then project_name is used to find project to delete
+    :param project_id: int - default None - if set, then project_id is used to find project to delete
+    :return:
+    """
     if (project_name is None) and (project_id is None):
         raise ValueError('provide either a project_name or project_id')
     if not (project_name is None):
@@ -134,7 +149,7 @@ def delete_project(cur, project_name=None, project_id=None):
 
 def drop_table(cur, table_name, cascade=False):
     """
-    Drop a table from the database
+    Drop a table from the database, if cascade is set to True, then all tables dependent also remove.
     :param cur: cursor
     :param table_name: string - name of table (e.g. projects)
     :param cascade: bool (default False) - cascades to all other tables (yay! tidy databases)
@@ -186,7 +201,7 @@ def insert_project_active(cur, project_id):
 
 def insert_project(cur, project_name, n_cams, dt):
     """
-
+    Insert a new project and associated settings into the database
     :param cur: cursor
     :param project_name: str - (user defined) name of project (note: id is provided automatically)
     :param n_cams: int - nr of cameras in project
@@ -211,12 +226,11 @@ def insert_project(cur, project_name, n_cams, dt):
 
 def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb):
     """
-
+    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
     :param cur: cursor
     :param project_id: int - project id
     :param survey_run: string - id of survey within project
     :param device_name: string - id of device
-    :param folder: string - folder containing photos on child
     :param fn: string - filename
     :param photo: numpy-array with photo TODO: check how photos are returned and revise if needed
     :param thumb: numpy-array with thumbnail TODO: check how thumbnails are returned and revise if needed
@@ -318,13 +332,18 @@ def query_projects(cur, project_id=None, project_name=None):
 
 
 def query_project_active(cur):
+    """
+    list the currently active project and its status flag. This should always only contain one project!
+    :param cur: cursor
+    :return: list of one project
+    """
     cur.execute("SELECT * FROM project_active")
     return cur.fetchall()
 
 
 def update_device(cur, device_name, status, last_photo=""):
     """
-
+    Update the status of a given (existing) device in devices table
     :param cur: cursor
     :param device_name: str - id of device
     :param status: int - status indicator
@@ -339,9 +358,9 @@ def update_device(cur, device_name, status, last_photo=""):
 
 def update_project_active(cur, status):
     """
-
+    Update status of the currently running project. 0/1: service (not) running
     :param cur: cursor
-    :param status: int - update the status of the rig to given state
+    :param status: int - update the status of the rig to given state (0: not running, 1: running)
     :return:
     """
     sql_command = f"UPDATE project_active SET status={status}"
