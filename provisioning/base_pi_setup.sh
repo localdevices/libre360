@@ -20,18 +20,6 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-echo updating
-sudo apt update && sudo apt upgrade -y
-
-echo Installing ODM infrastructure
-sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
-
-echo Installing emacs because it is the best editor and IDE. You are welcome.
-sudo apt install -y emacs-nox
-
-echo Installing requirements from setup.py using pip
-pip3 install -e .
-
 # Check if on RPi before doing stuff specific to Pi
 if [[ onpi == "yes" ]]; then
     # TODO check if already done before sedding in the disable flag
@@ -53,6 +41,18 @@ if [[ onpi == "yes" ]]; then
     sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
     sudo locale-gen
 fi
+
+echo updating
+sudo apt update && sudo apt upgrade -y
+
+echo Installing ODM infrastructure
+sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
+
+echo Installing emacs because it is the best editor and IDE. You are welcome.
+sudo apt install -y emacs-nox
+
+echo Installing requirements from setup.py using pip
+pip3 install -e .
 
 echo ************************************
 echo Now you should have a $model set up with the basic infrastructure common to all devices in the ODM360 rig. The next steps depend whether this device is intended to be a Parent or Child.
