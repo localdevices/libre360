@@ -19,7 +19,7 @@ echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 echo Running database setup script
-./database_setup.sh
+provisioning/database_setup.sh
 
 echo Installing requirements from setup.py using pip
 pip3 install -e .
