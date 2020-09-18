@@ -35,10 +35,10 @@ if [[ onpi == "yes" ]]; then
 
     echo Making perl shut up about locales
     echo by setting to en_US.UTF-8
+    sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
     export LANGUAGE=en_US.UTF-8
     export LANG=en_US.UTF-8
     export LC_ALL=en_US.UTF-8
-    sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
     sudo locale-gen
 fi
 
