@@ -1,5 +1,5 @@
 import psycopg2
-
+import logging
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 
@@ -89,6 +89,37 @@ def create_table_devices(cur):
     create_table(cur, sql_command)
 
 
+def create_table_project_active(cur, drop=False):
+    if drop:
+        sql_command = """
+        -- Lists the current active project ID and that's it... .
+        DROP TABLE IF EXISTS project_active CASCADE;
+        CREATE TABLE IF NOT EXISTS project_active
+        (
+            project_id BIGINT
+            ,status integer  -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
+            ,CONSTRAINT fk_projects
+                FOREIGN KEY(project_id) 
+                  REFERENCES projects(project_id)
+              ON DELETE CASCADE	
+        );
+        """
+    else:
+        sql_command = """
+        -- Lists the current active project ID and that's it... .
+        CREATE TABLE IF NOT EXISTS project_active
+        (
+            project_id BIGINT
+            ,status integer  -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
+            ,CONSTRAINT fk_projects
+                FOREIGN KEY(project_id) 
+                  REFERENCES projects(project_id)
+              ON DELETE CASCADE	
+        );
+        """
+
+    create_table(cur, sql_command)
+
 def delete_project(cur, project_name=None, project_id=None):
     if (project_name is None) and (project_id is None):
         raise ValueError('provide either a project_name or project_id')
@@ -149,6 +180,9 @@ def insert_device(cur, device_name, status):
     sql_command = f"INSERT INTO devices(device_name, status) VALUES ('{device_name}', {status});"
     insert(cur, sql_command)
 
+def insert_project_active(cur, project_id):
+    sql_command = f"INSERT INTO project_active(project_id, status) VALUES ({project_id}, 0);"
+    insert(cur, sql_command)
 
 def insert_project(cur, project_name, n_cams, dt):
     """
@@ -237,6 +271,17 @@ def is_device(cur, device_name):
     return cur.fetchall()[0][0]
 
 
+def query_devices(cur, status=None):
+    if status is None:
+        # count
+        sql_command = """SELECT * FROM devices"""
+    else:
+        sql_command = f"""SELECT * FROM devices WHERE status={status}"""
+
+    cur.execute(sql_command)
+    return cur.fetchall()
+
+
 def query_photos(cur, project_id=None):
     """
     queries all photos for a given project name
@@ -257,14 +302,24 @@ def query_photos_survey(cur, project_id, survey_run):
     raise NotImplemented("Function needs to be prepared")
 
 
-def query_projects(cur):
+def query_projects(cur, project_id=None, project_name=None):
     """
     returns all project names available in table "photos" as flattened list
     :param cur: cursor
     :return: list of strings
     """
-    cur.execute("SELECT DISTINCT(project_name) FROM projects")
-    return [x[0] for x in cur.fetchall()]
+    if project_id is not None:
+        cur.execute(f"SELECT * FROM projects WHERE project_id={project_id}")
+    elif project_name is not None:
+        cur.execute(f"SELECT * FROM projects WHERE project_name='{project_name}'")
+    else:
+        cur.execute("SELECT * FROM projects")
+    return cur.fetchall()
+
+
+def query_project_active(cur):
+    cur.execute("SELECT * FROM project_active")
+    return cur.fetchall()
 
 
 def update_device(cur, device_name, status, last_photo=""):
@@ -281,3 +336,14 @@ def update_device(cur, device_name, status, last_photo=""):
     sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_name='{device_name}'"
     cur.execute(sql_command)
 
+
+def update_project_active(cur, status):
+    """
+
+    :param cur: cursor
+    :param status: int - update the status of the rig to given state
+    :return:
+    """
+    sql_command = f"UPDATE project_active SET status={status}"
+    cur.execute(sql_command)
+    cur.connection.commit()
