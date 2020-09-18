@@ -7,6 +7,8 @@ cur = con.cursor()
 
 # DO SOMETHING
 # We'll start with a clean slate
+if dbase.is_table(cur, 'project_active'):
+    dbase.drop_table(cur, 'project_active')
 if dbase.is_table(cur, 'devices'):
     dbase.drop_table(cur, 'devices')
 if dbase.is_table(cur, 'photos'):
