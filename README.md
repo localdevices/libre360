@@ -28,7 +28,7 @@ This is a quick listing of install steps, intended for someone who already knows
 - Buy Pis, SD cards, cameras, wires, GNSS receivers, etc. [Parts list here](provisioning/setup_pi.md).
 - Solder, jumper, assemble, etc. [Instructions here](provisioning/setup_pi.md).
 - Flash parent SD card with [Raspberry Pi OS](https://www.raspberrypi.org/downloads/raspberry-pi-os/)
-- Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` [like this]((https://www.raspberrypi.org/documentation/configuration/wireless/headless.md) with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
+- Add empty ```ssh``` file and appropriate ```wpa_supplicant.conf``` [like this](https://www.raspberrypi.org/documentation/configuration/wireless/headless.md) with wifi info to boot partition on that SD card. Put it in the parent Pi and start it up.
 - SSH into the pi ```ssh pi@raspberrypi.local``` with password ```raspberry```.
 - Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git -y```.
 - Clone odm360 repo ```git clone https://github.com/OpenDroneMap/odm360.git```, cd into the folder ```cd odm360```

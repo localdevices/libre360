@@ -13,7 +13,13 @@ if [[ "$model" == *"Raspberry Pi"* ]]; then
     echo "This is actually a Raspberry Pi!"
     onpi="yes"
 fi
-   
+
+# If nothing in /proc/device-tree/model:
+if [[ "$model" == "" ]]; then
+    echo "I have no idea what this machine is!"
+    model="computer of some sort"
+fi
+
 
 echo updating
 sudo apt update && sudo apt upgrade -y
@@ -30,6 +36,12 @@ sudo apt install -y postgresql postgresql-contrib libpq-dev
 echo Installing requirements from setup.py using pip
 pip3 install -e .
 
+echo putting ~/.local/bin on PATH for flask
+export PATH="$HOME/.local/bin:$PATH"
+echo and appending line to .bashrc to always do that
+# TODO check if already done
+echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
+
 # Check if on RPi before doing stuff specific to Pi
 if [[ onpi == "yes" ]]; then
     # TODO check if already done before sedding in the disable flag
@@ -42,6 +54,14 @@ if [[ onpi == "yes" ]]; then
     # TODO check if already done before pushing this line into the file
     echo enabling UART
     echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
+
+    echo Making perl shut up about locales
+    echo by setting to en_US.UTF-8
+    export LANGUAGE=en_US.UTF-8
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+    sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
+    sudo locale-gen
 fi
 
 echo ************************************
