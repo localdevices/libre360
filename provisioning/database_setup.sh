@@ -21,10 +21,7 @@ sudo -u postgres psql -c "ALTER ROLE odm360 WITH CREATEDB"
 echo Creating database odm360
 sudo -u postgres psql -c "CREATE DATABASE odm360 WITH OWNER odm360;"
 
-
-
-
-echo ##########################################################
+echo ************************************
 echo Now you should have a Postgresql database with a user and password properly configured to connect to using psycopg2 from Python.
-echo ##########################################################
+echo ************************************
 echo

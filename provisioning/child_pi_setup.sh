@@ -20,6 +20,7 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
+
 echo updating
 sudo apt update && sudo apt upgrade -y
 
@@ -29,8 +30,17 @@ sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
 echo Installing emacs because it is the best editor and IDE. You are welcome.
 sudo apt install -y emacs-nox
 
+echo Installing postgresql
+sudo apt install -y postgresql postgresql-contrib libpq-dev
+
 echo Installing requirements from setup.py using pip
 pip3 install -e .
+
+echo putting ~/.local/bin on PATH for flask
+export PATH="$HOME/.local/bin:$PATH"
+echo and appending line to .bashrc to always do that
+# TODO check if already done
+echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
 
 # Check if on RPi before doing stuff specific to Pi
 if [[ onpi == "yes" ]]; then
