@@ -1,5 +1,5 @@
 # Server is setup here
-from flask import Flask, session, render_template, request, jsonify, current_app
+from flask import Flask, session, render_template, redirect, request, jsonify, current_app
 from flask_bootstrap import Bootstrap
 import time, os
 import psycopg2
@@ -8,7 +8,7 @@ from odm360.utils import parse_config, make_config
 from odm360.log import start_logger
 import odm360.camera360rig as camrig
 from odm360.utils import get_lan_ip
-
+from odm360 import dbase
 # API for picam is defined below
 def do_GET():
     """
@@ -109,31 +109,68 @@ db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
-app = Flask(__name__)
-bootstrap = Bootstrap(app)
+# initialize project and photos table if they don't already exist
+dbase.create_table_projects(cur)
+dbase.create_table_photos(cur)
+dbase.create_table_project_active(cur)
+dbase.create_table_devices(cur)
+
+#make sure devices is empty
+dbase.truncate_table(cur, 'devices')
 
 logger = start_logger("True", "False")
 
-@app.route("/")
-def gps_page():
-    # TODO: only do this if there is no rig initialized yet.
-    # FIXME: replace by checking for projects in database
-    if not('config' in current_app.config):
-        if os.path.isfile('current_config'):
-            with open('current_config', 'r') as f:
-                config_fn = os.path.join('config', f.read())
-        else:
-            config_fn = 'config/settings.conf.default'
-        logger.info(f'Parsing project config from {os.path.abspath(config_fn)}')
-        initialize_config(config_fn)
-    if current_app.config['start_parent']:
-        logger.info('Starting parent server')
-        camrig.start_rig()
+# if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
+cur_project = dbase.query_project_active(cur)
+if len(cur_project) == 1:
+    dbase.update_project_active(cur, 0)
 
-    """
-        The status web page with the gnss satellites levels and a map
-    """
-    return render_template("status.html")
+app = Flask(__name__)
+bootstrap = Bootstrap(app)
+
+
+@app.route("/", methods=['GET', 'POST'])
+def gps_page():
+    if request.method == "POST":
+        form = cleanopts(request.form)
+        if 'project' in form:
+            logger.info(f"Changing to project {form['project']}")
+            # first drop the current active project table and create a new one
+            dbase.truncate_table(cur, 'project_active')
+            # insert new active project
+            dbase.insert_project_active(cur, int(form['project']))
+        elif 'service' in form:
+            if form["service"] == "on":
+                logger.info("Starting service")
+                dbase.update_project_active(cur, 1)  # status 1 means auto_start cameras once they are all online
+        else:
+            # TODO: bug in code. EWhen switch is turned off, the form returns empty dictionary.
+            logger.info("Stopping service")
+            dbase.update_project_active(cur, 0)  # status 1 means auto_start cameras once they are all online
+
+    # FIXME: replace by checking for projects in database
+    # first check what projects already exist and list those in the status page as selectors
+    projects = dbase.query_projects(cur)
+    project_ids = [p[0] for p in projects]
+    project_names = [p[1] for p in projects]
+    projects = zip(project_ids, project_names)
+    cur_project = dbase.query_project_active(cur)
+    devices_ready = dbase.query_devices(cur, status=1)
+    devices_total = dbase.query_devices(cur)
+
+    if len(cur_project) == 0:
+        cur_project_id = None
+        service_active = 0
+    else:
+        cur_project_id = cur_project[0][0]
+        service_active = cur_project[0][1]
+    return render_template("status.html",
+                           projects=projects,
+                           cur_project_id=cur_project_id,
+                           service_active=service_active,
+                           devices_total=len(devices_total),
+                           devices_ready=len(devices_ready)
+                           )  #
 
 @app.route('/project', methods=['GET', 'POST'])
 def project_page():
@@ -146,33 +183,18 @@ def project_page():
         form = cleanopts(request.form)
         config = {}
         # set the config options as provided
-        config['project'] = form['project']
-        config['n_cams'] = form['n_cams']
-        config['dt'] = form['dt']
-        config['root'] = os.path.join('photos', form['project'])
-        config['verbose'] = "True" if form['loglevel']=='debug' else "False"
-        config['quiet'] = "False"
-        config_fn = f'{form["project"]}.ini'
-        conf_obj = make_config(config)
-        with open(os.path.abspath(os.path.join('config', config_fn)), 'w') as f:
-            conf_obj.write(f)
-        with open('current_config', 'w') as f:      
-            f.write(config_fn)
-        initialize_config(os.path.join('config', config_fn))
-        # start the rig, after this, the rig is in current_app.config['rig'], if start_parent is true
-        if current_app.config['start_parent']:
-            camrig.start_rig()
 
-        return render_template("status.html")   #, main_settings = main_settings,
-                                                # ntrip_settings = ntrip_settings,
-                                                # file_settings = file_settings,
-                                                # rtcm_svr_settings = rtcm_svr_settings)
+        dbase.insert_project(cur, form['project_name'], n_cams=int(form['n_cams']), dt=int(form['dt']))
+        # remove the current project selection and make a fresh table
+        dbase.create_table_project_active(cur, drop=True)
+        # set project to current by retrieving its id and inserting that in current project table
+        project_id = dbase.query_projects(cur, project_name=form['project_name'])[0][0]
+        dbase.insert_project_active(cur, project_id=project_id)
+
+        return redirect("/")
 
     else:
-        return render_template("project.html") #, main_settings = main_settings,
-                                                # ntrip_settings = ntrip_settings,
-                                                # file_settings = file_settings,
-                                                # rtcm_svr_settings = rtcm_svr_settings)
+        return render_template("project.html")
 
 @app.route('/logs')
 def logs_page():
