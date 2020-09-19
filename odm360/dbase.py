@@ -68,8 +68,6 @@ def create_table_devices(cur):
     :param cur: cursor
     :return:
     """
-    # first drop the existing status table
-    drop_table(cur, 'devices')
     # then create a new one
     sql_command = """
     CREATE TABLE IF NOT EXISTS devices
@@ -339,6 +337,12 @@ def query_project_active(cur):
     """
     cur.execute("SELECT * FROM project_active")
     return cur.fetchall()
+
+
+def truncate_table(cur, table):
+    sql_command = f"""TRUNCATE {table}"""
+    cur.execute(sql_command)
+    cur.connection.commit()
 
 
 def update_device(cur, device_name, status, last_photo=""):

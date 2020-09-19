@@ -115,6 +115,9 @@ dbase.create_table_photos(cur)
 dbase.create_table_project_active(cur)
 dbase.create_table_devices(cur)
 
+#make sure devices is empty
+dbase.truncate_table(cur, 'devices')
+
 logger = start_logger("True", "False")
 
 # if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
@@ -133,7 +136,7 @@ def gps_page():
         if 'project' in form:
             logger.info(f"Changing to project {form['project']}")
             # first drop the current active project table and create a new one
-            dbase.create_table_project_active(cur, drop=True)
+            dbase.truncate_table(cur, 'project_active')
             # insert new active project
             dbase.insert_project_active(cur, int(form['project']))
         elif 'service' in form:
