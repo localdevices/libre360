@@ -283,30 +283,29 @@ def is_device(cur, device_name):
     return cur.fetchall()[0][0]
 
 
-def query_devices(cur, status=None):
+def query_devices(cur, status=None, as_dict=False):
+    table_name = 'devices'
     if status is None:
         # count
-        sql_command = """SELECT * FROM devices"""
+        sql_command = f"""SELECT * FROM {table_name}"""
     else:
-        sql_command = f"""SELECT * FROM devices WHERE status={status}"""
-
-    cur.execute(sql_command)
-    return cur.fetchall()
+        sql_command = f"""SELECT * FROM {table_name} WHERE status={status}"""
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
 
 
-def query_photos(cur, project_id=None):
+def query_photos(cur, project_id=None, as_dict=False):
     """
     queries all photos for a given project name
     :param cur: cursor
     :param project_id: int - project id
     :return: list of results
     """
+    table_name = 'photos'
     if project_id is None:
         raise ValueError('provide a project_id')
-    sql_command = f"SELECT * FROM photos WHERE project_id={project_id}"
+    sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
 
-    cur.execute(sql_command)
-    return cur.fetchall()
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -314,29 +313,45 @@ def query_photos_survey(cur, project_id, survey_run):
     raise NotImplemented("Function needs to be prepared")
 
 
-def query_projects(cur, project_id=None, project_name=None):
+def query_projects(cur, project_id=None, project_name=None, as_dict=False):
     """
     returns all project names available in table "photos" as flattened list
     :param cur: cursor
     :return: list of strings
     """
+    table_name = 'projects'
     if project_id is not None:
-        cur.execute(f"SELECT * FROM projects WHERE project_id={project_id}")
+        sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
     elif project_name is not None:
-        cur.execute(f"SELECT * FROM projects WHERE project_name='{project_name}'")
+        sql_command = f"SELECT * FROM {table_name} WHERE project_name='{project_name}'"
     else:
-        cur.execute("SELECT * FROM projects")
-    return cur.fetchall()
+        sql_command = f"SELECT * FROM {table_name}"
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
 
 
-def query_project_active(cur):
+def query_project_active(cur, as_dict=False):
     """
     list the currently active project and its status flag. This should always only contain one project!
     :param cur: cursor
     :return: list of one project
     """
-    cur.execute("SELECT * FROM project_active")
-    return cur.fetchall()
+    table_name = 'project_active'
+    sql_command = f"SELECT * FROM {table_name}"
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
+
+def query_table(cur, sql_command, table_name=None, as_dict=False):
+    cur.execute(sql_command)
+    data = cur.fetchall()
+    if as_dict:
+        if table_name is None:
+            raise ValueError('table_name is of type None, has to be type str to use as_dict=True')
+        # add the column labels and make a dict out of the data
+        sql_command = f"""SELECT * FROM information_schema.columns WHERE table_name='{table_name}'"""
+        cur.execute(sql_command)
+        cols = cur.fetchall()
+        return {k: list(v) if len(v) > 1 else v[0] for k, v in zip(cols, zip(*data))}
+    else:
+        return data
 
 
 def truncate_table(cur, table):
