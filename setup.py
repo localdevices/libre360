@@ -25,6 +25,7 @@ setup(
     install_requires=[
         "pySerial",
         "numpy",
+        "pytz",
         "gphoto2",
         "schedule",
         "picamera",
