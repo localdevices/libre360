@@ -1,10 +1,9 @@
 # Server is setup here
-from flask import Flask, session, render_template, redirect, request, jsonify, current_app
+from flask import Flask, render_template, redirect, request, jsonify, current_app, make_response
 from flask_bootstrap import Bootstrap
-import time, os
 import psycopg2
 
-from odm360.utils import parse_config, make_config
+from odm360.utils import parse_config
 from odm360.log import start_logger
 import odm360.camera360rig as camrig
 from odm360.utils import get_lan_ip
@@ -24,29 +23,34 @@ def do_GET():
     the GET API then decides what action should be taken given the state.
     Client is responsible for updating its status to the current
     """
-    try:
-        # TODO: pass full project details from dbase to child
-        msg = request.get_json()
-        print(msg)
-        # Create or update state of current camera
-        current_app.config['rig'].cam_state[request.remote_addr] = msg['state']
-        log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
-        logger.debug(log_msg)
-        # check if task exists and sent instructions back
-        method = f'get_{msg["req"].lower()}'
-        # if hasattr(self, method):
-        if 'kwargs' in msg:
-            kwargs = msg['kwargs']
-        else:
-            kwargs = {}
-        task = getattr(current_app.config['rig'], method)
-        # execute with key-word arguments provided
-        r = task(**kwargs)
-        return r
-    except:
-        return {'task': 'wait',
-                'kwargs': {}
-                }
+    # try:
+    # TODO: pass full project details from dbase to child
+    msg = request.get_json()
+    print(msg)
+    # Create or update state of current camera
+    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
+    # check if the device exists.
+    if dbase.is_device(cur, device_name):
+        dbase.update_device(cur, device_name, rig_states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
+    else:
+        dbase.insert_device(cur, device_name, rig_states[msg['state']])
+    # current_app.config['rig'].cam_state[request.remote_addr] = msg['state']  # TODO: remove this old code, once works, also remove config['rig'] objects from code
+    log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
+    logger.debug(log_msg)
+    # check if task exists and sent instructions back
+    method = f'get_{msg["req"].lower()}'
+    if not(hasattr(camrig, method)):
+        return 'method not available', 404
+    if 'kwargs' in msg:
+        kwargs = msg['kwargs']
+    else:
+        kwargs = {}
+    task = getattr(camrig, method)
+    # execute with key-word arguments provided
+    r = task(cur, **kwargs)
+    return r, 200
+    # except:
+    #     return 'method failed', 500
 
 # POST echoes the message adding a JSON field
 def do_POST():
@@ -57,24 +61,36 @@ def do_POST():
     the POST API then decides what action should be taken based on the POST request.
     POST API will also return a result back
     """
-    msg = request.get_json()
-    print(msg)
-    # show request in log
-    log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
+    try:
+        msg = request.get_json()
+        print(msg)
+        # Create or update state of current camera
+        device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
+        # check if the device exists.
+        if dbase.is_device(cur, device_name):
+            dbase.update_device(cur, device_name, rig_states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
+        else:
+            dbase.insert_device(cur, device_name, rig_states[msg['state']])
+        # show request in log
+        log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
 
-    logger.debug(log_msg)
+        logger.debug(log_msg)
 
-    # check if task exists and sent instructions back
-    method = f'post_{msg["req"].lower()}'
-    if hasattr(current_app.config['rig'], method):
+        # check if task exists and sent instructions back
+        method = f'post_{msg["req"].lower()}'
+        if not(hasattr(camrig, method)):
+            return 'method not available', 404
+
         if 'kwargs' in msg:
             kwargs = msg['kwargs']
         else:
             kwargs = {}
-        task = getattr(current_app.config['rig'], method)
+        task = getattr(camrig, method)
         # execute with key-word arguments provided
         r = task(**kwargs)
-        return r
+        return r, 200
+    except:
+        return 'method failed', 500
 
 def cleanopts(optsin):
     """Takes a multidict from a flask form, returns cleaned dict of options"""
@@ -83,27 +99,36 @@ def cleanopts(optsin):
     for key in d:
         opts[key] = optsin[key].lower().replace(' ', '_')
     return opts
+#
+# # TODO: remove when database connection is function
+# def initialize_config(config_fn):
+#     config = parse_config(config_fn)
+#     # test if we are ready to start devices or not
+#     start_parent = True
+#     if config.get('main', 'n_cams') == '':
+#         start_parent = False
+#         logger.info('n_cams is missing in config, starting without a running parent server')
+#     if config.get('main', 'dt') == '':
+#         start_parent = False
+#         logger.info('dt is missing in config, starting without a running parent server')
+#     if config.get('main', 'project') == '':
+#         start_parent = False
+#         logger.info('project is missing in config, starting without a running parent server')
+#     if config.get('main', 'root') == '':
+#         start_parent = False
+#         logger.info('root is missing in config, starting without a running parent server')
+#     current_app.config['config'] = dict(config.items('main'))
+#     current_app.config['ip'] = get_lan_ip()
+#     current_app.config['start_parent'] = start_parent
 
-# TODO: remove when database connection is function
-def initialize_config(config_fn):
-    config = parse_config(config_fn)
-    # test if we are ready to start devices or not
-    start_parent = True
-    if config.get('main', 'n_cams') == '':
-        start_parent = False
-        logger.info('n_cams is missing in config, starting without a running parent server')
-    if config.get('main', 'dt') == '':
-        start_parent = False
-        logger.info('dt is missing in config, starting without a running parent server')
-    if config.get('main', 'project') == '':
-        start_parent = False
-        logger.info('project is missing in config, starting without a running parent server')
-    if config.get('main', 'root') == '':
-        start_parent = False
-        logger.info('root is missing in config, starting without a running parent server')
-    current_app.config['config'] = dict(config.items('main'))
-    current_app.config['ip'] = get_lan_ip()
-    current_app.config['start_parent'] = start_parent
+# define state translation
+rig_states = {
+    'offline': 0,
+    'idle': 1,
+    'ready': 2,
+    'capturing': 3,
+    'broken': 9,
+}
 
 db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
@@ -127,6 +152,7 @@ if len(cur_project) == 1:
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
+
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -225,11 +251,11 @@ def file_page():
 def picam():
     if request.method == 'POST':
 
-        r = do_POST()
+        r, status_code = do_POST()
     else:
         # print(request.get_json())
-        r = do_GET()  # response is passed back to client
-    return jsonify(r)
+        r, status_code = do_GET()  # response is passed back to client
+    return make_response(jsonify(r), status_code)
 
 def run(app):
     app.run(debug=False, port=5000, host="0.0.0.0")

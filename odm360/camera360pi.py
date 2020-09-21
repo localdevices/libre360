@@ -22,11 +22,14 @@ class Camera360Pi(PiCamera):
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, root=None, logger=logger, debug=False, host=None, port=None):
+    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
-        self._root = root  # root folder where to store photos from this specific camera instance
+        self._project_id = project_id  # project_id for the entire project from parent
+        self._project_name = project_name  # human-readable name
+        self._n_cams = n_cams  # total amount of cameras related to this project
+        self._dt = dt  # time intervals requested by parent
         self.src_fn = None  # path to currently made photo (source) inside the camera
         self.dst_fn = ''  # path to photo (destination) on drive
         self.logger = logger
@@ -34,8 +37,6 @@ class Camera360Pi(PiCamera):
         self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
         self.host = host
         self.port = port
-        if not(os.path.isdir(self._root)):
-            os.makedirs(self._root)
         if not(self.debug):
             super().__init__()
         # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken

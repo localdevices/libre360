@@ -101,7 +101,8 @@ def create_table_project_active(cur, drop=False):
         CREATE TABLE IF NOT EXISTS project_active
         (
             project_id BIGINT
-            ,status integer  -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
+            ,status integer -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
+            ,start_time timestamp -- 
             ,CONSTRAINT fk_projects
                 FOREIGN KEY(project_id) 
                   REFERENCES projects(project_id)
@@ -346,9 +347,9 @@ def query_table(cur, sql_command, table_name=None, as_dict=False):
         if table_name is None:
             raise ValueError('table_name is of type None, has to be type str to use as_dict=True')
         # add the column labels and make a dict out of the data
-        sql_command = f"""SELECT * FROM information_schema.columns WHERE table_name='{table_name}'"""
+        sql_command = f"""SELECT column_name FROM information_schema.columns WHERE table_name='{table_name}'"""
         cur.execute(sql_command)
-        cols = cur.fetchall()
+        cols = [c[0] for c in cur.fetchall()]
         return {k: list(v) if len(v) > 1 else v[0] for k, v in zip(cols, zip(*data))}
     else:
         return data
@@ -360,7 +361,7 @@ def truncate_table(cur, table):
     cur.connection.commit()
 
 
-def update_device(cur, device_name, status, last_photo=""):
+def update_device(cur, device_name, status, last_photo=None):
     """
     Update the status of a given (existing) device in devices table
     :param cur: cursor
@@ -371,7 +372,10 @@ def update_device(cur, device_name, status, last_photo=""):
     """
     if not (is_device(cur, device_name)):
         raise KeyError(f'device "{device_name}" does not exist in table "device_status"')
-    sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_name='{device_name}'"
+    if last_photo is not None:
+        sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_name='{device_name}'"
+    else:
+        sql_command = f"UPDATE devices SET status={status} WHERE device_name='{device_name}'"
     cur.execute(sql_command)
 
 
