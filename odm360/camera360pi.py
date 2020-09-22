@@ -13,10 +13,6 @@ except:
     class PiCamera:
         pass
 
-
-
-
-
 class Camera360Pi(PiCamera):
     """
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
@@ -26,6 +22,7 @@ class Camera360Pi(PiCamera):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
+        self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
         self._n_cams = n_cams  # total amount of cameras related to this project
@@ -37,6 +34,8 @@ class Camera360Pi(PiCamera):
         self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
         self.host = host
         self.port = port
+        if not(os.path.isdir(self._root)):
+            os.makedirs(self._root)
         if not(self.debug):
             super().__init__()
         # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken
@@ -113,7 +112,8 @@ class Camera360Pi(PiCamera):
         Tries to capture an image until successful
         :param timeout: float - amount of time capturing is tried
         """
-
+        # update project status
+        # TODO: make sure the parent required project is stored
         camera = PiCamera()
 
         _take = True
@@ -123,7 +123,7 @@ class Camera360Pi(PiCamera):
             try:
                 self.logger.debug(f'Trial {n}')
                 # Temporary image location until set_dst_fn is defined
-                self.src_photo_fn = camera.capture('/home/pi/Desktop/image.jpg')
+                self.src_photo_fn = self.capture()  # '/home/pi/Desktop/image.jpg'
                 dt = time.time()-start_time
                 _take = False
                 self.logger.info(f'Picture taken in {str(self.src_photo_fn)} within {dt*1000} ms')
@@ -154,7 +154,7 @@ class Camera360Pi(PiCamera):
         :return:
         """
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f'http://{self.host}:{self.port}', data=json.dumps(msg), headers=headers)
+        r = requests.post(f'http://{self.host}:{self.port}/picam', data=json.dumps(msg), headers=headers)
 
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
