@@ -4,8 +4,9 @@ import logging
 logger = logging.getLogger(__name__)
 import socket
 import nmap
+import pytz, tzlocal
 from configparser import ConfigParser
-
+from odm360.states import states
 
 def find_serial(wildcard='', logger=logger):
     """
@@ -71,11 +72,40 @@ def make_config(settings):
         config.set('main', setting, settings[setting])
     return config
 
+
 def to_utc(dt):
+    """
+    convert timezone to utc timezone, assuming it is in local time.
+    :param dt: datetime obj
+    :return: datetime obj
+    """
+
     dt_local = dt.astimezone()
     return dt_local.astimezone(pytz.utc)
-import pytz, datetime
-local = pytz.timezone ("America/Los_Angeles")
-naive = datetime.datetime.strptime ("2001-2-3 10:11:12", "%Y-%m-%d %H:%M:%S")
-local_dt = local.localize(naive, is_dst=None)
-utc_dt = local_dt.astimezone(pytz.utc)
+
+
+def to_local_tz(dt):
+    """
+    convert timezone aware datetime object to local timezone. If no timezone is provided it will return the same
+    dt, assuming it is local timezone
+    :param dt: datetime obj
+    :return: datetime obj
+    """
+    local_tz = tzlocal.get_localzone()
+    return dt.astimezone(local_tz)
+
+
+def get_key_state(value):
+    """
+    Returns the key in dict "states" belonging to provided value. If the key is ambiguous, a list of keys is provided.
+    If value is not found in dict, None is returnewd
+    :param value: int - state value to look for key
+    :return: str - name of key
+    """
+    keys = [k for k, v in states.items() if v==value]
+    if len(keys) == 0:
+        return None
+    elif len(keys) == 1:
+        return keys[0]
+    else:
+        return keys

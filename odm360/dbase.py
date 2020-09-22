@@ -1,7 +1,10 @@
 import psycopg2
 import logging
+import datetime as dt
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
+from odm360 import utils
+from odm360.states import states
 
 def create_table(cur, sql_command):
     """
@@ -284,17 +287,18 @@ def is_device(cur, device_name):
     return cur.fetchall()[0][0]
 
 
-def query_devices(cur, status=None, as_dict=False):
+def query_devices(cur, status=None, device_name=None, as_dict=False, flatten=False):
     table_name = 'devices'
-    if status is None:
-        # count
-        sql_command = f"""SELECT * FROM {table_name}"""
-    else:
-        sql_command = f"""SELECT * FROM {table_name} WHERE status={status}"""
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
+    sql_command = f"""SELECT * FROM {table_name}"""
+    if status is not None:
+        sql_command = sql_command + f""" WHERE status={status}"""
+    if device_name is not None:
+        sql_command = sql_command + f""" WHERE device_name='{device_name}'"""
+
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
 
 
-def query_photos(cur, project_id=None, as_dict=False):
+def query_photos(cur, project_id=None, as_dict=False, flatten=False):
     """
     queries all photos for a given project name
     :param cur: cursor
@@ -306,7 +310,7 @@ def query_photos(cur, project_id=None, as_dict=False):
         raise ValueError('provide a project_id')
     sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
 
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -314,7 +318,7 @@ def query_photos_survey(cur, project_id, survey_run):
     raise NotImplemented("Function needs to be prepared")
 
 
-def query_projects(cur, project_id=None, project_name=None, as_dict=False):
+def query_projects(cur, project_id=None, project_name=None, as_dict=False, flatten=False):
     """
     returns all project names available in table "photos" as flattened list
     :param cur: cursor
@@ -327,7 +331,7 @@ def query_projects(cur, project_id=None, project_name=None, as_dict=False):
         sql_command = f"SELECT * FROM {table_name} WHERE project_name='{project_name}'"
     else:
         sql_command = f"SELECT * FROM {table_name}"
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
 
 
 def query_project_active(cur, as_dict=False):
@@ -338,9 +342,9 @@ def query_project_active(cur, as_dict=False):
     """
     table_name = 'project_active'
     sql_command = f"SELECT * FROM {table_name}"
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict)
+    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=True)
 
-def query_table(cur, sql_command, table_name=None, as_dict=False):
+def query_table(cur, sql_command, table_name=None, as_dict=False, flatten=False):
     cur.execute(sql_command)
     data = cur.fetchall()
     if as_dict:
@@ -350,7 +354,11 @@ def query_table(cur, sql_command, table_name=None, as_dict=False):
         sql_command = f"""SELECT column_name FROM information_schema.columns WHERE table_name='{table_name}'"""
         cur.execute(sql_command)
         cols = [c[0] for c in cur.fetchall()]
-        return {k: list(v) if len(v) > 1 else v[0] for k, v in zip(cols, zip(*data))}
+        if flatten and (len(data) == 1):
+            return {k: v[0] for k, v in zip(cols, zip(*data))}
+        else:
+            return {k: list(v) for k, v in zip(cols, zip(*data))}
+
     else:
         return data
 
@@ -379,13 +387,17 @@ def update_device(cur, device_name, status, last_photo=None):
     cur.execute(sql_command)
 
 
-def update_project_active(cur, status):
+def update_project_active(cur, status, start_time=None):
     """
     Update status of the currently running project. 0/1: service (not) running
     :param cur: cursor
     :param status: int - update the status of the rig to given state (0: not running, 1: running)
     :return:
     """
-    sql_command = f"UPDATE project_active SET status={status}"
+    if start_time is None:
+        sql_command = f"UPDATE project_active SET status={status}"
+    else:
+        start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        sql_command = f"UPDATE project_active SET status={status}, start_time='{start_time_str}'"
     cur.execute(sql_command)
     cur.connection.commit()
