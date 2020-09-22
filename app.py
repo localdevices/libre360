@@ -150,7 +150,8 @@ bootstrap = Bootstrap(app)
 @app.route("/", methods=['GET', 'POST'])
 def gps_page():
     if request.method == "POST":
-        form = cleanopts(request.form)
+        raw_form = request.form
+        form = cleanopts(raw_form)
         if 'project' in form:
             logger.info(f"Changing to project {form['project']}")
             # first drop the current active project table and create a new one
@@ -161,10 +162,12 @@ def gps_page():
             if form["service"] == "on":
                 logger.info("Starting service")
                 dbase.update_project_active(cur, states['capture'])
-        # else:
-        #     # TODO: bug in code. EWhen switch is turned off, the form returns empty dictionary.
-        #     logger.info("Stopping service")
-        #     dbase.update_project_active(cur, states['ready'])  # status 1 means auto_start cameras once they are all online
+        elif len(form) == 0:
+            print(f'RAW FORM: {raw_form}')
+            print(f'FORM: {form}')
+            # TODO: bug in code. When switch is turned off, the form returns empty dictionary.
+            logger.info("Stopping service")
+            dbase.update_project_active(cur, states['ready'])  # status 1 means auto_start cameras once they are all online
 
     # FIXME: replace by checking for projects in database
     # first check what projects already exist and list those in the status page as selectors
