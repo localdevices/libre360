@@ -138,7 +138,6 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
                                  )
                 # logger.debug(f'Received {r.text}')
                 msg = r.json()
-                print(msg)
                 if 'project' in msg:
                     # setup camera object
                     camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port, **msg['project'])
@@ -146,10 +145,8 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
                     break
-                elif 'wait' in msg:
-                    raise Warning(f'Got a "wait" as answer, meaning that there is no suitable project to work on yet')
-                    # msg retrieved does not contain 'root', therefore throw error msg
-                    raise ValueError(f'Expected "root" as answer, but instead got {r.text}')
+                else:
+                    logger.debug(f'No project as answer, meaning that there is no suitable project to work on yet')
             except:
                 # sleep for 2 seconds before trying again
                 time.sleep(2)
@@ -173,7 +170,8 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
             log_msg = f(**kwargs)
             state = camera.state
             post_log_msg = {'kwargs': log_msg,
-                            'req': 'LOG'
+                            'req': 'LOG',
+                            'state': camera.state
                             }
             r = requests.post(f'http://{host}:{port}/picam', data=json.dumps(post_log_msg), headers=headers)
             success = r.json()
