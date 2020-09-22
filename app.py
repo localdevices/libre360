@@ -8,6 +8,7 @@ from odm360.log import start_logger
 import odm360.camera360rig as camrig
 from odm360.utils import get_lan_ip
 from odm360 import dbase
+from odm360.states import states
 # API for picam is defined below
 def do_GET():
     """
@@ -31,9 +32,9 @@ def do_GET():
     device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
     # check if the device exists.
     if dbase.is_device(cur, device_name):
-        dbase.update_device(cur, device_name, rig_states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
+        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
     else:
-        dbase.insert_device(cur, device_name, rig_states[msg['state']])
+        dbase.insert_device(cur, device_name, states[msg['state']])
     # current_app.config['rig'].cam_state[request.remote_addr] = msg['state']  # TODO: remove this old code, once works, also remove config['rig'] objects from code
     log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
     logger.debug(log_msg)
@@ -61,36 +62,36 @@ def do_POST():
     the POST API then decides what action should be taken based on the POST request.
     POST API will also return a result back
     """
-    try:
-        msg = request.get_json()
-        print(msg)
-        # Create or update state of current camera
-        device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
-        # check if the device exists.
-        if dbase.is_device(cur, device_name):
-            dbase.update_device(cur, device_name, rig_states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
-        else:
-            dbase.insert_device(cur, device_name, rig_states[msg['state']])
-        # show request in log
-        log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
+    # try:
+    msg = request.get_json()
+    print(msg)
+    # Create or update state of current camera
+    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
+    # check if the device exists.
+    if dbase.is_device(cur, device_name):
+        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
+    else:
+        dbase.insert_device(cur, device_name, states[msg['state']])
+    # show request in log
+    log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
 
-        logger.debug(log_msg)
+    logger.debug(log_msg)
 
-        # check if task exists and sent instructions back
-        method = f'post_{msg["req"].lower()}'
-        if not(hasattr(camrig, method)):
-            return 'method not available', 404
+    # check if task exists and sent instructions back
+    method = f'post_{msg["req"].lower()}'
+    if not(hasattr(camrig, method)):
+        return 'method not available', 404
 
-        if 'kwargs' in msg:
-            kwargs = msg['kwargs']
-        else:
-            kwargs = {}
-        task = getattr(camrig, method)
-        # execute with key-word arguments provided
-        r = task(**kwargs)
-        return r, 200
-    except:
-        return 'method failed', 500
+    if 'kwargs' in msg:
+        kwargs = msg['kwargs']
+    else:
+        kwargs = {}
+    task = getattr(camrig, method)
+    # execute with key-word arguments provided
+    r = task(**kwargs)
+    return r, 200
+    # except:
+    #     return 'method failed', 500
 
 def cleanopts(optsin):
     """Takes a multidict from a flask form, returns cleaned dict of options"""
@@ -121,15 +122,6 @@ def cleanopts(optsin):
 #     current_app.config['ip'] = get_lan_ip()
 #     current_app.config['start_parent'] = start_parent
 
-# define state translation
-rig_states = {
-    'offline': 0,
-    'idle': 1,
-    'ready': 2,
-    'capturing': 3,
-    'broken': 9,
-}
-
 db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
 cur = conn.cursor()
@@ -148,7 +140,7 @@ logger = start_logger("True", "False")
 # if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
 cur_project = dbase.query_project_active(cur)
 if len(cur_project) == 1:
-    dbase.update_project_active(cur, 0)
+    dbase.update_project_active(cur, states['ready'])
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
@@ -168,11 +160,11 @@ def gps_page():
         elif 'service' in form:
             if form["service"] == "on":
                 logger.info("Starting service")
-                dbase.update_project_active(cur, 1)  # status 1 means auto_start cameras once they are all online
-        else:
-            # TODO: bug in code. EWhen switch is turned off, the form returns empty dictionary.
-            logger.info("Stopping service")
-            dbase.update_project_active(cur, 0)  # status 1 means auto_start cameras once they are all online
+                dbase.update_project_active(cur, states['capture'])
+        # else:
+        #     # TODO: bug in code. EWhen switch is turned off, the form returns empty dictionary.
+        #     logger.info("Stopping service")
+        #     dbase.update_project_active(cur, states['ready'])  # status 1 means auto_start cameras once they are all online
 
     # FIXME: replace by checking for projects in database
     # first check what projects already exist and list those in the status page as selectors
@@ -181,15 +173,19 @@ def gps_page():
     project_names = [p[1] for p in projects]
     projects = zip(project_ids, project_names)
     cur_project = dbase.query_project_active(cur)
-    devices_ready = dbase.query_devices(cur, status=1)
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
     devices_total = dbase.query_devices(cur)
 
     if len(cur_project) == 0:
         cur_project_id = None
         service_active = 0
+        dbase.update_project_active(cur, status=states['idle'])
     else:
         cur_project_id = cur_project[0][0]
         service_active = cur_project[0][1]
+        if service_active != states['capture']:
+            # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
+            dbase.update_project_active(cur, status=states['ready'])
     return render_template("status.html",
                            projects=projects,
                            cur_project_id=cur_project_id,
@@ -207,7 +203,6 @@ def project_page():
         # config = current_app.config['config']
         # FIXME: put inputs into the database and remove config stuff below
         form = cleanopts(request.form)
-        config = {}
         # set the config options as provided
 
         dbase.insert_project(cur, form['project_name'], n_cams=int(form['n_cams']), dt=int(form['dt']))
