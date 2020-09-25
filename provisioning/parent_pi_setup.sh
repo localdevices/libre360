@@ -30,6 +30,47 @@ echo and appending line to .bashrc to always do that
 # TODO check if already done
 echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
 
+echo installing nginx and configuring it to use uwsgi
+sudo apt install -y nginx
+
+sudo rm /etc/nginx/sites-enabled/default
+echo adding the odm360dashboard site to nginx
+cat > odm360dashboard <<EOF
+server {
+    listen 80;
+    server_name localhost;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:/tmp/odm360.sock;
+    }
+}
+EOF
+
+sudo mv odm360dashboard /etc/nginx/sites-available/
+
+sudo ln -s /etc/nginx/sites-available/odm360dashboard /etc/nginx/sites-enabled/
+
+echo adding the odm360dashboard service to Systemd
+cat > odm360dashboard.service <<EOF
+[Unit]
+Description=uWSGI instance to serve odm360dashboard
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/pi/odm360
+ExecStart=/home/pi/odm360/uwsgi --ini /home/pi/uwsgi.ini
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo mv odm360dashboard.service /etc/systemd/system/
+echo starting and enabling the odm360dashboard service with Systemd
+sudo systemctl start odm360dashboard.service
+sudo systemctl enable odm360dashboard.service
+
 echo "************************************"
 echo Now you should have a $model set up as a Parent for an ODM360 rig.
 echo "************************************"
