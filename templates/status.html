@@ -13,11 +13,19 @@
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
-              <select name="project" id="project">
-                <option value="project_1">Project 1</option>
-                <option value="project_2">Project 2</option>
-                <option value="project_3">Project 3</option>
-              </select>
+            <form action="" method="POST">
+                <select name="project" id="project">
+                    {% if projects %}
+                      {% for project_id, project_name in projects %}
+                        {% if project_id == cur_project_id %}
+                          <option selected value="{{ project_id }}">{{ project_name }}</option>
+                        {% else %}
+                          <option value="{{ project_id }}">{{ project_name }}</option>
+                        {% endif %}
+                      {% endfor %}
+                  {% endif %}
+                </select>
+            </form>
         </div>
     </div>
     <div class="row">
@@ -39,17 +47,27 @@
         <div class="col py-3 border bg-light"><b>Satellites: </b><span id="sat_nr"></span></div>
     </div>
     <div class="row">
-        <div class="col py-3 border bg-light"><b>Cameras:</b><span id="cam_summary"></span></div>
+        <div class="col py-3 border bg-light"><b>Total cameras online: {{ devices_total }}</b><span id="cam_summary"></span></div>
+<!--        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>-->
+    </div>
+    <div class="row">
+        <div class="col py-3 border bg-light"><b>Cameras ready: {{ devices_ready }}</b><span id="cam_summary"></span></div>
 <!--        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>-->
     </div>
     <br>
     <div class="row">
         <div class="col"><b>Main service:</b></div>
         <div class="col">
+        <form action="" method="POST">
             <label class="switch">
-              <input type="checkbox">
+                {% if service_active==3 %}
+                  <input name="service" id="service" type="checkbox" checked>
+                {% else %}
+                  <input name="service" id="service" type="checkbox">
+                {% endif %}
               <span class="slider round"></span>
             </label>
+        </form>
         </div>
     </div>
 </div>
@@ -60,6 +78,21 @@
 {{super()}}
 <!-- TODO consider reusing parts of stuff below -->
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
+<script type="text/javascript">
+  jQuery(function() {
+    jQuery('#project').change(function() {
+        this.form.submit();
+    });
+});
+</script>
+<script type="text/javascript">
+  jQuery(function() {
+    jQuery('#service').change(function() {
+        this.form.submit();
+    });
+});
+</script>
+
 <!--<script type="text/javascript" src="{{ url_for('static', filename='graph.js') }}" charset="utf-8"></script>-->
 <!--<script type="text/javascript" src="{{ url_for('static', filename='status.js') }}" charset="utf-8"></script>-->
 {% endblock %}

@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 # odm360 imports
 from odm360.timer import RepeatedTimer
-from odm360.camera360rig import CameraRig
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
@@ -124,8 +123,8 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
     state = 'idle'
-    get_root_msg = {'state': state,
-                    'req': 'ROOT'
+    get_project_msg = {'state': state,
+                    'req': 'PROJECT'
                     }
     # try to get in contact with the right host
     logger.debug('Initializing search for server')
@@ -134,23 +133,23 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
         for host, status in all_ips:
             try:
                 r = requests.get(f'http://{host}:{port}/picam',
-                                 data=json.dumps(get_root_msg),
+                                 data=json.dumps(get_project_msg),
                                  headers=headers
                                  )
                 # logger.debug(f'Received {r.text}')
                 msg = r.json()
-                if 'root' in msg:
+                if 'project' in msg:
                     # setup camera object
-                    camera = Camera360Pi(root=msg['root'], logger=logger, debug=debug, host=host, port=port)
+                    camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port, **msg['project'])
                     state = camera.state
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
                     break
                 else:
-                    # msg retrieved does not contain 'root', therefore throw error msg
-                    raise ValueError(f'Expected "root" as answer, but instead got {r.text}')
+                    logger.debug(f'No project as answer, meaning that there is no suitable project to work on yet')
             except:
-                pass
+                # sleep for 2 seconds before trying again
+                time.sleep(2)
     # we have contact, now continuously ask for information and report back
     try:
         while True:
@@ -171,7 +170,8 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
             log_msg = f(**kwargs)
             state = camera.state
             post_log_msg = {'kwargs': log_msg,
-                            'req': 'LOG'
+                            'req': 'LOG',
+                            'state': camera.state
                             }
             r = requests.post(f'http://{host}:{port}/picam', data=json.dumps(post_log_msg), headers=headers)
             success = r.json()
