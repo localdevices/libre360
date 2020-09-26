@@ -13,20 +13,20 @@ except:
     class PiCamera:
         pass
 
-
-
-
-
 class Camera360Pi(PiCamera):
     """
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, root=None, logger=logger, debug=False, host=None, port=None):
+    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
-        self._root = root  # root folder where to store photos from this specific camera instance
+        self._root = 'photos'
+        self._project_id = project_id  # project_id for the entire project from parent
+        self._project_name = project_name  # human-readable name
+        self._n_cams = n_cams  # total amount of cameras related to this project
+        self._dt = dt  # time intervals requested by parent
         self.src_fn = None  # path to currently made photo (source) inside the camera
         self.dst_fn = ''  # path to photo (destination) on drive
         self.logger = logger
@@ -112,7 +112,8 @@ class Camera360Pi(PiCamera):
         Tries to capture an image until successful
         :param timeout: float - amount of time capturing is tried
         """
-
+        # update project status
+        # TODO: make sure the parent required project is stored
         camera = PiCamera()
 
         _take = True
@@ -122,7 +123,7 @@ class Camera360Pi(PiCamera):
             try:
                 self.logger.debug(f'Trial {n}')
                 # Temporary image location until set_dst_fn is defined
-                self.src_photo_fn = camera.capture('/home/pi/Desktop/image.jpg')
+                self.src_photo_fn = self.capture()  # '/home/pi/Desktop/image.jpg'
                 dt = time.time()-start_time
                 _take = False
                 self.logger.info(f'Picture taken in {str(self.src_photo_fn)} within {dt*1000} ms')
@@ -153,7 +154,7 @@ class Camera360Pi(PiCamera):
         :return:
         """
         headers = {'Content-type': 'application/json'}
-        r = requests.post(f'http://{self.host}:{self.port}', data=json.dumps(msg), headers=headers)
+        r = requests.post(f'http://{self.host}:{self.port}/picam', data=json.dumps(msg), headers=headers)
 
     def set_dst_fn(self):
         raise NotImplementedError('Setting destination path is not implemented yet')
