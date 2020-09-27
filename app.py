@@ -245,13 +245,15 @@ def cam_page():
 def file_page():
     return render_template("file_page.html")
 
-@app.route('/picam', methods=['GET', 'POST'])
+@app.route('/picam', methods = ['GET', 'POST'])
 def picam():
     if request.method == 'POST':
 
         r, status_code = do_POST()
     else:
         # print(request.get_json())
+        r = do_GET()  # response is passed back to client
+    return jsonify(r)    
         r, status_code = do_GET()  # response is passed back to client
     return make_response(jsonify(r), status_code)
 
