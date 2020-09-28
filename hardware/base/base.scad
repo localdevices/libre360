@@ -1,13 +1,13 @@
 //define dimensions. All in mm
 num_cams = 7;
-plate_thickness = 3.25; // thickness of base plate
-mid_thickness = 6; // Thickness of inner raised area (first "step")
-edge_thickness = 10.5; // Thickness of the raised edge where the holes are
+plate_thickness = 3.5; // thickness of base plate
+mid_thickness = 3.5; // Thickness of inner raised area (first "step")
+edge_thickness = 7; // Thickness of the raised edge where the holes are
 edge_width_from_hole = 4; // Width of the edge, material on each side of the hole
-hole_diameter = 8; 
-radius_to_hole = 100; // Distance from center to the center of the mounting holes
-mid_area_width = 10; // Width of the inner raised area
-radius_central_gap = 40; // Radius of the empty central area
+hole_diameter = 4.75; 
+radius_to_hole = 65; // Distance from center to the center of the mounting holes
+mid_area_width = 5; // Width of the inner raised area
+radius_central_gap = 60 ; // Radius of the empty central area
 
 // Don't touch
 rotate_angle = 360/num_cams;
