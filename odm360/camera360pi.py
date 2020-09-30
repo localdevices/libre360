@@ -134,15 +134,20 @@ class Camera360Pi(PiCamera):
             # apparently the picture was not taken
             raise IOError('Timeout reached')
 
-    def capture_continuous(self, start_time=None, interval=5):
-        # FIXME: refactor RepeatedTimer so that a start_time can be passed
+    def capture_continuous(self, start_time=None, project=None):
+        self._project_id = int(project['project_id'])
+        self._project_name = project['project_name']
+        self._dt = int(project['dt'])
+        self._n_cams = int(project['n_cams'])
+        # import pdb;pdb.set_trace()
+        self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs.')
         try:
-            self.timer = RepeatedTimer(interval, self.capture, start_time=start_time)
+            self.timer = RepeatedTimer(int(project['dt']), self.capture, start_time=start_time)
             self.state = 'capture'
         except:
             msg = 'Camera not responding or disconnected'
             logger.error(msg)
-        msg = f'Camera is now capturing avery {interval} seconds'
+        msg = f'Camera is now capturing every {self._dt} seconds'
         logger.info(msg)
         return {'msg': msg,
                 'level': 'info'

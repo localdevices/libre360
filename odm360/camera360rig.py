@@ -125,6 +125,7 @@ def activate_camera(cur):
     # retrieve settings of current project
     cur_project = dbase.query_project_active(cur, as_dict=True)
     project = dbase.query_projects(cur, project_id=cur_project['project_id'], as_dict=True, flatten=True)
+    dt = int(project['dt'])
 
     cur_address = request.remote_addr  # TODO: also add uuid of device
     # check how many cams have the state 'ready', only start when the full rig is ready
@@ -137,7 +138,7 @@ def activate_camera(cur):
         # no start time has been set yet, ready to start the time
         logger.debug('All cameras are ready, setting start time')
 
-        start_time_epoch = time.time() + 10  # this number is send to the child to start capturing
+        start_time_epoch = dt * round((time.time() + 10) / dt)  # this number is send to the child to start capturing
         start_datetime = datetime.datetime.fromtimestamp(start_time_epoch)
         start_datetime_utc = utils.to_utc(start_datetime)
 
@@ -146,7 +147,8 @@ def activate_camera(cur):
         logger.debug(f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}')
         logger.info(f'Sending capture command to {cur_address}')
         return {'task': 'capture_continuous',
-                'kwargs': {'start_time': start_time_epoch}
+                'kwargs': {'start_time': start_time_epoch,
+                           'project': project},
                 }
     else:
         logger.debug(f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, waiting...')

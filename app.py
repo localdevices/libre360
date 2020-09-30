@@ -126,6 +126,8 @@ def gps_page():
             dbase.truncate_table(cur, 'project_active')
             # insert new active project
             dbase.insert_project_active(cur, int(form['project']))
+            cur_project = dbase.query_projects(cur, project_id=int(form['project']), as_dict=True, flatten=True)
+            logger.info(f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'")
         elif 'service' in form:
             if form["service"] == "on":
                 logger.info("Starting service")
