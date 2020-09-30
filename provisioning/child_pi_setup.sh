@@ -24,7 +24,16 @@ sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 # TODO set up the database specifically for a child
 
+# Set up pi camera
+if [[ "$onpi" ]]; then
+    echo "start_x=1             # Enables camera" >> /boot/config.txt
+    echo "gpu_mem=256           # Sets GPU memory" >> /boot/config.txt
+fi
+
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
 echo "************************************"
 echo
+
+# Reboot to enable camera
+sudo reboot
