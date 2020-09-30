@@ -77,7 +77,7 @@
 {% block scripts %}
 {{super()}}
 <!-- TODO consider reusing parts of stuff below -->
-<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
+<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>-->
 <script type="text/javascript">
   jQuery(function() {
     jQuery('#project').change(function() {
@@ -93,6 +93,4 @@
 });
 </script>
 
-<!--<script type="text/javascript" src="{{ url_for('static', filename='graph.js') }}" charset="utf-8"></script>-->
-<!--<script type="text/javascript" src="{{ url_for('static', filename='status.js') }}" charset="utf-8"></script>-->
 {% endblock %}

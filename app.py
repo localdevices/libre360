@@ -23,9 +23,7 @@ def do_GET():
     Client is responsible for updating its status to the current
     """
     # try:
-    # TODO: pass full project details from dbase to child
     msg = request.get_json()
-    print(msg)
     # Create or update state of current camera
     device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
     # check if the device exists.
