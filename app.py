@@ -1,14 +1,12 @@
 # Server is setup here
-from flask import Flask, render_template, redirect, request, jsonify, current_app, make_response
+from flask import Flask, render_template, redirect, request, jsonify, make_response, Response
 from flask_bootstrap import Bootstrap
 import psycopg2
-
-from odm360.utils import parse_config
-from odm360.log import start_logger
+from odm360.log import start_logger, stream_logger
 import odm360.camera360rig as camrig
-from odm360.utils import get_lan_ip
 from odm360 import dbase
 from odm360.states import states
+
 # API for picam is defined below
 def do_GET():
     """
@@ -100,37 +98,11 @@ def cleanopts(optsin):
     for key in d:
         opts[key] = optsin[key].lower().replace(' ', '_')
     return opts
-#
-# # TODO: remove when database connection is function
-# def initialize_config(config_fn):
-#     config = parse_config(config_fn)
-#     # test if we are ready to start devices or not
-#     start_parent = True
-#     if config.get('main', 'n_cams') == '':
-#         start_parent = False
-#         logger.info('n_cams is missing in config, starting without a running parent server')
-#     if config.get('main', 'dt') == '':
-#         start_parent = False
-#         logger.info('dt is missing in config, starting without a running parent server')
-#     if config.get('main', 'project') == '':
-#         start_parent = False
-#         logger.info('project is missing in config, starting without a running parent server')
-#     if config.get('main', 'root') == '':
-#         start_parent = False
-#         logger.info('root is missing in config, starting without a running parent server')
-#     current_app.config['config'] = dict(config.items('main'))
-#     current_app.config['ip'] = get_lan_ip()
-#     current_app.config['start_parent'] = start_parent
+
 
 db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
 cur = conn.cursor()
-
-# initialize project and photos table if they don't already exist
-dbase.create_table_projects(cur)
-dbase.create_table_photos(cur)
-dbase.create_table_project_active(cur)
-dbase.create_table_devices(cur)
 
 #make sure devices is empty
 dbase.truncate_table(cur, 'devices')
@@ -144,8 +116,6 @@ if len(cur_project) == 1:
 
 app = Flask(__name__)
 bootstrap = Bootstrap(app)
-
-
 
 @app.route("/", methods=['GET', 'POST'])
 def gps_page():
@@ -214,9 +184,8 @@ def project_page():
         # set project to current by retrieving its id and inserting that in current project table
         project_id = dbase.query_projects(cur, project_name=form['project_name'])[0][0]
         dbase.insert_project_active(cur, project_id=project_id)
-
+        logger.info(f'Created a new project name: "{form["project_name"]}" cams: {form["n_cams"]} interval: {int(form["dt"])} secs.')
         return redirect("/")
-
     else:
         return render_template("project.html")
 
@@ -244,6 +213,13 @@ def cam_page():
 @app.route('/file_page')
 def file_page():
     return render_template("file_page.html")
+
+
+@app.route("/log_stream", methods=["GET"])
+def stream():
+    """returns logging information"""
+    # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
+    return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
 @app.route('/picam', methods = ['GET', 'POST'])
 def picam():
