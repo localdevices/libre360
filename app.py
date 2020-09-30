@@ -208,6 +208,7 @@ def cam_page():
     """
     return render_template("cam_status.html", n_cams=range(6))
 
+
 @app.route('/file_page')
 def file_page():
     return render_template("file_page.html")
@@ -224,9 +225,13 @@ def picam():
     if request.method == 'POST':
 
         r, status_code = do_POST()
-    else:
+        return make_response(jsonify(r), status_code)
+
+    elif request.method == 'GET':
         r, status_code = do_GET()  # response is passed back to client
-    return make_response(jsonify(r), status_code)
+        return make_response(jsonify(r), status_code)
+    # else:
+    #     return 'Hey dudes! I got shit from you!!!'
 
 def run(app):
     app.run(debug=False, port=5000, host="0.0.0.0")

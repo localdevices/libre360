@@ -11,7 +11,8 @@ try:
     from picamera import PiCamera
 except:
     class PiCamera:
-        pass
+        def __init__(self):
+            pass
 
 class Camera360Pi(PiCamera):
     """
@@ -36,8 +37,7 @@ class Camera360Pi(PiCamera):
         self.port = port
         if not(os.path.isdir(self._root)):
             os.makedirs(self._root)
-        if not(self.debug):
-            super().__init__()
+        super().__init__()
         # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken
         self.resolution = (4056, 3040)
 
@@ -104,6 +104,7 @@ class Camera360Pi(PiCamera):
         self.logger.debug(f'Photo took {toc-tic} seconds to take')
         post_capture = {'kwargs': {'msg': f'Taken photo {self.dst_fn}', 'level': 'info'},
                         'req': 'LOG',
+                        'state': self.state
                         }
         self.post(post_capture)
 

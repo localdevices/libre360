@@ -26,6 +26,7 @@ setup(
         "pySerial",
         "numpy",
         "pytz",
+        "tzlocal",
         "gphoto2",
         "schedule",
         "picamera",

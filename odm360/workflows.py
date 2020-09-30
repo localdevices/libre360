@@ -140,7 +140,10 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
                 msg = r.json()
                 if 'project' in msg:
                     # setup camera object
-                    camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port, **msg['project'])
+                    try:
+                        camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port, **msg['project'])
+                    except:
+                        raise IOError('There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened.')
                     state = camera.state
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
