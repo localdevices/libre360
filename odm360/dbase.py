@@ -225,7 +225,6 @@ def insert_project(cur, project_name, n_cams, dt):
     """
     insert(cur, sql_command)
 
-
 def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb=None):
     """
     Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
@@ -238,6 +237,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb=None
     :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
     :return:
     """
+    _photo = psycopg2.Binary(photo)  # note: photo can be retrieved with _photo.tobytes()
     if thumb is None:
         sql_command = f"""
         INSERT INTO photos_child
@@ -253,9 +253,10 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb=None
         ,'{survey_run}'
         ,'{device_name}'
         ,'{fn}'
-        ,{photo}
+        ,{_photo}
         );"""
     else:
+        _thumb = psycopg2.Binary(thumb)
         sql_command = f"""
         INSERT INTO photos_child
         (
@@ -271,8 +272,8 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb=None
         ,'{survey_run}'
         ,'{device_name}'
         ,'{fn}'
-        ,{photo}
-        ,{thumb}
+        ,{_photo}
+        ,{_thumb}
         );"""
 
     insert(cur, sql_command)

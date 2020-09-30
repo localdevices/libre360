@@ -125,7 +125,7 @@ class Camera360Pi(PiCamera):
             # store as blob in database
             dbase.insert_photo(cur, self._project_id, self._survey_run, self._device, fn, target.read(), thumb=None)
         self.logger.debug(f'Photo took {toc-tic} seconds to take')
-        post_capture = {'kwargs': {'msg': f'Taken photo {self.dst_fn}', 'level': 'info'},
+        post_capture = {'kwargs': {'msg': f'Taken photo {fn}', 'level': 'info'},
                         'req': 'LOG',
                         'state': self.state
                         }
