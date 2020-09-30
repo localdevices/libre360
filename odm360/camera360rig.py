@@ -148,6 +148,7 @@ def activate_camera(cur):
         logger.info(f'Sending capture command to {cur_address}')
         return {'task': 'capture_continuous',
                 'kwargs': {'start_time': start_time_epoch,
+                           'survey_run': start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S"),
                            'project': project},
                 }
     else:

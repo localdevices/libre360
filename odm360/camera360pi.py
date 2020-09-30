@@ -1,12 +1,22 @@
 import os
+import io
 import time
 import logging
 import json
 import requests
-
+import psycopg2
 logger = logging.getLogger(__name__)
 from datetime import datetime
+
+# import odm360 methods and functions
 from odm360.timer import RepeatedTimer
+from odm360 import dbase
+
+# connect to child database
+db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
+conn = psycopg2.connect(db)
+cur = conn.cursor()
+
 try:
     from picamera import PiCamera
 except:
@@ -19,10 +29,11 @@ class Camera360Pi(PiCamera):
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
+    def __init__(self, device, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
+        self._device = device
         self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
@@ -93,14 +104,26 @@ class Camera360Pi(PiCamera):
                 'level': 'info'
                 }
 
-    def capture(self, timeout=1.):
+    def capture(self, timeout=1., cur=cur):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
-        self.dst_fn = os.path.join(self._root, fn)
-        self.logger.info(f'Writing to {self.dst_fn}')
+        if cur is None:
+            # capture to local file
+            self.dst_fn = os.path.join(self._root, fn)
+            self.logger.info(f'Writing to {self.dst_fn}')
+            target = self.dst_fn
+        else:
+            # capture to database
+            self.logger.info(f'Writing {fn} to database')
+            target = io.BytesIO()
         tic = time.time()
         if not(self.debug):
-            super().capture(self.dst_fn)
+            super().capture(target, 'jpeg')
         toc = time.time()
+        if (cur is not None) and (not(self.debug)):
+            # rewind to zero
+            target.seek(0)
+            # store as blob in database
+            dbase.insert_photo(cur, self._project_id, self._survey_run, self._device, fn, target.read(), thumb=None)
         self.logger.debug(f'Photo took {toc-tic} seconds to take')
         post_capture = {'kwargs': {'msg': f'Taken photo {self.dst_fn}', 'level': 'info'},
                         'req': 'LOG',
@@ -134,13 +157,14 @@ class Camera360Pi(PiCamera):
             # apparently the picture was not taken
             raise IOError('Timeout reached')
 
-    def capture_continuous(self, start_time=None, project=None):
+    def capture_continuous(self, start_time=None, survey_run=None, project=None):
         self._project_id = int(project['project_id'])
         self._project_name = project['project_name']
         self._dt = int(project['dt'])
         self._n_cams = int(project['n_cams'])
+        self._survey_run = survey_run
         # import pdb;pdb.set_trace()
-        self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs.')
+        self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs survey run {self._survey_run}.')
         try:
             self.timer = RepeatedTimer(int(project['dt']), self.capture, start_time=start_time)
             self.state = 'capture'

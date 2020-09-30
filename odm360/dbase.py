@@ -226,7 +226,7 @@ def insert_project(cur, project_name, n_cams, dt):
     insert(cur, sql_command)
 
 
-def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb):
+def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb=None):
     """
     Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
     :param cur: cursor
@@ -234,33 +234,47 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb):
     :param survey_run: string - id of survey within project
     :param device_name: string - id of device
     :param fn: string - filename
-    :param photo: numpy-array with photo TODO: check how photos are returned and revise if needed
-    :param thumb: numpy-array with thumbnail TODO: check how thumbnails are returned and revise if needed
+    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
+    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
     :return:
     """
-    try:
-        _photo = psycopg2.Binary(photo)
-        _thumb = psycopg2.Binary(thumb)
-    except:
-        raise ValueError('photo or thumbnail are not numpy-arrays')
-    sql_command = f"""
-    INSERT INTO photos
-    (
-    project_id
-    ,survey_run
-    ,device_name
-    ,photo_filename
-    ,photo
-    ,thumbnail
-    ) VALUES
-    (
-    '{project_id}'
-    ,'{survey_run}'
-    ,'{device_name}'
-    ,'{fn}'
-    ,{_photo}
-    ,{_thumb}
-    );"""
+    if thumb is None:
+        sql_command = f"""
+        INSERT INTO photos_child
+        (
+        project_id
+        ,survey_run
+        ,device_name
+        ,photo_filename
+        ,photo
+        ) VALUES
+        (
+        '{project_id}'
+        ,'{survey_run}'
+        ,'{device_name}'
+        ,'{fn}'
+        ,{photo}
+        );"""
+    else:
+        sql_command = f"""
+        INSERT INTO photos_child
+        (
+        project_id
+        ,survey_run
+        ,device_name
+        ,photo_filename
+        ,photo
+        ,thumbnail
+        ) VALUES
+        (
+        '{project_id}'
+        ,'{survey_run}'
+        ,'{device_name}'
+        ,'{fn}'
+        ,{photo}
+        ,{thumb}
+        );"""
+
     insert(cur, sql_command)
 
 
