@@ -4,15 +4,17 @@ num_cams = 7;
 plate_thickness = 3.5; // thickness of base plate
 mid_thickness = 3.5; // Thickness of inner raised area (first "step")
 edge_thickness = 7; // Thickness of the raised edge where the holes are
-edge_width_from_hole = 4; // Width of the edge, material on each side of the hole
+edge_width_from_hole = 6; // Width of the edge, material on each side of the hole
 hole_diameter = 4.75; 
 radius_to_hole = 65; // Distance from center to the center of the mounting holes
 mid_area_width = 5; // Width of the inner raised area
 radius_central_gap = 60 ; // Radius of the empty central area
 
 // Alignment indent in edge
-picam_base_width = 20; 
-picam_base_thickness = 10;
+// picam base width is 13.5
+picam_base_width = 14.1375 ; 
+// picam base thickness is 11.5
+picam_base_thickness = 12.1375;
 indent_depth = 3;
 offset_of_hole = 0; // If the mounting bolt hole isn't centered you can adjust it
 
