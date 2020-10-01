@@ -40,8 +40,8 @@ for n in range(10):
         my_stream.seek(0)
         fn = f'yeeee_{n}.jpg'
         print('Inserting into database...')
-        data = my_stream.read()
-        # dbase.insert_photo(cur, project_id, survey_run, device_name, fn, my_stream.read(), thumb=None)
+        #data = my_stream.read()
+        dbase.insert_photo(cur, project_id, survey_run, device_name, fn, my_stream.read(), thumb=None)
     toc = time.time()
     print(f'Photo taking and storing {fn} took {toc-tic} seconds')
     print('Flushing bytesio')
