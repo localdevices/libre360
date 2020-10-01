@@ -1,0 +1,2 @@
+#!/bin/bash
+"$(basename $0)/python" -m odm360 $@

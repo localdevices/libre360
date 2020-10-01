@@ -38,7 +38,11 @@ setup(
         "uwsgi",
         "psycopg2",
     ],
-    extras_require={"dev": ["pytest", "pytest-cov", "black"], "optional": [],},
+    extras_require={
+        "dev": ["pytest", "pytest-cov", "black"],
+        "optional": [],
+    },
+    scripts=["bin/odm360"],
     entry_points="""
     """,
     include_package_data=True,
