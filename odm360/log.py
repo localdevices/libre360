@@ -3,6 +3,7 @@ import sys
 import logging
 import logging.handlers
 import os
+import time
 
 FMT = "%(asctime)s - %(name)s - %(module)s - %(levelname)s - %(message)s"
 
@@ -48,3 +49,16 @@ def start_logger(verbose, quiet):
     logger = setuplog("odm360", "odm360.log", log_level=log_level)
     logger.info("starting...")
     return logger
+
+
+def stream_logger(fn="odm360.log", truncate=100):
+    # open file for reading
+    with open(fn) as f:
+        while True:
+            yield f.read()
+            time.sleep(0.2)
+# go to the last 100 lines
+    # display all data
+    # then yield every second one line
+    # yield lines continuously
+    #

@@ -1,0 +1,4 @@
+Sources for Raspberry Pi Cam Case for GoPro Connector
+
+Raspberry pi camera case/enclosure (https://www.thingiverse.com/thing:92208)
+GoPro Connector (https://www.thingiverse.com/thing:22477)

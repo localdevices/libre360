@@ -1,17 +1,36 @@
 {% extends 'base.html' %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/log.css') }}">
 {{super()}}
 {% endblock %}
 
 {% block content %}
-<!--INSERT STUFF HERE-->
+ <body id="main">
+    <div class="row">
+        <br>
+        <br>
+    </div>
+    <div class="row">
+      <div class="logging_window">
+        <pre id="output"></pre>
+      </div>
+    </div>
+  </body>
 {% endblock %}
 
 {% block scripts %}
 {{super()}}
-<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
-<!--<script type="text/javascript" src="{{ url_for('static', filename='logs.js') }}" charset="utf-8"></script>-->
+<script>
+  $(document).ready(function(){
+    var output = document.getElementById('output');
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '{{ url_for('stream') }}', true);
+    xhr.send();
+    setInterval(function() {
+      output.textContent = xhr.responseText;
+    }, 500);
+  });
+</script>
 
 {% endblock %}
