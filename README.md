@@ -6,7 +6,7 @@ This repository contains code for the EECS 398 group working on the odm360 proje
 
 The original plan used a Sony α6000 using [gphoto2](http://gphoto.org/), but the project has been expanded to use [that fancy new Raspberry Pi camera](https://www.raspberrypi.org/products/raspberry-pi-high-quality-camera/).
 
-![](images/rpi7.JPG)
+![](images/rpi7_live.JPG)
 
 See also: https://www.opendronemap.org/2020/05/360-cameras/
 
