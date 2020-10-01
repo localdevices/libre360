@@ -1,0 +1,30 @@
+name: build-packages
+on: push
+jobs:
+  build-amd64:
+    name: Build amd64 packages
+    runs-on: ubuntu-latest
+    container: debian:buster-slim
+    steps:
+      - name: Download build tools
+        run: apt-get update && apt-get install -y devscripts git
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install build dependencies
+        run: yes | mk-build-deps -ri
+      - name: Update snapshot version
+        run: .github/scripts/set-snapshot-version.sh
+      - name: Build packages
+        run: dpkg-buildpackage --build=all,any
+      - name: Save packages
+        run: cp ../*.deb debian/changelog /github/home
+      - name: Upload packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: odm360-amd64-debs
+          path: |
+            /github/home/*.deb
+            /github/home/changelog
+          if-no-files-found: error
