@@ -26,8 +26,10 @@ sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 # Set up pi camera
 if [[ "$onpi" ]]; then
-    echo "start_x=1             # Enables camera" | sudo tee --append /boot/config.txt
-    echo "gpu_mem=256           # Sets GPU memory" | sudo tee --append /boot/config.txt
+    echo "" | sudo tee --append /boot/config.txt # Add blank line before camera setup in config
+    echo "# Enable camera and set GPU memory to allow for maximum resolution." | sudo tee --append /boot/config.txt
+    echo "start_x=1             # Enable camera" | sudo tee --append /boot/config.txt
+    echo "gpu_mem=256           # Set GPU memory" | sudo tee --append /boot/config.txt
 fi
 
 echo "************************************"
