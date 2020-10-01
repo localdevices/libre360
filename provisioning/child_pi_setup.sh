@@ -32,8 +32,11 @@ fi
 
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
+echo 'About to reboot to enable camera... (15s)'
 echo "************************************"
 echo
+
+sleep 15s
 
 # Reboot to enable camera
 sudo reboot
