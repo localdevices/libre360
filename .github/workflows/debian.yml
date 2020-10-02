@@ -14,17 +14,54 @@ jobs:
           fetch-depth: 0
       - name: Install build dependencies
         run: yes | mk-build-deps -ri
-      - name: Update snapshot version
+      - name: Update changelog with snapshot version
         run: .github/scripts/set-snapshot-version.sh
       - name: Build packages
         run: dpkg-buildpackage --build=all,any
       - name: Save packages
-        run: cp ../*.deb debian/changelog /github/home
+        run: cp ../*.deb /github/home
       - name: Upload packages
         uses: actions/upload-artifact@v2
         with:
           name: odm360-amd64-debs
-          path: |
-            /github/home/*.deb
-            /github/home/changelog
+          path: /github/home/*.deb
+          if-no-files-found: error
+      - name: Upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog
+          path: debian/changelog
+          if-no-files-found: error
+
+  build-armhf:
+    name: Build armhf packages
+    needs: build-amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get changelog from amd64 build
+        uses: actions/download-artifact@v2
+        with:
+          name: changelog
+      - name: Overwrite existing changelog
+        run: mv changelog debian
+      - name: Start QEMU for 32-bit ARM emulation
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Install dependencies and build packages
+        uses: docker://arm32v7/debian:buster-slim
+        with:
+          args: >
+            bash -c "apt-get update && \
+                     apt-get install -y devscripts && \
+                     yes | mk-build-deps -ri && \
+                     dpkg-buildpackage --build=any && \
+                     eval 'cp -v ../*.deb .'"
+      - name: Upload packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: odm360-armhf-debs
+          path: ${{ github.workspace }}/*.deb
           if-no-files-found: error
