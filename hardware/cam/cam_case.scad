@@ -1,9 +1,9 @@
 // Adjustable parameters
 length = 65;
 width = 30;
-thickness = 1.5;
-screw_hole_diameter = 1;
-screw_hole_offset = 3;
+thickness = 2;
+screw_hole_radius = 1.25;
+screw_hole_offset = 3.5;
 pad_diameter = 7;
 pad_height = 4;
 
@@ -39,25 +39,25 @@ difference(){
     }
 
     translate([length/2 - screw_hole_offset, width/2 - screw_hole_offset,-2]) {
-            cylinder(r = screw_hole_diameter, h = pin, $fn=64);
+            cylinder(r = screw_hole_radius, h = pin, $fn=64);
     }
 
     mirror([1,0,0]) {    
         translate([length/2 - screw_hole_offset, width/2 - screw_hole_offset,-2]) {
-            cylinder(r = screw_hole_diameter, h = pin, $fn=64);
+            cylinder(r = screw_hole_radius, h = pin, $fn=64);
         }
     }
 
     mirror([0,1,0]) {    
         translate([length/2 - screw_hole_offset, width/2 - screw_hole_offset,-2]) {
-            cylinder(r = screw_hole_diameter, h = pin, $fn=64);
+            cylinder(r = screw_hole_radius, h = pin, $fn=64);
         }
     }
 
     mirror([1,0,0]) {
         mirror([0,1,0]) {    
             translate([length/2 - screw_hole_offset, width/2 -  screw_hole_offset,-2]) {
-                cylinder(r = screw_hole_diameter, h = pin, $fn=64);
+                cylinder(r = screw_hole_radius, h = pin, $fn=64);
             }
         }
     }
