@@ -1,5 +1,10 @@
 name: build-packages
-on: push
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "*"
+      - "!apt-repo"
 jobs:
   build-amd64:
     name: Build amd64 packages
@@ -65,3 +70,19 @@ jobs:
           name: odm360-armhf-debs
           path: ${{ github.workspace }}/*.deb
           if-no-files-found: error
+
+  apt-repo:
+    name: Build apt repository
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-armhf]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ~/artifacts
+      - name: Build package repository
+        run: .github/scripts/build-apt-repo.sh ~/artifacts/**/*.deb
