@@ -106,7 +106,7 @@ def get_task(cur):
             'kwargs': {}
             }
 
-def post_log(msg, level='info'):
+def post_log(cur, msg, level='info'):
     """
     Log message from current camera on logger
     :return:
@@ -120,6 +120,15 @@ def post_log(msg, level='info'):
         return {'success': True}
     except:
         return {'success': False}
+
+def post_store(cur, **kwargs):
+    """
+    Passes arguments to database storage func.
+    :param kwargs: dict of key-word arguments passed to dbase.insert_photo
+    :return:
+    """
+    dbase.insert_photo(cur, **kwargs)
+
 
 def activate_camera(cur):
     # retrieve settings of current project

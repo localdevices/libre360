@@ -17,6 +17,10 @@ db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
+# get the uuid of the device
+cur.execute("SELECT * FROM device")
+device_uuid = cur.fetchone()[0]
+
 try:
     from picamera import PiCamera
 except:
@@ -29,11 +33,11 @@ class Camera360Pi(PiCamera):
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, device, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
+    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
-        self._device = device
+        self._device = device_uuid
         self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
@@ -106,30 +110,40 @@ class Camera360Pi(PiCamera):
 
     def capture(self, timeout=1., cur=cur):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
-        if cur is None:
-            # capture to local file
-            self.dst_fn = os.path.join(self._root, fn)
-            self.logger.info(f'Writing to {self.dst_fn}')
-            target = self.dst_fn
-        else:
-            # capture to database
-            self.logger.info(f'Writing {fn} to database')
-            target = io.BytesIO()
+        # capture to local file
+        self.dst_fn = os.path.join(self._root, fn)
+        self.logger.info(f'Writing to {self.dst_fn}')
+        target = self.dst_fn
+        # prepare kwargs for database insertion
+        kwargs = {
+            'project_id': self._project_id,
+            'survey_run': self._survey_run,
+            'device_name': self._device,
+            'fn': fn,
+        }
         tic = time.time()
         if not(self.debug):
             super().capture(target, 'jpeg')
         toc = time.time()
-        if (cur is not None) and (not(self.debug)):
-            # rewind to zero
-            target.seek(0)
-            # store as blob in database
-            dbase.insert_photo(cur, self._project_id, self._survey_run, self._device, fn, target.read(), thumb=None)
+        # store details about photo in database
+        dbase.insert_photo(cur, **kwargs)
+        # retrieve uuid of inserted photo
+
         self.logger.debug(f'Photo took {toc-tic} seconds to take')
         post_capture = {'kwargs': {'msg': f'Taken photo {fn}', 'level': 'info'},
                         'req': 'LOG',
                         'state': self.state
                         }
-        self.post(post_capture)
+        self.post(post_capture)  # this just logs on parent side what happened on child side
+        # now add a photo on the parent side's database as well, making sure the uuid is fixed!
+        kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
+        store_capture = {'kwargs': kwargs,
+                        'req': 'STORE',
+                        'state': self.state
+                        }
+
+        self.post(store_capture)  # store info on photo on parent side
+
 
     def capture_until(self, timeout=1.):
         """
