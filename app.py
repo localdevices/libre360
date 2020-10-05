@@ -2,101 +2,12 @@
 from flask import Flask, render_template, redirect, request, jsonify, make_response, Response
 from flask_bootstrap import Bootstrap
 import psycopg2
+
 from odm360.log import start_logger, stream_logger
-import odm360.camera360rig as camrig
+from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
-
-# API for picam is defined below
-def do_GET():
-    """
-    GET API should provide a json with the following fields:
-    state: str - can be:
-        "idle" - before anything is done, or after camera is stopped (to be implemented with push button)
-        "ready" - camera is initialized
-        "capture" - camera is capturing
-    req: str - name of method to call from server
-    kwargs: dict - any kwargs that need to be parsed to method (can be left out if None)
-    log: str - log message to be printed from client on server's log (see self.logger)
-
-    the GET API then decides what action should be taken given the state.
-    Client is responsible for updating its status to the current
-    """
-    # try:
-    msg = request.get_json()
-    # Create or update state of current camera
-    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
-    # check if the device exists.
-    if dbase.is_device(cur, device_name):
-        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
-    else:
-        dbase.insert_device(cur, device_name, states[msg['state']])
-    # current_app.config['rig'].cam_state[request.remote_addr] = msg['state']  # TODO: remove this old code, once works, also remove config['rig'] objects from code
-    log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
-    logger.debug(log_msg)
-    # check if task exists and sent instructions back
-    method = f'get_{msg["req"].lower()}'
-    if not(hasattr(camrig, method)):
-        return 'method not available', 404
-    if 'kwargs' in msg:
-        kwargs = msg['kwargs']
-    else:
-        kwargs = {}
-    task = getattr(camrig, method)
-    # execute with key-word arguments provided
-    r = task(cur, **kwargs)
-    return r, 200
-    # except:
-    #     return 'method failed', 500
-
-# POST echoes the message adding a JSON field
-def do_POST():
-    """
-    POST API should provide a json with the following fields:
-    req: str - name of method for posting to call from server (e.g. log)
-    kwargs: dict - any kwargs that need to be parsed to method (can be left out if None)
-    the POST API then decides what action should be taken based on the POST request.
-    POST API will also return a result back
-    """
-    # try:
-    msg = request.get_json()
-    print(msg)
-    # Create or update state of current camera
-    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
-    # check if the device exists.
-    if dbase.is_device(cur, device_name):
-        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
-    else:
-        dbase.insert_device(cur, device_name, states[msg['state']])
-    # show request in log
-    log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
-
-    logger.debug(log_msg)
-
-    # check if task exists and sent instructions back
-    method = f'post_{msg["req"].lower()}'
-    if not(hasattr(camrig, method)):
-        return 'method not available', 404
-
-    if 'kwargs' in msg:
-        kwargs = msg['kwargs']
-    else:
-        kwargs = {}
-    task = getattr(camrig, method)
-    # execute with key-word arguments provided
-    r = task(**kwargs)
-    return r, 200
-    # except:
-    #     return 'method failed', 500
-
-def cleanopts(optsin):
-    """Takes a multidict from a flask form, returns cleaned dict of options"""
-    opts = {}
-    d = optsin
-    for key in d:
-        opts[key] = optsin[key].lower().replace(' ', '_')
-    return opts
-
+from odm360.utils import cleanopts
 
 db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
@@ -226,14 +137,13 @@ def stream():
 def picam():
     if request.method == 'POST':
 
-        r, status_code = do_POST()
+        r, status_code = do_request(method='POST')
         return make_response(jsonify(r), status_code)
 
     elif request.method == 'GET':
-        r, status_code = do_GET()  # response is passed back to client
+        r, status_code = do_request(method='GET')  # response is passed back to client
         return make_response(jsonify(r), status_code)
-    # else:
-    #     return 'Hey dudes! I got shit from you!!!'
+
 
 def run(app):
     app.run(debug=False, port=5000, host="0.0.0.0")
