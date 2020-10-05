@@ -19,23 +19,22 @@ CREATE SERVER filesystem_srv foreign data wrapper multicorn options (
 );
 
 -- create photos table (dependent on projects)
-CREATE TABLE IF NOT EXISTS photos
+CREATE FOREIGN TABLE IF NOT EXISTS photos
 (
-    photo_uuid uuid DEFAULT uuid_generate_v4 ()
+    device_uuid UUID
     ,project_id INT
     ,survey_run text NOT NULL
     ,device_name text NOT NULL
-    ,photo_filename text NOT NULL
+    ,PRIMARY KEY (photo_filename) UUID NOT NULL
     ,photo BYTEA NOT NULL
-    ,thumbnail BYTEA
-    ,device_uuid uuid
-    ,PRIMARY KEY(photo_uuid)
+) server filesystem_srv options(
+    root_dir    '/home/pi/odm360/piimage',
+    {device_uuid}/{project_id}/{survey_run}/{device_name}/{photo_filename}.jpg
+    ,photo 'content'
 );
-
 
 ALTER TABLE device OWNER TO odm360;
 ALTER TABLE photos OWNER TO odm360;
 -- Now add one device
 INSERT INTO device (name) VALUES ('picam');
 -- And that's it! Only one device entry ever!
-
