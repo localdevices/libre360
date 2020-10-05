@@ -22,6 +22,9 @@ fi
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
+echo Installing mulicorn to allow file system FDW for images
+sudo apt install -y python3-multicorn
+
 # TODO set up the database specifically for a child
 
 # Set up pi camera
