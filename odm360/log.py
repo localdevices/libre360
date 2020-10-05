@@ -57,8 +57,3 @@ def stream_logger(fn="odm360.log", truncate=100):
         while True:
             yield f.read()
             time.sleep(0.2)
-# go to the last 100 lines
-    # display all data
-    # then yield every second one line
-    # yield lines continuously
-    #

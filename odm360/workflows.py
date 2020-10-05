@@ -110,7 +110,7 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
     :param port: port number to host server
     :return:
     """
-    from odm360.camera360pi import Camera360Pi
+    from odm360.camera360pi import Camera360Pi, device_uuid
 
     # only load Camera360Pi in a child. A parent may not have this lib
     ip = get_lan_ip()  # retrieve child's IP address
@@ -122,9 +122,14 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
         all_ips = [(host, 'up')]
     # initiate the state of the child as 'idle'
     log_msg = ''  # start with an empty msg
-    state = 'idle'
-    get_project_msg = {'state': state,
-                    'req': 'PROJECT'
+    state = {'status': 'idle',
+             'ip': ip,
+             'device_uuid': device_uuid
+             }
+
+    get_project_msg = {
+        'state': state,
+        'req': 'PROJECT'
                     }
     # try to get in contact with the right host
     logger.debug('Initializing search for server')
@@ -140,8 +145,11 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
                 msg = r.json()
                 if 'project' in msg:
                     # setup camera object
-                    camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port, **msg['project'])
-                    state = camera.state
+                    try:
+                        camera = Camera360Pi(logger=logger, debug=debug, host=host, port=port) # start without any project info, **msg['project'])
+                    except:
+                        raise IOError('There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened.')
+                    state['status'] = camera.state
                     logger.info(f'Found host on {host}:{port}')
                     host_found = True
                     break
@@ -154,9 +162,11 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
     try:
         while True:
             # ask for a task
-            get_task_msg = {'state': camera.state,
-                            'req': 'TASK'
-                            }
+            get_task_msg = {
+                'device_uuid': device_uuid,
+                'state': state,
+                'req': 'TASK'
+            }
             r = requests.get(f'http://{host}:{port}/picam',
                              data=json.dumps(get_task_msg),
                              headers=headers
@@ -168,10 +178,11 @@ def child_tcp_ip(timeout=1., logger=logger, host=None, port=5000, debug=False):
             f = getattr(camera, task)
             # execute function with kwargs provided
             log_msg = f(**kwargs)
-            state = camera.state
+            # update status to camera.state
+            state['status'] = camera.state
             post_log_msg = {'kwargs': log_msg,
                             'req': 'LOG',
-                            'state': camera.state
+                            'state': state,
                             }
             r = requests.post(f'http://{host}:{port}/picam', data=json.dumps(post_log_msg), headers=headers)
             success = r.json()

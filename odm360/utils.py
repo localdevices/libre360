@@ -8,6 +8,16 @@ import pytz, tzlocal
 from configparser import ConfigParser
 from odm360.states import states
 
+
+def cleanopts(optsin):
+    """Takes a multidict from a flask form, returns cleaned dict of options"""
+    opts = {}
+    d = optsin
+    for key in d:
+        opts[key] = optsin[key].lower().replace(' ', '_')
+    return opts
+
+
 def find_serial(wildcard='', logger=logger):
     """
     Looks for serial devices in all active serial ports

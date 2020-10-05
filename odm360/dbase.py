@@ -225,42 +225,78 @@ def insert_project(cur, project_name, n_cams, dt):
     """
     insert(cur, sql_command)
 
-
-def insert_photo(cur, project_id, survey_run, device_name, fn, photo, thumb):
+def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, photo=None, thumb=None):
     """
     Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
     :param cur: cursor
     :param project_id: int - project id
     :param survey_run: string - id of survey within project
-    :param device_name: string - id of device
+    :param device_name: uuid - id of device
     :param fn: string - filename
-    :param photo: numpy-array with photo TODO: check how photos are returned and revise if needed
-    :param thumb: numpy-array with thumbnail TODO: check how thumbnails are returned and revise if needed
+    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
+    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
     :return:
     """
-    try:
-        _photo = psycopg2.Binary(photo)
+    _photo = psycopg2.Binary(photo)  # note: photo can be retrieved with _photo.tobytes()
+    if photo_uuid is not None:
+        # occurs when parent-side storage is done, no binary data is stored
+        sql_command = f"""
+        INSERT INTO photos
+        (
+        photo_uuid
+        ,project_id
+        ,survey_run
+        ,device_name
+        ,photo_filename
+        ,photo
+        ) VALUES
+        (
+        '{photo_uuid}'
+        ,'{project_id}'
+        ,'{survey_run}'
+        ,'{device_name}'
+        ,'{fn}'
+        ,{_photo}
+        );"""
+
+    elif thumb is None:
+        sql_command = f"""
+        INSERT INTO photos
+        (
+        project_id
+        ,survey_run
+        ,device_name
+        ,photo_filename
+        ,photo
+        ) VALUES
+        (
+        '{project_id}'
+        ,'{survey_run}'
+        ,'{device_name}'
+        ,'{fn}'
+        ,{_photo}
+        );"""
+    else:
         _thumb = psycopg2.Binary(thumb)
-    except:
-        raise ValueError('photo or thumbnail are not numpy-arrays')
-    sql_command = f"""
-    INSERT INTO photos
-    (
-    project_id
-    ,survey_run
-    ,device_name
-    ,photo_filename
-    ,photo
-    ,thumbnail
-    ) VALUES
-    (
-    '{project_id}'
-    ,'{survey_run}'
-    ,'{device_name}'
-    ,'{fn}'
-    ,{_photo}
-    ,{_thumb}
-    );"""
+        sql_command = f"""
+        INSERT INTO photos_child
+        (
+        project_id
+        ,survey_run
+        ,device_name
+        ,photo_filename
+        ,photo
+        ,thumbnail
+        ) VALUES
+        (
+        '{project_id}'
+        ,'{survey_run}'
+        ,'{device_name}'
+        ,'{fn}'
+        ,{_photo}
+        ,{_thumb}
+        );"""
+
     insert(cur, sql_command)
 
 
@@ -297,6 +333,21 @@ def query_devices(cur, status=None, device_name=None, as_dict=False, flatten=Fal
 
     return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
 
+
+def query_photo(cur, fn):
+    """
+
+    :param cur: cursor
+    :param fn: file name to search for in photos table
+    :param kwargs: query_table kwargs (as_dict and flatten)
+    :return:
+    """
+    table_name = 'photos'
+    if fn is None:
+        raise ValueError('Must provide filename as string')
+    sql_command = f"SELECT * FROM {table_name} WHERE photo_filename={fn}"
+    # as we are looking for one unique, photo, as_dict and flatten need to be True
+    return query_table(cur, sql_command, table_name=table_name, as_dict=True, flatten=True)
 
 def query_photos(cur, project_id=None, as_dict=False, flatten=False):
     """

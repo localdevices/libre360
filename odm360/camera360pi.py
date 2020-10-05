@@ -1,17 +1,32 @@
 import os
+import io
 import time
 import logging
 import json
 import requests
-
+import psycopg2
 logger = logging.getLogger(__name__)
 from datetime import datetime
+
+# import odm360 methods and functions
 from odm360.timer import RepeatedTimer
+from odm360 import dbase
+
+# connect to child database
+db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
+conn = psycopg2.connect(db)
+cur = conn.cursor()
+
+# get the uuid of the device
+cur.execute("SELECT * FROM device")
+device_uuid = cur.fetchone()[0]
+
 try:
     from picamera import PiCamera
 except:
     class PiCamera:
-        pass
+        def __init__(self):
+            pass
 
 class Camera360Pi(PiCamera):
     """
@@ -22,6 +37,7 @@ class Camera360Pi(PiCamera):
         self.debug = debug
         self.state = 'idle'
         self.timer = None
+        self._device = device_uuid
         self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
@@ -36,8 +52,7 @@ class Camera360Pi(PiCamera):
         self.port = port
         if not(os.path.isdir(self._root)):
             os.makedirs(self._root)
-        if not(self.debug):
-            super().__init__()
+        super().__init__()
         # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken
         self.resolution = (4056, 3040)
 
@@ -93,19 +108,42 @@ class Camera360Pi(PiCamera):
                 'level': 'info'
                 }
 
-    def capture(self, timeout=1.):
+    def capture(self, timeout=1., cur=cur):
         fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
+        # capture to local file
         self.dst_fn = os.path.join(self._root, fn)
         self.logger.info(f'Writing to {self.dst_fn}')
+        target = self.dst_fn
+        # prepare kwargs for database insertion
+        kwargs = {
+            'project_id': self._project_id,
+            'survey_run': self._survey_run,
+            'device_name': self._device,
+            'fn': fn,
+        }
         tic = time.time()
         if not(self.debug):
-            super().capture(self.dst_fn)
+            super().capture(target, 'jpeg')
         toc = time.time()
+        # store details about photo in database
+        dbase.insert_photo(cur, **kwargs)
+        # retrieve uuid of inserted photo
+
         self.logger.debug(f'Photo took {toc-tic} seconds to take')
-        post_capture = {'kwargs': {'msg': f'Taken photo {self.dst_fn}', 'level': 'info'},
+        post_capture = {'kwargs': {'msg': f'Taken photo {fn}', 'level': 'info'},
                         'req': 'LOG',
+                        'state': self.state
                         }
-        self.post(post_capture)
+        self.post(post_capture)  # this just logs on parent side what happened on child side
+        # now add a photo on the parent side's database as well, making sure the uuid is fixed!
+        kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
+        store_capture = {'kwargs': kwargs,
+                        'req': 'STORE',
+                        'state': self.state
+                        }
+
+        self.post(store_capture)  # store info on photo on parent side
+
 
     def capture_until(self, timeout=1.):
         """
@@ -133,15 +171,21 @@ class Camera360Pi(PiCamera):
             # apparently the picture was not taken
             raise IOError('Timeout reached')
 
-    def capture_continuous(self, start_time=None, interval=5):
-        # FIXME: refactor RepeatedTimer so that a start_time can be passed
+    def capture_continuous(self, start_time=None, survey_run=None, project=None):
+        self._project_id = int(project['project_id'])
+        self._project_name = project['project_name']
+        self._dt = int(project['dt'])
+        self._n_cams = int(project['n_cams'])
+        self._survey_run = survey_run
+        # import pdb;pdb.set_trace()
+        self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs survey run {self._survey_run}.')
         try:
-            self.timer = RepeatedTimer(interval, self.capture, start_time=start_time)
+            self.timer = RepeatedTimer(int(project['dt']), self.capture, start_time=start_time)
             self.state = 'capture'
         except:
             msg = 'Camera not responding or disconnected'
             logger.error(msg)
-        msg = f'Camera is now capturing avery {interval} seconds'
+        msg = f'Camera is now capturing every {self._dt} seconds'
         logger.info(msg)
         return {'msg': msg,
                 'level': 'info'
