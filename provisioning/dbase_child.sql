@@ -1,4 +1,5 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "multicorn";
 
 -- drop any tables if they exist
 DROP TABLE IF EXISTS device;
