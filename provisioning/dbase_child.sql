@@ -13,6 +13,11 @@ CREATE TABLE IF NOT EXISTS device
     ,PRIMARY KEY(device_uuid)
 );
 
+-- add file system foreign data wrapper
+CREATE SERVER filesystem_srv foreign data wrapper multicorn options (
+    wrapper 'multicorn.fsfdw.FilesystemFdw'
+);
+
 -- create photos table (dependent on projects)
 CREATE TABLE IF NOT EXISTS photos
 (
