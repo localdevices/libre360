@@ -6,8 +6,8 @@ screw_hole_radius = 1.25;
 screw_hole_offset = 3.5;
 pad_diameter = 7;
 pad_height = 6;
-length_cam_case = 38;
-width_cam_case = 38;
+length_cam_case = 37;
+width_cam_case = 37;
 offset_distance = 7;
 offset_hole_distance = offset_distance + length_cam_case / 2;
 

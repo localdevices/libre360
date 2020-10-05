@@ -1,11 +1,11 @@
 // Adjustable parameters
-length_cam_case = 38;
-width_cam_case = 38;
+length_cam_case = 37;
+width_cam_case = 37;
 thickness = 2;
 screw_hole_radius = 1.25;
 screw_hole_offset = 3.5;
 pad_diameter = 7;
-pad_height = 4;
+pad_height = 6;
 
 
 // Don't touch
