@@ -116,11 +116,8 @@ def settings_page():
 
 @app.route('/cams')
 def cam_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    devices = dbase.query_devices(cur)
-    return render_template("cam_status.html", cams=range(6), cams_online=len(devices))
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    return render_template("cam_status.html")
 
 
 @app.route('/file_page')
@@ -135,26 +132,24 @@ def stream():
     return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
 
-@app.route("/show_cams")
-def show_cams():
-    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
-    cur_project = dbase.query_project_active(cur)
-    project = dbase.query_projects(cur, project_id=cur_project[0][0])
-    devices = dbase.query_devices(cur)
-
-    if len(cur_project) == 0:
-        cams = 0
-    else:
-        cams = range(len(devices))
-    return render_template("show_cams.html", cams=cams, cams_online=len(devices))
-
-
-
 @app.route('/_cameras')
 def cameras():
     # FIXME get the actual database status
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
     devices = dbase.make_dict_devices(cur)
-    print(devices)
+    n_online = len(devices)
+    # add offline devices
+    n_offline = int(project['n_cams']) - n_online
+    for n in range(n_offline):
+        devices.append({'device_no': f'camera{n + n_online}',
+                        'device_uuid': 'uknown',
+                        'device_name': 'unknown',
+                        'status': 'offline',
+                        'last_photo': None,
+                        }
+                       )
+
     return jsonify(devices) #, mimetype='application/json') #mimetype="text/plain", content_type="text/event-stream")
 
 
