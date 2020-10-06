@@ -18,9 +18,12 @@ conn = psycopg2.connect(db)
 cur = conn.cursor()
 
 # get the uuid of the device
-cur.execute("SELECT * FROM device")
-device_uuid = cur.fetchone()[0]
-
+try:
+    cur.execute("SELECT * FROM device")
+    device_uuid, device_name = cur.fetchone()[0]
+except:
+    import uuid
+    device_uuid, device_name = str(uuid.uuid4()), 'dummy'
 try:
     from picamera import PiCamera
 except:
@@ -33,11 +36,12 @@ class Camera360Pi(PiCamera):
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
+    def __init__(self, state, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
-        self.state = 'idle'
+        self.state = state
         self.timer = None
-        self._device = device_uuid
+        self._device_uuid = device_uuid
+        self._device_name = device_name
         self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
@@ -64,10 +68,10 @@ class Camera360Pi(PiCamera):
                 time.sleep(2)
             msg = 'Raspi camera initialized'
             self.logger.info(msg)
-            self.state = 'ready'
+            self.state['status'] = 'ready'
         except:
             msg = 'Raspi camera could not be initialized'
-            self.state = 'broken'
+            self.state['status'] = 'broken'
             self.logger.error(msg)
         return {'msg': msg,
                 'level': 'info'
@@ -85,7 +89,7 @@ class Camera360Pi(PiCamera):
 
     def exit(self):
         self.stop_preview()
-        self.state = 'idle'
+        self.state['status'] = 'idle'
         msg = 'Raspi camera shutdown'
         self.logger.info(msg)
         return {'msg': msg,
@@ -99,7 +103,7 @@ class Camera360Pi(PiCamera):
                 self.timer.stop()
             except:
                 pass
-            self.state = 'ready'
+            self.state['status'] = 'ready'
             msg = 'Camera capture stopped'
         else:
             msg = 'No capturing taking place, do nothing'
@@ -118,7 +122,8 @@ class Camera360Pi(PiCamera):
         kwargs = {
             'project_id': self._project_id,
             'survey_run': self._survey_run,
-            'device_name': self._device,
+            'device_uuid': self._device_uuid,
+            'device_name': self._device_name,
             'fn': fn,
         }
         tic = time.time()
@@ -181,7 +186,7 @@ class Camera360Pi(PiCamera):
         self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs survey run {self._survey_run}.')
         try:
             self.timer = RepeatedTimer(int(project['dt']), self.capture, start_time=start_time)
-            self.state = 'capture'
+            self.state['status'] = 'capture'
         except:
             msg = 'Camera not responding or disconnected'
             logger.error(msg)

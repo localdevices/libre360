@@ -36,7 +36,7 @@ def create_table_photos(cur):
     ,photo_filename text NOT NULL
     ,photo BYTEA NOT NULL
     ,thumbnail BYTEA
-    ,device_id BIGINT
+    ,device_uuid uuid
     ,PRIMARY KEY(photo_uuid)
     ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
         FOREIGN KEY(project_id) 
@@ -75,11 +75,11 @@ def create_table_devices(cur):
     sql_command = """
     CREATE TABLE IF NOT EXISTS devices
     (
-    device_id BIGINT GENERATED ALWAYS AS IDENTITY
+    device_uuid uuid GENERATED ALWAYS AS IDENTITY
     ,device_name text NOT NULL
     ,status integer NOT NULL -- what are our status codes?
     ,last_photo uuid
-    ,PRIMARY KEY(device_id)
+    ,PRIMARY KEY(device_uuid)
     ,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
             FOREIGN KEY(last_photo) 
             REFERENCES photos(photo_uuid)
@@ -179,22 +179,23 @@ def insert(cur, sql_command):
     :param sql_command: command to create record with
     :return:
     """
-    try:
-        cur.execute(sql_command)
-        cur.connection.commit()
-    except:
-        raise IOError(f'Insertion command {sql_command} failed')
+    # try:
+    cur.connection.rollback()
+    cur.execute(sql_command)
+    cur.connection.commit()
+    # except:
+    #     raise IOError(f'Insertion command {sql_command} failed')
 
 
-def insert_device(cur, device_name, status):
+def insert_device(cur, device_uuid, device_name, status):
     """
     insert a new device in table (leave out last_photo since it is not available yet).
     :param cur: cursor
-    :param device_name: string - id of device (auto-generated on child side)
+    :param device_uuid: uuid - id of device (auto-generated on child side)
     :param status: int - status of device, each int has a specific meaning
     :return:
     """
-    sql_command = f"INSERT INTO devices(device_name, status) VALUES ('{device_name}', {status});"
+    sql_command = f"INSERT INTO devices(device_uuid, device_name, status) VALUES ('{device_uuid}', '{device_name}', {status});"
     insert(cur, sql_command)
 
 def insert_project_active(cur, project_id):
@@ -225,13 +226,13 @@ def insert_project(cur, project_name, n_cams, dt):
     """
     insert(cur, sql_command)
 
-def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, photo=None, thumb=None):
+def insert_photo(cur, project_id, survey_run, device_uuid, device_name, fn, photo_uuid=None, photo=None, thumb=None):
     """
     Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
     :param cur: cursor
     :param project_id: int - project id
     :param survey_run: string - id of survey within project
-    :param device_name: uuid - id of device
+    :param device_uuid: uuid - id of device
     :param fn: string - filename
     :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
     :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
@@ -246,6 +247,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         photo_uuid
         ,project_id
         ,survey_run
+        ,device_uuid
         ,device_name
         ,photo_filename
         ,photo
@@ -254,6 +256,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         '{photo_uuid}'
         ,'{project_id}'
         ,'{survey_run}'
+        ,'{device_uuid}'
         ,'{device_name}'
         ,'{fn}'
         ,{_photo}
@@ -265,6 +268,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         (
         project_id
         ,survey_run
+        ,device_uuid
         ,device_name
         ,photo_filename
         ,photo
@@ -272,6 +276,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         (
         '{project_id}'
         ,'{survey_run}'
+        ,'{device_uuid}'
         ,'{device_name}'
         ,'{fn}'
         ,{_photo}
@@ -283,6 +288,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         (
         project_id
         ,survey_run
+        ,device_uuid
         ,device_name
         ,photo_filename
         ,photo
@@ -291,6 +297,7 @@ def insert_photo(cur, project_id, survey_run, device_name, fn, photo_uuid=None, 
         (
         '{project_id}'
         ,'{survey_run}'
+        ,'{device_uuid}'
         ,'{device_name}'
         ,'{fn}'
         ,{_photo}
@@ -312,24 +319,26 @@ def is_table(cur, table_name):
     return cur.fetchall()[0][0]
 
 
-def is_device(cur, device_name):
+def is_device(cur, device_uuid):
     """
     Simple check to see if device exists
     :param cur: cursor
-    :param device_name: str - name of device
+    :param device_uuid: uuid - name of device
     :return: True/False
     """
-    cur.execute(f"SELECT EXISTS ( SELECT 1 FROM devices WHERE device_name='{device_name}')")
-    return cur.fetchall()[0][0]
+    sql_command = f"SELECT EXISTS ( SELECT 1 FROM devices WHERE device_uuid='{device_uuid}')"
+    cur.connection.rollback()
+    cur.execute(sql_command)
+    return cur.fetchone()[0]
 
 
-def query_devices(cur, status=None, device_name=None, as_dict=False, flatten=False):
+def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=False):
     table_name = 'devices'
     sql_command = f"""SELECT * FROM {table_name}"""
     if status is not None:
         sql_command = sql_command + f""" WHERE status={status}"""
-    if device_name is not None:
-        sql_command = sql_command + f""" WHERE device_name='{device_name}'"""
+    if device_uuid is not None:
+        sql_command = sql_command + f""" WHERE device_uuid='{device_uuid}'"""
 
     return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
 
@@ -345,7 +354,7 @@ def query_photo(cur, fn):
     table_name = 'photos'
     if fn is None:
         raise ValueError('Must provide filename as string')
-    sql_command = f"SELECT * FROM {table_name} WHERE photo_filename={fn}"
+    sql_command = f"SELECT * FROM {table_name} WHERE photo_filename='{fn}'"
     # as we are looking for one unique, photo, as_dict and flatten need to be True
     return query_table(cur, sql_command, table_name=table_name, as_dict=True, flatten=True)
 
@@ -420,21 +429,21 @@ def truncate_table(cur, table):
     cur.connection.commit()
 
 
-def update_device(cur, device_name, status, last_photo=None):
+def update_device(cur, device_uuid, status, last_photo=None):
     """
     Update the status of a given (existing) device in devices table
     :param cur: cursor
-    :param device_name: str - id of device
+    :param device_uuid: uuid - id of device
     :param status: int - status indicator
     :param last_photo: str - uuid of last photo (error returned if uuid does not exist in database)
     :return:
     """
-    if not (is_device(cur, device_name)):
-        raise KeyError(f'device "{device_name}" does not exist in table "device_status"')
+    if not (is_device(cur, device_uuid)):
+        raise KeyError(f'device "{device_uuid}" does not exist in table "device_status"')
     if last_photo is not None:
-        sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_name='{device_name}'"
+        sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_uuid='{device_uuid}'"
     else:
-        sql_command = f"UPDATE devices SET status={status} WHERE device_name='{device_name}'"
+        sql_command = f"UPDATE devices SET status={status} WHERE device_uuid='{device_uuid}'"
     cur.execute(sql_command)
 
 

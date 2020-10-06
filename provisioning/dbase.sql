@@ -24,9 +24,9 @@ CREATE TABLE IF NOT EXISTS photos
     ,survey_run text NOT NULL
     ,device_name text NOT NULL
     ,photo_filename text NOT NULL
-    ,photo BYTEA NOT NULL
+    ,photo BYTEA
     ,thumbnail BYTEA
-    ,device_id BIGINT
+    ,device_uuid uuid
     ,PRIMARY KEY(photo_uuid)
     ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
         FOREIGN KEY(project_id)
@@ -50,11 +50,11 @@ CREATE TABLE IF NOT EXISTS project_active
 -- create a status table for the camera rig
 CREATE TABLE IF NOT EXISTS devices
 (
-device_id BIGINT GENERATED ALWAYS AS IDENTITY
-,device_name text NOT NULL
+device_uuid uuid  -- GENERATED ALWAYS AS IDENTITY
+,device_name text -- NOT NULL
 ,status integer NOT NULL -- what are our status codes?
 ,last_photo uuid
-,PRIMARY KEY(device_id)
+,PRIMARY KEY(device_uuid)
 ,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
         FOREIGN KEY(last_photo)
         REFERENCES photos(photo_uuid)

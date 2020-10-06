@@ -133,15 +133,21 @@ def stream():
     # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
     return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
+@app.route('/_cameras')
+def cameras():
+    import numpy as np
+    return jsonify({'camera1': np.random.rand(), 'camera2': np.random.rand()})
+
+
 @app.route('/picam', methods = ['GET', 'POST'])
 def picam():
     if request.method == 'POST':
 
-        r, status_code = do_request(method='POST')
+        r, status_code = do_request(cur, method='POST')
         return make_response(jsonify(r), status_code)
 
     elif request.method == 'GET':
-        r, status_code = do_request(method='GET')  # response is passed back to client
+        r, status_code = do_request(cur, method='GET')  # response is passed back to client
         return make_response(jsonify(r), status_code)
 
 
