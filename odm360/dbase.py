@@ -331,6 +331,16 @@ def is_device(cur, device_uuid):
     cur.execute(sql_command)
     return cur.fetchone()[0]
 
+def make_dict_devices(cur):
+    devices_raw = query_devices(cur)
+    devices = {f'camera{n}': {'device_uuid': d[0],
+                    'device_name': d[1],
+                    'status': utils.get_key_state(int(d[2])),
+                    'last_photo': d[3]
+                    } for n, d in enumerate(devices_raw)
+               }
+    return devices
+
 
 def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=False):
     table_name = 'devices'

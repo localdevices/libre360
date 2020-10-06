@@ -29,5 +29,20 @@
 
 {% block scripts %}
 {{super()}}
+Script for fetching the camera statuses continuously
+<script>
+    function fetchdata(){
+        $.getJSON(
+            "_cameras",
+            function(data){
+                $("#output").text(data.camera1);
+                // Update the value in your table here
+            }
+        );
+    }
+    setInterval(fetchdata, 1000)
+</script>
+
+
 <!-- TODO consider reusing parts of stuff below -->
 {% endblock %}

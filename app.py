@@ -119,7 +119,8 @@ def cam_page():
     """
         The data web pages where you can download/delete the raw gnss data
     """
-    return render_template("cam_status.html", n_cams=range(6))
+    devices = dbase.query_devices(cur)
+    return render_template("cam_status.html", cams=range(6), cams_online=len(devices))
 
 
 @app.route('/file_page')
@@ -133,10 +134,29 @@ def stream():
     # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
     return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
+
+@app.route("/show_cams")
+def show_cams():
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(cur, project_id=cur_project[0][0])
+    devices = dbase.query_devices(cur)
+
+    if len(cur_project) == 0:
+        cams = 0
+    else:
+        cams = range(len(devices))
+    return render_template("show_cams.html", cams=cams, cams_online=len(devices))
+
+
+
 @app.route('/_cameras')
 def cameras():
-    import numpy as np
-    return jsonify({'camera1': np.random.rand(), 'camera2': np.random.rand()})
+    # FIXME get the actual database status
+    devices = dbase.make_dict_devices(cur)
+    print(devices)
+    return jsonify(devices) #, mimetype='application/json') #mimetype="text/plain", content_type="text/event-stream")
+
 
 
 @app.route('/picam', methods = ['GET', 'POST'])
