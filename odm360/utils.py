@@ -61,27 +61,6 @@ def get_lan_devices(ip_subnet):
     nm.scan(hosts=ip_subnet, arguments='-sP')
     return [(x, nm[x]['status']['state']) for x in nm.all_hosts()]
 
-def parse_config(settings_path):
-    """
-        Parse the config file with interpolation=None or it will break run_cast.sh
-    """
-    config = ConfigParser(interpolation=None)
-    config.read(settings_path)
-    return config
-
-def make_config(settings):
-    """
-    Writes a config to a file
-
-    :param settings_path:
-    :return:
-    """
-    config = ConfigParser()
-    config.add_section('main')
-    for setting in settings:
-        config.set('main', setting, settings[setting])
-    return config
-
 
 def to_utc(dt):
     """
