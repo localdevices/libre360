@@ -86,10 +86,8 @@ def gps_page():
     return render_template("status.html",
                            projects=projects,
                            cur_project_id=cur_project_id,
-                           service_active=service_active,
-                           devices_total=len(devices_total),
-                           devices_ready=len(devices_ready)
-                           )  #
+                           service_active=service_active
+                           )
 
 @app.route('/project', methods=['GET', 'POST'])
 def project_page():
@@ -147,7 +145,6 @@ def stream():
 
 @app.route('/_cameras')
 def cameras():
-    # FIXME get the actual database status
     cur_project = dbase.query_project_active(cur)
     project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
     devices = dbase.make_dict_devices(cur)
@@ -165,6 +162,13 @@ def cameras():
 
     return jsonify(devices)
 
+
+@app.route('/_cam_summary')
+def cam_summary():
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
+    devices = dbase.query_devices(cur)
+    cams = {'ready': len(devices_ready), 'total': len(devices)}
+    return jsonify(cams)
 
 
 @app.route('/picam', methods = ['GET', 'POST'])
