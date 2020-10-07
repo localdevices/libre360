@@ -2,101 +2,13 @@
 from flask import Flask, render_template, redirect, request, jsonify, make_response, Response
 from flask_bootstrap import Bootstrap
 import psycopg2
+import logging
+
 from odm360.log import start_logger, stream_logger
-import odm360.camera360rig as camrig
+from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
-
-# API for picam is defined below
-def do_GET():
-    """
-    GET API should provide a json with the following fields:
-    state: str - can be:
-        "idle" - before anything is done, or after camera is stopped (to be implemented with push button)
-        "ready" - camera is initialized
-        "capture" - camera is capturing
-    req: str - name of method to call from server
-    kwargs: dict - any kwargs that need to be parsed to method (can be left out if None)
-    log: str - log message to be printed from client on server's log (see self.logger)
-
-    the GET API then decides what action should be taken given the state.
-    Client is responsible for updating its status to the current
-    """
-    # try:
-    msg = request.get_json()
-    # Create or update state of current camera
-    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
-    # check if the device exists.
-    if dbase.is_device(cur, device_name):
-        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
-    else:
-        dbase.insert_device(cur, device_name, states[msg['state']])
-    # current_app.config['rig'].cam_state[request.remote_addr] = msg['state']  # TODO: remove this old code, once works, also remove config['rig'] objects from code
-    log_msg = f'Cam {request.remote_addr} - GET {msg["req"]}'
-    logger.debug(log_msg)
-    # check if task exists and sent instructions back
-    method = f'get_{msg["req"].lower()}'
-    if not(hasattr(camrig, method)):
-        return 'method not available', 404
-    if 'kwargs' in msg:
-        kwargs = msg['kwargs']
-    else:
-        kwargs = {}
-    task = getattr(camrig, method)
-    # execute with key-word arguments provided
-    r = task(cur, **kwargs)
-    return r, 200
-    # except:
-    #     return 'method failed', 500
-
-# POST echoes the message adding a JSON field
-def do_POST():
-    """
-    POST API should provide a json with the following fields:
-    req: str - name of method for posting to call from server (e.g. log)
-    kwargs: dict - any kwargs that need to be parsed to method (can be left out if None)
-    the POST API then decides what action should be taken based on the POST request.
-    POST API will also return a result back
-    """
-    # try:
-    msg = request.get_json()
-    print(msg)
-    # Create or update state of current camera
-    device_name = request.remote_addr   # TODO: change this into the uuid of the device, once modified on the child side database setup
-    # check if the device exists.
-    if dbase.is_device(cur, device_name):
-        dbase.update_device(cur, device_name, states[msg['state']])  # TODO: add last_photo in the form of a thumbnail, requires modification of dbase last_photo data type
-    else:
-        dbase.insert_device(cur, device_name, states[msg['state']])
-    # show request in log
-    log_msg = f'Cam {request.remote_addr} - POST {msg["req"]}'
-
-    logger.debug(log_msg)
-
-    # check if task exists and sent instructions back
-    method = f'post_{msg["req"].lower()}'
-    if not(hasattr(camrig, method)):
-        return 'method not available', 404
-
-    if 'kwargs' in msg:
-        kwargs = msg['kwargs']
-    else:
-        kwargs = {}
-    task = getattr(camrig, method)
-    # execute with key-word arguments provided
-    r = task(**kwargs)
-    return r, 200
-    # except:
-    #     return 'method failed', 500
-
-def cleanopts(optsin):
-    """Takes a multidict from a flask form, returns cleaned dict of options"""
-    opts = {}
-    d = optsin
-    for key in d:
-        opts[key] = optsin[key].lower().replace(' ', '_')
-    return opts
-
+from odm360.utils import cleanopts
 
 db = 'dbname=odm360 user=odm360 host=localhost password=zanzibar'
 conn = psycopg2.connect(db)
@@ -113,10 +25,17 @@ if len(cur_project) == 1:
     dbase.update_project_active(cur, states['ready'])
 
 app = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+app.logger.disabled = True
 bootstrap = Bootstrap(app)
 
 @app.route("/", methods=['GET', 'POST'])
 def gps_page():
+    # check devices that are online and ready for capturing
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
+    devices_total = dbase.query_devices(cur)
+
     if request.method == "POST":
         raw_form = request.form
         form = cleanopts(raw_form)
@@ -126,14 +45,19 @@ def gps_page():
             dbase.truncate_table(cur, 'project_active')
             # insert new active project
             dbase.insert_project_active(cur, int(form['project']))
+            cur_project = dbase.query_projects(cur, project_id=int(form['project']), as_dict=True, flatten=True)
+            logger.info(f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'")
         elif 'service' in form:
             if form["service"] == "on":
-                logger.info("Starting service")
-                dbase.update_project_active(cur, states['capture'])
+                cur_project = dbase.query_project_active(cur)
+                project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
+                if project['n_cams'] == len(devices_ready):
+                    # get details of current project
+                    logger.info("Starting service")
+                    dbase.update_project_active(cur, states['capture'])
+                else:
+                    logger.info(f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready")
         elif len(form) == 0:
-            print(f'RAW FORM: {raw_form}')
-            print(f'FORM: {form}')
-            # TODO: bug in code. When switch is turned off, the form returns empty dictionary.
             logger.info("Stopping service")
             dbase.update_project_active(cur, states['ready'])  # status 1 means auto_start cameras once they are all online
 
@@ -144,8 +68,7 @@ def gps_page():
     project_names = [p[1] for p in projects]
     projects = zip(project_ids, project_names)
     cur_project = dbase.query_project_active(cur)
-    devices_ready = dbase.query_devices(cur, status=states['ready'])
-    devices_total = dbase.query_devices(cur)
+
 
     if len(cur_project) == 0:
         cur_project_id = None
@@ -154,16 +77,17 @@ def gps_page():
     else:
         cur_project_id = cur_project[0][0]
         service_active = cur_project[0][1]
+        project = dbase.query_projects(cur, project_id=cur_project_id, as_dict=True, flatten=True)
+        devices_expected = project['n_cams']
         if service_active != states['capture']:
             # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states['ready'])
+
     return render_template("status.html",
                            projects=projects,
                            cur_project_id=cur_project_id,
-                           service_active=service_active,
-                           devices_total=len(devices_total),
-                           devices_ready=len(devices_ready)
-                           )  #
+                           service_active=service_active
+                           )
 
 @app.route('/project', methods=['GET', 'POST'])
 def project_page():
@@ -203,10 +127,9 @@ def settings_page():
 
 @app.route('/cams')
 def cam_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    return render_template("cam_status.html", n_cams=range(6))
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    return render_template("cam_status.html")
+
 
 @app.route('/file_page')
 def file_page():
@@ -219,16 +142,51 @@ def stream():
     # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
     return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
+
+@app.route('/_cameras')
+def cameras():
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
+    devices = dbase.make_dict_devices(cur)
+    n_online = len(devices)
+    # add offline devices
+    n_offline = int(project['n_cams']) - n_online
+    for n in range(n_offline):
+        devices.append({'device_no': f'camera{n + n_online}',
+                        'device_uuid': 'uknown',
+                        'device_name': 'unknown',
+                        'status': 'offline',
+                        'last_photo': None,
+                        }
+                       )
+
+    return jsonify(devices)
+
+
+@app.route('/_cam_summary')
+def cam_summary():
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
+    devices = dbase.query_devices(cur)
+    cams = {'ready': len(devices_ready), 'total': len(devices)}
+    return jsonify(cams)
+
+
 @app.route('/picam', methods = ['GET', 'POST'])
 def picam():
     if request.method == 'POST':
 
-        r, status_code = do_POST()
-    else:
-        r, status_code = do_GET()  # response is passed back to client
-    return make_response(jsonify(r), status_code)
+        r, status_code = do_request(cur, method='POST')
+        return make_response(jsonify(r), status_code)
+
+    elif request.method == 'GET':
+        r, status_code = do_request(cur, method='GET')  # response is passed back to client
+        return make_response(jsonify(r), status_code)
+
 
 def run(app):
+    server = '0.0.0.0'
+    port = 5000
+    logger.info(f'Running application on http://{server}:{port}')
     app.run(debug=False, port=5000, host="0.0.0.0")
 
 if __name__ == "__main__":

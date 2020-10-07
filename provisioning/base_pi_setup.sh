@@ -46,7 +46,7 @@ echo updating
 sudo apt update && sudo apt upgrade -y
 
 echo Installing ODM infrastructure
-sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
+sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran nmap
 
 echo Installing emacs because it is the best editor and IDE. You are welcome.
 sudo apt install -y emacs-nox

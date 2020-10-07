@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # Set up a Raspberry Pi as a Child for an ODM360 rig
-
 echo checking if this is running on a Raspberry Pi
 # for some reason this produces a cryptic Bash error
 # warning: command substitution: ignored null byte in input
