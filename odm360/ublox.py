@@ -1,6 +1,8 @@
 import logging
 from odm360.serial_device import SerialDevice
+
 logger = logging.getLogger(__name__)
+
 
 class Ublox(SerialDevice):
     # def find_serial_device(self, wildcard='u-blox'):
@@ -18,7 +20,7 @@ class Ublox(SerialDevice):
             pass
             # FIXME: implement parsing of NMEA from text to self.nmea
         else:
-            raise ValueError('No text found.')
+            raise ValueError("No text found.")
 
     def log_rinex(self):
         """
@@ -26,4 +28,4 @@ class Ublox(SerialDevice):
 
         :return:
         """
-        raise NotImplementedError('Not implemented yet.')
+        raise NotImplementedError("Not implemented yet.")

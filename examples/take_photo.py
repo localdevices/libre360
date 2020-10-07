@@ -1,6 +1,7 @@
 import gphoto2 as gp
 from odm360 import camera360gphoto
 from odm360.log import setuplog
+
 camera_list = list(gp.Camera.autodetect())
 rig = [camera360gphoto.Camera360G(addr=addr) for name, addr in camera_list]
 camera = rig[0]
@@ -17,8 +18,8 @@ print(camera.get_port_info())
 camera.init()
 
 text = camera.get_summary()
-print('Summary')
-print('=======')
+print("Summary")
+print("=======")
 print(str(text))
 camera.capture_until(timeout=1)
 camera.exit()

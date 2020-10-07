@@ -1,132 +1,9 @@
 import psycopg2
-import logging
-import datetime as dt
+
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
-from odm360.states import states
 
-def create_table(cur, sql_command):
-    """
-    Create a new table using a sql command
-    :param cur:
-    :param sql_command:
-    :return:
-    """
-    try:
-        cur.execute(sql_command)
-        cur.connection.commit()
-    except:
-        raise IOError('Table creation did not succeed.')
-
-
-def create_table_photos(cur):
-    """
-    create table for storing photos
-    :param cur:
-    :return:
-    """
-
-    sql_command = """
-    CREATE TABLE IF NOT EXISTS photos
-    (photo_uuid uuid DEFAULT uuid_generate_v4 () 
-    ,project_id INT
-    ,survey_run text NOT NULL
-    ,device_name text NOT NULL
-    ,photo_filename text NOT NULL
-    ,photo BYTEA NOT NULL
-    ,thumbnail BYTEA
-    ,device_uuid uuid
-    ,PRIMARY KEY(photo_uuid)
-    ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
-        FOREIGN KEY(project_id) 
-            REFERENCES projects(project_id)
-        ON DELETE CASCADE
-    );
-
-    """
-
-    create_table(cur, sql_command)
-
-
-def create_table_projects(cur):
-    sql_command = """
-    CREATE TABLE IF NOT EXISTS projects
-    (
-    project_id BIGINT GENERATED ALWAYS AS IDENTITY -- rather than serial, we will comply with the SQL standard
-    ,project_name text NOT NULL -- I assuming this is a project name and have renamed as such
-    ,n_cams integer NOT NULL
-    ,dt BIGINT NOT NULL
-    ,PRIMARY KEY(project_id)
-    -- just to keep constraints to the end of the table creation process,we call out the primary key separately
-    );
-    """
-
-    create_table(cur, sql_command)
-
-
-def create_table_devices(cur):
-    """
-    creates a status table for the camera rig, always first drops the existing status table before creating a new one
-    :param cur: cursor
-    :return:
-    """
-    # then create a new one
-    sql_command = """
-    CREATE TABLE IF NOT EXISTS devices
-    (
-    device_uuid uuid GENERATED ALWAYS AS IDENTITY
-    ,device_name text NOT NULL
-    ,status integer NOT NULL -- what are our status codes?
-    ,last_photo uuid
-    ,PRIMARY KEY(device_uuid)
-    ,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
-            FOREIGN KEY(last_photo) 
-            REFERENCES photos(photo_uuid)
-        ON DELETE CASCADE	
-    );
-
-    """
-    create_table(cur, sql_command)
-
-
-def create_table_project_active(cur, drop=False):
-    """
-    Create a table for just the project that is currently active, only holding the project_id and a status
-    :param cur: cursor
-    :param drop: bool - default False, if set to True, any existing table will be dropped first, before (re)creation
-    :return:
-    """
-    if drop:
-        sql_command = """
-        -- Lists the current active project ID and that's it... .
-        DROP TABLE IF EXISTS project_active CASCADE;
-        CREATE TABLE IF NOT EXISTS project_active
-        (
-            project_id BIGINT
-            ,status integer -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
-            ,start_time timestamp -- 
-            ,CONSTRAINT fk_projects
-                FOREIGN KEY(project_id) 
-                  REFERENCES projects(project_id)
-              ON DELETE CASCADE	
-        );
-        """
-    else:
-        sql_command = """
-        -- Lists the current active project ID and that's it... .
-        CREATE TABLE IF NOT EXISTS project_active
-        (
-            project_id BIGINT
-            ,status integer  -- 0: waiting for cams to get ready, 1: ready, 2: capturing, 3: transferring
-            ,CONSTRAINT fk_projects
-                FOREIGN KEY(project_id) 
-                  REFERENCES projects(project_id)
-              ON DELETE CASCADE	
-        );
-        """
-
-    create_table(cur, sql_command)
 
 def delete_project(cur, project_name=None, project_id=None):
     """
@@ -139,7 +16,7 @@ def delete_project(cur, project_name=None, project_id=None):
     :return:
     """
     if (project_name is None) and (project_id is None):
-        raise ValueError('provide either a project_name or project_id')
+        raise ValueError("provide either a project_name or project_id")
     if not (project_name is None):
         sql_command = f"DELETE FROM projects WHERE project_name='{project_name}'"
     else:
@@ -149,26 +26,9 @@ def delete_project(cur, project_name=None, project_id=None):
     cur.connection.commit()
 
 
-def drop_table(cur, table_name, cascade=False):
-    """
-    Drop a table from the database, if cascade is set to True, then all tables dependent also remove.
-    :param cur: cursor
-    :param table_name: string - name of table (e.g. projects)
-    :param cascade: bool (default False) - cascades to all other tables (yay! tidy databases)
-    :return:
-    """
-    if cascade:
-        sql_command = f"DROP TABLE IF EXISTS {table_name} CASCADE"
-    else:
-        sql_command = f"DROP TABLE IF EXISTS {table_name} "
-
-    cur.execute(sql_command)
-    cur.connection.commit()
-
-
 def drop_photo(cur):
     # FIXME: implement
-    raise NotImplementedError('Not yet implemented')
+    raise NotImplementedError("Not yet implemented")
 
 
 def insert(cur, sql_command):
@@ -198,9 +58,13 @@ def insert_device(cur, device_uuid, device_name, status):
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status) VALUES ('{device_uuid}', '{device_name}', {status});"
     insert(cur, sql_command)
 
+
 def insert_project_active(cur, project_id):
-    sql_command = f"INSERT INTO project_active(project_id, status) VALUES ({project_id}, 0);"
+    sql_command = (
+        f"INSERT INTO project_active(project_id, status) VALUES ({project_id}, 0);"
+    )
     insert(cur, sql_command)
+
 
 def insert_project(cur, project_name, n_cams, dt):
     """
@@ -226,7 +90,18 @@ def insert_project(cur, project_name, n_cams, dt):
     """
     insert(cur, sql_command)
 
-def insert_photo(cur, project_id, survey_run, device_uuid, device_name, fn, photo_uuid=None, photo=None, thumb=None):
+
+def insert_photo(
+    cur,
+    project_id,
+    survey_run,
+    device_uuid,
+    device_name,
+    fn,
+    photo_uuid=None,
+    photo=None,
+    thumb=None,
+):
     """
     Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
     :param cur: cursor
@@ -238,7 +113,9 @@ def insert_photo(cur, project_id, survey_run, device_uuid, device_name, fn, phot
     :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
     :return:
     """
-    _photo = psycopg2.Binary(photo)  # note: photo can be retrieved with _photo.tobytes()
+    _photo = psycopg2.Binary(
+        photo
+    )  # note: photo can be retrieved with _photo.tobytes()
     if photo_uuid is not None:
         # occurs when parent-side storage is done, no binary data is stored
         sql_command = f"""
@@ -326,32 +203,40 @@ def is_device(cur, device_uuid):
     :param device_uuid: uuid - name of device
     :return: True/False
     """
-    sql_command = f"SELECT EXISTS ( SELECT 1 FROM devices WHERE device_uuid='{device_uuid}')"
+    sql_command = (
+        f"SELECT EXISTS ( SELECT 1 FROM devices WHERE device_uuid='{device_uuid}')"
+    )
     cur.connection.rollback()
     cur.execute(sql_command)
     return cur.fetchone()[0]
 
+
 def make_dict_devices(cur):
     devices_raw = query_devices(cur)
-    devices = [{'device_no': f'camera{n}',
-                'device_uuid': d[0],
-                'device_name': d[1],
-                'status': utils.get_key_state(int(d[2])),
-                'last_photo': d[3]
-                } for n, d in enumerate(devices_raw)
-               ]
+    devices = [
+        {
+            "device_no": f"camera{n}",
+            "device_uuid": d[0],
+            "device_name": d[1],
+            "status": utils.get_key_state(int(d[2])),
+            "last_photo": d[3],
+        }
+        for n, d in enumerate(devices_raw)
+    ]
     return devices
 
 
 def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=False):
-    table_name = 'devices'
+    table_name = "devices"
     sql_command = f"""SELECT * FROM {table_name}"""
     if status is not None:
         sql_command = sql_command + f""" WHERE status={status}"""
     if device_uuid is not None:
         sql_command = sql_command + f""" WHERE device_uuid='{device_uuid}'"""
 
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    )
 
 
 def query_photo(cur, fn):
@@ -362,12 +247,15 @@ def query_photo(cur, fn):
     :param kwargs: query_table kwargs (as_dict and flatten)
     :return:
     """
-    table_name = 'photos'
+    table_name = "photos"
     if fn is None:
-        raise ValueError('Must provide filename as string')
+        raise ValueError("Must provide filename as string")
     sql_command = f"SELECT * FROM {table_name} WHERE photo_filename='{fn}'"
     # as we are looking for one unique, photo, as_dict and flatten need to be True
-    return query_table(cur, sql_command, table_name=table_name, as_dict=True, flatten=True)
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=True, flatten=True
+    )
+
 
 def query_photos(cur, project_id=None, as_dict=False, flatten=False):
     """
@@ -376,12 +264,14 @@ def query_photos(cur, project_id=None, as_dict=False, flatten=False):
     :param project_id: int - project id
     :return: list of results
     """
-    table_name = 'photos'
+    table_name = "photos"
     if project_id is None:
-        raise ValueError('provide a project_id')
+        raise ValueError("provide a project_id")
     sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
 
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    )
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -389,20 +279,24 @@ def query_photos_survey(cur, project_id, survey_run):
     raise NotImplemented("Function needs to be prepared")
 
 
-def query_projects(cur, project_id=None, project_name=None, as_dict=False, flatten=False):
+def query_projects(
+    cur, project_id=None, project_name=None, as_dict=False, flatten=False
+):
     """
     returns all project names available in table "photos" as flattened list
     :param cur: cursor
     :return: list of strings
     """
-    table_name = 'projects'
+    table_name = "projects"
     if project_id is not None:
         sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
     elif project_name is not None:
         sql_command = f"SELECT * FROM {table_name} WHERE project_name='{project_name}'"
     else:
         sql_command = f"SELECT * FROM {table_name}"
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten)
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    )
 
 
 def query_project_active(cur, as_dict=False):
@@ -411,16 +305,21 @@ def query_project_active(cur, as_dict=False):
     :param cur: cursor
     :return: list of one project
     """
-    table_name = 'project_active'
+    table_name = "project_active"
     sql_command = f"SELECT * FROM {table_name}"
-    return query_table(cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=True)
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=True
+    )
+
 
 def query_table(cur, sql_command, table_name=None, as_dict=False, flatten=False):
     cur.execute(sql_command)
     data = cur.fetchall()
     if as_dict:
         if table_name is None:
-            raise ValueError('table_name is of type None, has to be type str to use as_dict=True')
+            raise ValueError(
+                "table_name is of type None, has to be type str to use as_dict=True"
+            )
         # add the column labels and make a dict out of the data
         sql_command = f"""SELECT column_name FROM information_schema.columns WHERE table_name='{table_name}'"""
         cur.execute(sql_command)
@@ -450,11 +349,15 @@ def update_device(cur, device_uuid, status, last_photo=None):
     :return:
     """
     if not (is_device(cur, device_uuid)):
-        raise KeyError(f'device "{device_uuid}" does not exist in table "device_status"')
+        raise KeyError(
+            f'device "{device_uuid}" does not exist in table "device_status"'
+        )
     if last_photo is not None:
         sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_uuid='{device_uuid}'"
     else:
-        sql_command = f"UPDATE devices SET status={status} WHERE device_uuid='{device_uuid}'"
+        sql_command = (
+            f"UPDATE devices SET status={status} WHERE device_uuid='{device_uuid}'"
+        )
     cur.execute(sql_command)
 
 
@@ -468,7 +371,9 @@ def update_project_active(cur, status, start_time=None):
     if start_time is None:
         sql_command = f"UPDATE project_active SET status={status}"
     else:
-        start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')
-        sql_command = f"UPDATE project_active SET status={status}, start_time='{start_time_str}'"
+        start_time_str = start_time.strftime("%Y-%m-%dT%H:%M:%S.%f")
+        sql_command = (
+            f"UPDATE project_active SET status={status}, start_time='{start_time_str}'"
+        )
     cur.execute(sql_command)
     cur.connection.commit()

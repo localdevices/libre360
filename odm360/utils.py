@@ -14,11 +14,11 @@ def cleanopts(optsin):
     opts = {}
     d = optsin
     for key in d:
-        opts[key] = optsin[key].lower().replace(' ', '_')
+        opts[key] = optsin[key].lower().replace(" ", "_")
     return opts
 
 
-def find_serial(wildcard='', logger=logger):
+def find_serial(wildcard="", logger=logger):
     """
     Looks for serial devices in all active serial ports
 
@@ -31,10 +31,11 @@ def find_serial(wildcard='', logger=logger):
         port = p[0]
         description = p[1]
         if wildcard.lower() in description.lower():
-            logger.info(f'Found {description} on port {port}')
+            logger.info(f"Found {description} on port {port}")
             ports.append(port)
             descr.append(description)
     return ports, descr
+
 
 def get_lan_ip():
     """
@@ -44,43 +45,25 @@ def get_lan_ip():
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    s.connect(('<broadcast>', 0))
+    s.connect(("<broadcast>", 0))
     return s.getsockname()[0]
+
 
 def get_lan_devices(ip_subnet):
     """
 
     :return:
     """
-    ip_parts = ip_subnet.split('.')
+    ip_parts = ip_subnet.split(".")
     if len(ip_parts) < 3:
-        raise ValueError('You supplied an ip_subnet that does not look like "XXX.XXX.XXX.XXX"')
-    ip_subnet = '{}.{}.{}.0/24'.format(*ip_parts[0:3])
+        raise ValueError(
+            'You supplied an ip_subnet that does not look like "XXX.XXX.XXX.XXX"'
+        )
+    ip_subnet = "{}.{}.{}.0/24".format(*ip_parts[0:3])
 
     nm = nmap.PortScanner()  # instantiate nmap.PortScanner object
-    nm.scan(hosts=ip_subnet, arguments='-sP')
-    return [(x, nm[x]['status']['state']) for x in nm.all_hosts()]
-
-def parse_config(settings_path):
-    """
-        Parse the config file with interpolation=None or it will break run_cast.sh
-    """
-    config = ConfigParser(interpolation=None)
-    config.read(settings_path)
-    return config
-
-def make_config(settings):
-    """
-    Writes a config to a file
-
-    :param settings_path:
-    :return:
-    """
-    config = ConfigParser()
-    config.add_section('main')
-    for setting in settings:
-        config.set('main', setting, settings[setting])
-    return config
+    nm.scan(hosts=ip_subnet, arguments="-sP")
+    return [(x, nm[x]["status"]["state"]) for x in nm.all_hosts()]
 
 
 def to_utc(dt):
@@ -112,7 +95,7 @@ def get_key_state(value):
     :param value: int - state value to look for key
     :return: str - name of key
     """
-    keys = [k for k, v in states.items() if v==value]
+    keys = [k for k, v in states.items() if v == value]
     if len(keys) == 0:
         return None
     elif len(keys) == 1:
