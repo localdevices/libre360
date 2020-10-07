@@ -3,7 +3,6 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
-
 def delete_project(cur, project_name=None, project_id=None):
     """
     Deletes a indicated project and all relations from database (inc. photos, so be careful with this one!)
@@ -20,23 +19,6 @@ def delete_project(cur, project_name=None, project_id=None):
         sql_command = f"DELETE FROM projects WHERE project_name='{project_name}'"
     else:
         sql_command = f"DELETE FROM projects WHERE project_id={project_id}"
-
-    cur.execute(sql_command)
-    cur.connection.commit()
-
-
-def drop_table(cur, table_name, cascade=False):
-    """
-    Drop a table from the database, if cascade is set to True, then all tables dependent also remove.
-    :param cur: cursor
-    :param table_name: string - name of table (e.g. projects)
-    :param cascade: bool (default False) - cascades to all other tables (yay! tidy databases)
-    :return:
-    """
-    if cascade:
-        sql_command = f"DROP TABLE IF EXISTS {table_name} CASCADE"
-    else:
-        sql_command = f"DROP TABLE IF EXISTS {table_name} "
 
     cur.execute(sql_command)
     cur.connection.commit()
