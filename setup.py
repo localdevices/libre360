@@ -27,6 +27,7 @@ setup(
         "numpy",
         "pytz",
         "tzlocal",
+        "uuid",
         "gphoto2",
         "schedule",
         "picamera",
