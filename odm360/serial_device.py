@@ -5,11 +5,15 @@ import pickle
 
 logger = logging.getLogger(__name__)
 
-class SerialDevice():
+
+class SerialDevice:
     """
     Class for generic functionalities for any serial device. Can be inherited for specific serial devices.
     """
-    def __init__(self, port, root='.', baud_rate=9600, timeout=5, parent=None, logger=logger):
+
+    def __init__(
+        self, port, root=".", baud_rate=9600, timeout=5, parent=None, logger=logger
+    ):
         """
         Initiate object with defaults
         :param port: str - UART port to connect with
@@ -33,12 +37,16 @@ class SerialDevice():
         """
         if self.port is not None:
             try:
-                self.serial = serial.Serial(self.port, self.baud_rate, timeout=self.timeout)
-                self.logger.info(f'Serial port on {self.port} opened with baud rate {self.baud_rate}')
+                self.serial = serial.Serial(
+                    self.port, self.baud_rate, timeout=self.timeout
+                )
+                self.logger.info(
+                    f"Serial port on {self.port} opened with baud rate {self.baud_rate}"
+                )
             except:
-                raise IOError('Cannot open serial device, check permissions')
+                raise IOError("Cannot open serial device, check permissions")
         else:
-            raise IOError('No port specified, please connect a device.')
+            raise IOError("No port specified, please connect a device.")
 
     def close_serial_device(self):
         """
@@ -46,17 +54,15 @@ class SerialDevice():
         """
         if self.serial is not None:
             self.serial.close()
-            logger.warning(f'Serial connection to {self.port} is closed.')
+            logger.warning(f"Serial connection to {self.port} is closed.")
         else:
-            raise IOError('No serial connection is open.')
+            raise IOError("No serial connection is open.")
 
     def _send_method(self, name, **kwargs):
         """
         serializes a function name and its arguments (provided as kwargs) in pickle, and send to device
         """
-        msg = {'name': name,
-               'kwargs': kwargs
-               }
+        msg = {"name": name, "kwargs": kwargs}
         p = pickle.dumps(msg)  # serialize msg
         self.serial.write(p)
         # self.serial.write(str.encode(txt))
@@ -84,7 +90,7 @@ class SerialDevice():
             p = pickle.dumps(data)  # serialize msg
             self.serial.write(p)
         else:
-            raise IOError('No serial connection is open.')
+            raise IOError("No serial connection is open.")
 
     def _from_serial(self):
         """
@@ -95,10 +101,10 @@ class SerialDevice():
         if self.serial is not None:
             data = self.serial.readline()
             if len(data) == 0:
-                raise IOError('Empty line received')
-            return pickle.loads(data) # return loaded data
+                raise IOError("Empty line received")
+            return pickle.loads(data)  # return loaded data
         else:
-            raise IOError('No serial connection is open.')
+            raise IOError("No serial connection is open.")
 
     def _from_serial_until(self, timeout=1):
         # TODO: implement a timeout in case no suitable data is found within timeout period
@@ -107,7 +113,9 @@ class SerialDevice():
             try:
                 data = self._from_serial()
                 _read = False
-                self.logger.info(f'Data received from {self.description} on port {self.port}')
+                self.logger.info(
+                    f"Data received from {self.description} on port {self.port}"
+                )
             except:
                 pass
         return data
@@ -126,4 +134,3 @@ class SerialDevice():
     #             # binary data found, so read until
     #             pass
     #     return txt
-

@@ -38,10 +38,7 @@ setup(
         "uwsgi",
         "psycopg2",
     ],
-    extras_require={
-        "dev": ["pytest", "pytest-cov", "black"],
-        "optional": [],
-    },
+    extras_require={"dev": ["pytest", "pytest-cov", "black"], "optional": [],},
     entry_points="""
     """,
     include_package_data=True,

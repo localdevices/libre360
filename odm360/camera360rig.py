@@ -9,7 +9,7 @@ import odm360.camera360rig as camrig
 logger = logging.getLogger(__name__)
 
 # API for picam is defined below
-def do_request(cur, method='GET'):
+def do_request(cur, method="GET"):
     """
     GET API should provide a json with the following fields:
     state: str - can be:
@@ -26,27 +26,22 @@ def do_request(cur, method='GET'):
     # try:
     msg = request.get_json()
     # Create or update state of current camera
-    state = msg['state']
+    state = msg["state"]
     # check if the device exists.
-    if dbase.is_device(cur, state['device_uuid']):
-        dbase.update_device(cur,
-                            state['device_uuid'],
-                            states[state['status']]
-                            )
+    if dbase.is_device(cur, state["device_uuid"]):
+        dbase.update_device(cur, state["device_uuid"], states[state["status"]])
     else:
-        dbase.insert_device(cur,
-                            state['device_uuid'],
-                            state['device_name'],
-                            states[state['status']]
-                            )
+        dbase.insert_device(
+            cur, state["device_uuid"], state["device_name"], states[state["status"]]
+        )
     log_msg = f'Cam {state["device_uuid"]} on {state["ip"]} - {method} {msg["req"]}'
     logger.debug(log_msg)
     # check if task exists and sent instructions back
     func = f'{method.lower()}_{msg["req"].lower()}'
-    if not(hasattr(camrig, func)):
-        return 'method not available', 404
-    if 'kwargs' in msg:
-        kwargs = msg['kwargs']
+    if not (hasattr(camrig, func)):
+        return "method not available", 404
+    if "kwargs" in msg:
+        kwargs = msg["kwargs"]
     else:
         kwargs = {}
     task = getattr(camrig, func)
@@ -56,6 +51,7 @@ def do_request(cur, method='GET'):
     # except:
     #     return 'method failed', 500
 
+
 def get_project(cur, state):
     """
     :return:
@@ -64,13 +60,16 @@ def get_project(cur, state):
     cur_project = dbase.query_project_active(cur, as_dict=True)
     # retrieve project with project_id
     if len(cur_project) == 0:
-        return  {'task': 'wait',
-                'kwargs': {}
-                }
+        return {"task": "wait", "kwargs": {}}
 
-    logger.info(f"Giving project {cur_project['project_id']} to Cam {state['device_uuid']}")
-    project = dbase.query_projects(cur, project_id=cur_project['project_id'], as_dict=True, flatten=True)
-    return {'project': project}
+    logger.info(
+        f"Giving project {cur_project['project_id']} to Cam {state['device_uuid']}"
+    )
+    project = dbase.query_projects(
+        cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
+    )
+    return {"project": project}
+
 
 def get_task(cur, state):
     """
@@ -88,32 +87,29 @@ def get_task(cur, state):
     # TODO: remove the automatic stopping after 10 secs
     rig = dbase.query_project_active(cur, as_dict=True)
 
-    cur_device = dbase.query_devices(cur, device_uuid=state['device_uuid'], as_dict=True, flatten=True)
+    cur_device = dbase.query_devices(
+        cur, device_uuid=state["device_uuid"], as_dict=True, flatten=True
+    )
     # get states of parent and child in human readable format
-    device_status = utils.get_key_state(cur_device['status'])
-    rig_status = utils.get_key_state(rig['status'])
+    device_status = utils.get_key_state(cur_device["status"])
+    rig_status = utils.get_key_state(rig["status"])
 
     if device_status != rig_status:
         # something needs to be done to get the states the same
-        if (device_status == 'idle') and (rig_status == 'ready'):
+        if (device_status == "idle") and (rig_status == "ready"):
             # initialize the camera
-            logger.info('Sending camera initialization ')
-            return {'task': 'init',
-                    'kwargs': {}
-                    }
-        elif (device_status == 'ready') and (rig_status == 'capture'):
+            logger.info("Sending camera initialization ")
+            return {"task": "init", "kwargs": {}}
+        elif (device_status == "ready") and (rig_status == "capture"):
             return activate_camera(cur, state)
 
-        elif (device_status == 'capture') and (rig_status == 'ready'):
-            return {'task': 'stop',
-                    'kwargs': {}
-                    }
+        elif (device_status == "capture") and (rig_status == "ready"):
+            return {"task": "stop", "kwargs": {}}
         # camera is already capturing, so just wait for further instructions (stop)
-    return {'task': 'wait',
-            'kwargs': {}
-            }
+    return {"task": "wait", "kwargs": {}}
 
-def post_log(cur, state, msg, level='info'):
+
+def post_log(cur, state, msg, level="info"):
     """
     Log message from current camera on logger
     :return:
@@ -123,9 +119,10 @@ def post_log(cur, state, msg, level='info'):
         log_msg = f'Cam {state["device_uuid"]} - {msg}'
         log_method = getattr(logger, level)
         log_method(log_msg)
-        return {'success': True}
+        return {"success": True}
     except:
-        return {'success': False}
+        return {"success": False}
+
 
 def post_store(cur, state, **kwargs):
     """
@@ -140,37 +137,50 @@ def post_store(cur, state, **kwargs):
 def activate_camera(cur, state):
     # retrieve settings of current project
     cur_project = dbase.query_project_active(cur, as_dict=True)
-    project = dbase.query_projects(cur, project_id=cur_project['project_id'], as_dict=True, flatten=True)
-    dt = int(project['dt'])
+    project = dbase.query_projects(
+        cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
+    )
+    dt = int(project["dt"])
 
     cur_address = request.remote_addr  # TODO: also add uuid of device
     # check how many cams have the state 'ready', only start when the full rig is ready
-    n_cams_ready = len(dbase.query_devices(cur, status=states['ready']))
+    n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
 
     # compute cams ready from a PostGreSQL query
-    if n_cams_ready == project['n_cams']:
-        logger.info(f'All cameras ready. Start capturing on device {state["device_uuid"]} on ip {state["ip"]}')
+    if n_cams_ready == project["n_cams"]:
+        logger.info(
+            f'All cameras ready. Start capturing on device {state["device_uuid"]} on ip {state["ip"]}'
+        )
         # no start time has been set yet, ready to start the time
-        logger.debug('All cameras are ready, setting start time')
+        logger.debug("All cameras are ready, setting start time")
 
-        start_time_epoch = dt * round((time.time() + 10) / dt)  # this number is send to the child to start capturing
+        start_time_epoch = dt * round(
+            (time.time() + 10) / dt
+        )  # this number is send to the child to start capturing
         start_datetime = datetime.datetime.fromtimestamp(start_time_epoch)
         start_datetime_utc = utils.to_utc(start_datetime)
 
         # set start time for capturing, and set state to capture
-        dbase.update_project_active(cur, status=states['capture'], start_time=start_datetime_utc)
-        logger.debug(f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}')
-        logger.info(f'Sending capture command to {cur_address}')
-        return {'task': 'capture_continuous',
-                'kwargs': {'start_time': start_time_epoch,
-                           'survey_run': start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S"),
-                           'project': project},
-                }
+        dbase.update_project_active(
+            cur, status=states["capture"], start_time=start_datetime_utc
+        )
+        logger.debug(
+            f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}'
+        )
+        logger.info(f"Sending capture command to {cur_address}")
+        return {
+            "task": "capture_continuous",
+            "kwargs": {
+                "start_time": start_time_epoch,
+                "survey_run": start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S"),
+                "project": project,
+            },
+        }
     else:
         # this should not happen as the front end part already checks if enough cams are online.
-        logger.info(f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, switching state back')
-        return {'task': 'wait',
-                'kwargs': {}
-                }
+        logger.info(
+            f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, switching state back'
+        )
+        return {"task": "wait", "kwargs": {}}
         # roll back to state "ready"
-        dbase.update_project_active(cur, status=states['ready'])
+        dbase.update_project_active(cur, status=states["ready"])
