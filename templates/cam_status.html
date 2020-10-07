@@ -7,18 +7,7 @@
 {% endblock %}
 
 {% block content %}
-<!-- <body id="main">-->
-<!--<div class="container">-->
-<!--        <div class="row">-->
-<!--            <div class="col">-->
-<!--                <b>Camera: </b>-->
-<!--            </div>-->
-<!--            <div id=output0 class="col">-->
-<!--                <b>STATUSS!!!</b>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--</div>-->
-<!-- </body>-->
+
 <div class="container">
     <table id="table">
         <thead>
@@ -41,17 +30,24 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script>
+    function loadTable()
+    {
+        $(function () {
+          $('#table').bootstrapTable({
+          });
+        });
+    }
     function fetchdevices(){
         $.getJSON(
             "_cameras",
             function(data){
-                $('#table').bootstrapTable({
-                data: data
-                });
-                $('#table').bootstrapTable('refresh');
+                $('#table').bootstrapTable("load",
+                data
+                );
             }
         );
     }
+    loadTable();
     setInterval(fetchdevices, 1000);
 </script>
 
