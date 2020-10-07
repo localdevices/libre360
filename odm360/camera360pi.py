@@ -1,5 +1,4 @@
 import os
-import io
 import time
 import logging
 import json
