@@ -26,7 +26,6 @@ def do_request(cur, method='GET'):
     """
     # try:
     msg = request.get_json()
-    print(msg)
     # Create or update state of current camera
     state = msg['state']
     # device_uuid = msg['device_uuid']  # TODO: change this into the uuid of the device, once modified on the child side database setup
@@ -95,11 +94,10 @@ def get_task(cur, state):
 
     cur_address = request.remote_addr
     cur_device = dbase.query_devices(cur, device_uuid=state['device_uuid'], as_dict=True, flatten=True)
-    print(f'CUR DEVICE IS {cur_device}')
     # get states of parent and child in human readable format
     device_status = utils.get_key_state(cur_device['status'])
     rig_status = utils.get_key_state(rig['status'])
-    print(f'DEVICE STATE IS {device_status} and RIG STATE IS {rig_status}')
+    # print(f'DEVICE STATE IS {device_status} and RIG STATE IS {rig_status}')
 
     if device_status != rig_status:
         # something needs to be done to get the states the same
@@ -176,8 +174,10 @@ def activate_camera(cur, state):
                            'project': project},
                 }
     else:
-        logger.debug(f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, waiting...')
+        logger.info(f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, switching state back')
         return {'task': 'wait',
                 'kwargs': {}
                 }
+        # roll back to state "ready"
+        dbase.update_project_active(cur, status=states['ready'])
     # TODO check wait
