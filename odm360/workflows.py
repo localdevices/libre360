@@ -38,24 +38,6 @@ def parent_gphoto2(dt, root='.', timeout=1, logger=logger, debug=False):
             logger.info('Camera not responding or disconnected')
     camera.exit()
 
-def parent_server(dt, project, root='.', logger=logger, n_cams=2, wait_time=12000, port=5000, debug=False, auto_start=False):
-    """
-
-    :param dt: time interval between photos
-    :param root: name of root folder to store photos in
-    :param logger: logger object
-    :param n_cams: number of cameras to expect (capturing will not commence before this amount is reached)
-    :param wait_time: time to wait until all cameras are online, stop when this is not reached in time
-    :param port: port number to host server
-
-    :return:
-    """
-    _start = time.time()
-    # find own ip address
-    ip = get_lan_ip()
-    # setup server
-    rig = CameraRig(ip, port, root=root, n_cams=n_cams, auto_start=auto_start, logger=logger)
-    return rig
 
 def parent_serial(dt, project, root='.', timeout=0.02, logger=logger, rig_size=1, debug=False, auto_start=False):
     ports = []
