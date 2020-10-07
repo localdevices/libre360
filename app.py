@@ -2,6 +2,7 @@
 from flask import Flask, render_template, redirect, request, jsonify, make_response, Response
 from flask_bootstrap import Bootstrap
 import psycopg2
+import logging
 
 from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
@@ -24,10 +25,17 @@ if len(cur_project) == 1:
     dbase.update_project_active(cur, states['ready'])
 
 app = Flask(__name__)
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+app.logger.disabled = True
 bootstrap = Bootstrap(app)
 
 @app.route("/", methods=['GET', 'POST'])
 def gps_page():
+    # check devices that are online and ready for capturing
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
+    devices_total = dbase.query_devices(cur)
+
     if request.method == "POST":
         raw_form = request.form
         form = cleanopts(raw_form)
@@ -41,12 +49,15 @@ def gps_page():
             logger.info(f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'")
         elif 'service' in form:
             if form["service"] == "on":
-                logger.info("Starting service")
-                dbase.update_project_active(cur, states['capture'])
+                cur_project = dbase.query_project_active(cur)
+                project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
+                if project['n_cams'] == len(devices_ready):
+                    # get details of current project
+                    logger.info("Starting service")
+                    dbase.update_project_active(cur, states['capture'])
+                else:
+                    logger.info(f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready")
         elif len(form) == 0:
-            print(f'RAW FORM: {raw_form}')
-            print(f'FORM: {form}')
-            # TODO: bug in code. When switch is turned off, the form returns empty dictionary.
             logger.info("Stopping service")
             dbase.update_project_active(cur, states['ready'])  # status 1 means auto_start cameras once they are all online
 
@@ -57,8 +68,7 @@ def gps_page():
     project_names = [p[1] for p in projects]
     projects = zip(project_ids, project_names)
     cur_project = dbase.query_project_active(cur)
-    devices_ready = dbase.query_devices(cur, status=states['ready'])
-    devices_total = dbase.query_devices(cur)
+
 
     if len(cur_project) == 0:
         cur_project_id = None
@@ -67,16 +77,17 @@ def gps_page():
     else:
         cur_project_id = cur_project[0][0]
         service_active = cur_project[0][1]
+        project = dbase.query_projects(cur, project_id=cur_project_id, as_dict=True, flatten=True)
+        devices_expected = project['n_cams']
         if service_active != states['capture']:
             # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states['ready'])
+
     return render_template("status.html",
                            projects=projects,
                            cur_project_id=cur_project_id,
-                           service_active=service_active,
-                           devices_total=len(devices_total),
-                           devices_ready=len(devices_ready)
-                           )  #
+                           service_active=service_active
+                           )
 
 @app.route('/project', methods=['GET', 'POST'])
 def project_page():
@@ -116,10 +127,8 @@ def settings_page():
 
 @app.route('/cams')
 def cam_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    return render_template("cam_status.html", n_cams=range(6))
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    return render_template("cam_status.html")
 
 
 @app.route('/file_page')
@@ -133,19 +142,51 @@ def stream():
     # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
     return Response(stream_logger(), mimetype="text/plain", content_type="text/event-stream")
 
+
+@app.route('/_cameras')
+def cameras():
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(cur, project_id=cur_project[0][0], as_dict=True, flatten=True)
+    devices = dbase.make_dict_devices(cur)
+    n_online = len(devices)
+    # add offline devices
+    n_offline = int(project['n_cams']) - n_online
+    for n in range(n_offline):
+        devices.append({'device_no': f'camera{n + n_online}',
+                        'device_uuid': 'uknown',
+                        'device_name': 'unknown',
+                        'status': 'offline',
+                        'last_photo': None,
+                        }
+                       )
+
+    return jsonify(devices)
+
+
+@app.route('/_cam_summary')
+def cam_summary():
+    devices_ready = dbase.query_devices(cur, status=states['ready'])
+    devices = dbase.query_devices(cur)
+    cams = {'ready': len(devices_ready), 'total': len(devices)}
+    return jsonify(cams)
+
+
 @app.route('/picam', methods = ['GET', 'POST'])
 def picam():
     if request.method == 'POST':
 
-        r, status_code = do_request(method='POST')
+        r, status_code = do_request(cur, method='POST')
         return make_response(jsonify(r), status_code)
 
     elif request.method == 'GET':
-        r, status_code = do_request(method='GET')  # response is passed back to client
+        r, status_code = do_request(cur, method='GET')  # response is passed back to client
         return make_response(jsonify(r), status_code)
 
 
 def run(app):
+    server = '0.0.0.0'
+    port = 5000
+    logger.info(f'Running application on http://{server}:{port}')
     app.run(debug=False, port=5000, host="0.0.0.0")
 
 if __name__ == "__main__":

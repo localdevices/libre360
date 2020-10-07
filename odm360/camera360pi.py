@@ -18,9 +18,12 @@ conn = psycopg2.connect(db)
 cur = conn.cursor()
 
 # get the uuid of the device
-cur.execute("SELECT * FROM device")
-device_uuid = cur.fetchone()[0]
-
+try:
+    cur.execute("SELECT * FROM device")
+    device_uuid, device_name = cur.fetchone()[0]
+except:
+    import uuid
+    device_uuid, device_name = str(uuid.uuid4()), 'dummy'
 try:
     from picamera import PiCamera
 except:
@@ -33,11 +36,12 @@ class Camera360Pi(PiCamera):
     This class is for increasing the functionalities of the Camera class of PiCamera specifically for
     the 360 camera use case.
     """
-    def __init__(self, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
+    def __init__(self, state, logger=logger, debug=False, host=None, port=None, project_id=None, project_name=None, n_cams=None, dt=None):
         self.debug = debug
-        self.state = 'idle'
+        self.state = state
         self.timer = None
-        self._device = device_uuid
+        self._device_uuid = device_uuid
+        self._device_name = device_name
         self._root = 'photos'
         self._project_id = project_id  # project_id for the entire project from parent
         self._project_name = project_name  # human-readable name
@@ -46,8 +50,6 @@ class Camera360Pi(PiCamera):
         self.src_fn = None  # path to currently made photo (source) inside the camera
         self.dst_fn = ''  # path to photo (destination) on drive
         self.logger = logger
-        self.id = None  # TODO: give a uniue ID to each camera (once CameraRig is defined, complete)
-        self.name = None  # TODO: give a name to each camera (once CameraRig is defined, complete)
         self.host = host
         self.port = port
         if not(os.path.isdir(self._root)):
@@ -64,10 +66,10 @@ class Camera360Pi(PiCamera):
                 time.sleep(2)
             msg = 'Raspi camera initialized'
             self.logger.info(msg)
-            self.state = 'ready'
+            self.state['status'] = 'ready'
         except:
             msg = 'Raspi camera could not be initialized'
-            self.state = 'broken'
+            self.state['status'] = 'broken'
             self.logger.error(msg)
         return {'msg': msg,
                 'level': 'info'
@@ -85,7 +87,7 @@ class Camera360Pi(PiCamera):
 
     def exit(self):
         self.stop_preview()
-        self.state = 'idle'
+        self.state['status'] = 'idle'
         msg = 'Raspi camera shutdown'
         self.logger.info(msg)
         return {'msg': msg,
@@ -93,13 +95,12 @@ class Camera360Pi(PiCamera):
                 }
 
     def stop(self):
-        # TODO: debug stop capture daemon
         if self.timer is not None:
             try:
                 self.timer.stop()
             except:
                 pass
-            self.state = 'ready'
+            self.state['status'] = 'ready'
             msg = 'Camera capture stopped'
         else:
             msg = 'No capturing taking place, do nothing'
@@ -118,7 +119,8 @@ class Camera360Pi(PiCamera):
         kwargs = {
             'project_id': self._project_id,
             'survey_run': self._survey_run,
-            'device_name': self._device,
+            'device_uuid': self._device_uuid,
+            'device_name': self._device_name,
             'fn': fn,
         }
         tic = time.time()
@@ -126,6 +128,7 @@ class Camera360Pi(PiCamera):
             super().capture(target, 'jpeg')
         toc = time.time()
         # store details about photo in database
+        dbase.insert_photo(cur, **kwargs)
         dbase.insert_photo(cur, **kwargs)
         # retrieve uuid of inserted photo
 
@@ -135,41 +138,16 @@ class Camera360Pi(PiCamera):
                         'state': self.state
                         }
         self.post(post_capture)  # this just logs on parent side what happened on child side
-        # now add a photo on the parent side's database as well, making sure the uuid is fixed!
-        kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
-        store_capture = {'kwargs': kwargs,
-                        'req': 'STORE',
-                        'state': self.state
-                        }
+        # TODO, once we are sure that parent inherits photos through a combined VIEW, remove commented lines below
+        # # now add a photo on the parent side's database as well, making sure the uuid is fixed!
+        # kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
+        # store_capture = {'kwargs': kwargs,
+        #                 'req': 'STORE',
+        #                 'state': self.state
+        #                 }
+        #
+        # self.post(store_capture)  # store info on photo on parent side
 
-        self.post(store_capture)  # store info on photo on parent side
-
-
-    def capture_until(self, timeout=1.):
-        """
-        Tries to capture an image until successful
-        :param timeout: float - amount of time capturing is tried
-        """
-        # update project status
-        # TODO: make sure the parent required project is stored
-        camera = PiCamera()
-
-        _take = True
-        n = 1
-        start_time = time.time()
-        while (_take) and (time.time()-start_time < timeout):
-            try:
-                self.logger.debug(f'Trial {n}')
-                # Temporary image location until set_dst_fn is defined
-                self.src_photo_fn = self.capture()  # '/home/pi/Desktop/image.jpg'
-                dt = time.time()-start_time
-                _take = False
-                self.logger.info(f'Picture taken in {str(self.src_photo_fn)} within {dt*1000} ms')
-            except:
-                n += 1
-        if _take:
-            # apparently the picture was not taken
-            raise IOError('Timeout reached')
 
     def capture_continuous(self, start_time=None, survey_run=None, project=None):
         self._project_id = int(project['project_id'])
@@ -181,7 +159,7 @@ class Camera360Pi(PiCamera):
         self.logger.info(f'Starting capture for project - id: {self._project_id} name: {self._project_name} interval: {self._dt} secs survey run {self._survey_run}.')
         try:
             self.timer = RepeatedTimer(int(project['dt']), self.capture, start_time=start_time)
-            self.state = 'capture'
+            self.state['status'] = 'capture'
         except:
             msg = 'Camera not responding or disconnected'
             logger.error(msg)
@@ -200,6 +178,3 @@ class Camera360Pi(PiCamera):
         headers = {'Content-type': 'application/json'}
         r = requests.post(f'http://{self.host}:{self.port}/picam', data=json.dumps(msg), headers=headers)
 
-    def set_dst_fn(self):
-        raise NotImplementedError('Setting destination path is not implemented yet')
-        # FIXME

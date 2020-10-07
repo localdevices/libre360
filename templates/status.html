@@ -47,12 +47,10 @@
         <div class="col py-3 border bg-light"><b>Satellites: </b><span id="sat_nr"></span></div>
     </div>
     <div class="row">
-        <div class="col py-3 border bg-light"><b>Total cameras online: {{ devices_total }}</b><span id="cam_summary"></span></div>
-<!--        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>-->
+        <div class="col py-3 border bg-light"><b>Total cameras online: </b><span id="cam_total">?</span></div>
     </div>
     <div class="row">
-        <div class="col py-3 border bg-light"><b>Cameras ready: {{ devices_ready }}</b><span id="cam_summary"></span></div>
-<!--        <div class="col py-3 border bg-light"><b>ALL READY</b><span id="cam_summary"></span></div>-->
+        <div class="col py-3 border bg-light"><b>Cameras ready: </b><span id="cam_ready">?</span></div>
     </div>
     <br>
     <div class="row">
@@ -78,6 +76,18 @@
 {{super()}}
 <!-- TODO consider reusing parts of stuff below -->
 <!--<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>-->
+<script>
+function get_cam_sum() {
+    $.getJSON("_cam_summary",
+            function (data) {
+                $('#cam_ready').text(data.ready)
+                $('#cam_total').text(data.total)
+                console.log(data)
+            }
+    );
+}
+setInterval('get_cam_sum()', 1000);
+</script>
 <script type="text/javascript">
   jQuery(function() {
     jQuery('#project').change(function() {
