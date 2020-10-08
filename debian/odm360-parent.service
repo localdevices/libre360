@@ -1,0 +1,14 @@
+[Unit]
+Description=ODM360 parent module
+After=network.target
+Conflicts=odm360-child.service
+
+[Service]
+Type=simple
+ExecStart=/opt/odm360/bin/python -m odm360 -p
+Restart=always
+
+[Install]
+# https://unix.stackexchange.com/a/479945
+Alias=odm360-parent
+WantedBy=multi-user.target

@@ -35,7 +35,6 @@ setup(
         "Flask",
         "Flask-Login",
         "Bootstrap-Flask",
-        "uwsgi",
         "psycopg2",
     ],
     extras_require={
