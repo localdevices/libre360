@@ -1,4 +1,5 @@
 # Server is setup here
+
 from flask import (
     Flask,
     render_template,
@@ -9,22 +10,52 @@ from flask import (
     Response,
 )
 from flask_bootstrap import Bootstrap
+
 import psycopg2
 import logging
+import time
 
 from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
-from odm360.utils import cleanopts
+from odm360.utils import cleanopts, get_key_state
+from odm360.timer import RepeatedTimer
+
 
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
+def check_offline(cur=cur, max_idle=5):
+    """
+    Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
+    is switched off in this case.
+    :param max_idle: maximum allowed idle time
+    :return:
+    """
+    """Run scheduled job."""
+    devices = dbase.query_devices(cur)
+    for dev in devices:
+        # check the last time the device was online
+        time_idle = time.time() - dev[3]  # seconds
+        if time_idle > max_idle:
+            logger.warning(f"Device {dev[0]} is offline...")
+            # check if there is an active project
+            rig = dbase.query_project_active(cur, as_dict=True)
+            if len(rig) > 0:
+                # check if project is capturing
+                if get_key_state(rig['status']) == "capture":
+                    # set back to ready
+                    dbase.update_project_active(cur, states["ready"])
+                    logger.warning(f"Stopping capturing")
+
+
+
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
-
+time.sleep(0.2)
+# start logger
 logger = start_logger("True", "False")
 
 # if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
@@ -32,12 +63,14 @@ cur_project = dbase.query_project_active(cur)
 if len(cur_project) == 1:
     dbase.update_project_active(cur, states["ready"])
 
+# start scheduled task to check for offline devices
+checker = RepeatedTimer(5, check_offline, start_time=time.time())
+
 app = Flask(__name__)
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
-
 
 @app.route("/", methods=["GET", "POST"])
 def gps_page():
@@ -125,8 +158,7 @@ def project_page():
         dbase.insert_project(
             cur, form["project_name"], n_cams=int(form["n_cams"]), dt=int(form["dt"])
         )
-        # remove the current project selection and make a fresh table
-        dbase.create_table_project_active(cur, drop=True)
+        dbase.truncate_table(cur, "project_active")
         # set project to current by retrieving its id and inserting that in current project table
         project_id = dbase.query_projects(cur, project_name=form["project_name"])[0][0]
         dbase.insert_project_active(cur, project_id=project_id)
@@ -217,6 +249,7 @@ def picam():
         r, status_code = do_request(
             cur, method="GET"
         )  # response is passed back to client
+        # print(r, status_code)
         return make_response(jsonify(r), status_code)
 
 

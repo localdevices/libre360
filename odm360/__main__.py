@@ -6,7 +6,7 @@ arguments:
 -p or --parent: run as parent (if not set, run as child)
 -d or --destination: provide a path name to
 """
-from odm360.log import setuplog
+from odm360.log import setuplog, start_logger
 import gphoto2 as gp
 from optparse import OptionParser
 
@@ -15,7 +15,7 @@ def main():
     parser = create_parser()
     (options, args) = parser.parse_args()
     # start a logger with defined log levels. This may be used in our main call
-    logger = start_logger(options.verbose, options.quiet)
+    logger = start_logger(options.verbose, options.quiet, "odm360-child")
 
     if options.parent:
         if options.n_cams is None:
@@ -133,19 +133,19 @@ def create_parser():
     return parser
 
 
-def start_logger(verbose, quiet):
-    if verbose:
-        verbose = 2
-    else:
-        verbose = 1
-    if quiet:
-        quiet = 1
-    else:
-        quiet = 0
-    log_level = max(10, 30 - 10 * (verbose - quiet))
-    logger = setuplog("odm360", "odm360.log", log_level=log_level)
-    logger.info("starting...")
-    return logger
+# def start_logger(verbose, quiet, name="odm360"):
+#     if verbose:
+#         verbose = 2
+#     else:
+#         verbose = 1
+#     if quiet:
+#         quiet = 1
+#     else:
+#         quiet = 0
+#     log_level = max(10, 30 - 10 * (verbose - quiet))
+#     logger = setuplog(name, f"{name}.log", log_level=log_level)
+#     logger.info("starting...")
+#     return logger
 
 
 if __name__ == "__main__":

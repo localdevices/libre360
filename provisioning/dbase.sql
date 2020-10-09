@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS devices
 device_uuid uuid  -- GENERATED ALWAYS AS IDENTITY
 ,device_name text -- NOT NULL
 ,status integer NOT NULL -- what are our status codes?
+,req_time double precision
 ,last_photo uuid
 ,PRIMARY KEY(device_uuid)
 ,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID

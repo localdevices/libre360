@@ -39,7 +39,7 @@ def add_filehandler(logger, path, log_level=20, fmt=FMT):
         logger.debug(f"Writing log messages to new file {path}.")
 
 
-def start_logger(verbose, quiet):
+def start_logger(verbose, quiet, name="odm360"):
     if verbose:
         verbose = 2
     else:
@@ -49,10 +49,9 @@ def start_logger(verbose, quiet):
     else:
         quiet = 0
     log_level = max(10, 30 - 10 * (verbose - quiet))
-    logger = setuplog("odm360", "odm360.log", log_level=log_level)
+    logger = setuplog(name, f"{name}.log", log_level=log_level)
     logger.info("starting...")
     return logger
-
 
 def stream_logger(fn="odm360.log", truncate=100):
     # open file for reading

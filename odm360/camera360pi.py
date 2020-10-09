@@ -23,7 +23,6 @@ try:
     device_uuid, device_name = cur.fetchone()[0]
 except:
     import uuid
-
     device_uuid, device_name = str(uuid.uuid4()), "dummy"
 try:
     from picamera import PiCamera
@@ -136,9 +135,10 @@ class Camera360Pi(PiCamera):
         toc = time.time()
         # store details about photo in database
         dbase.insert_photo(cur, **kwargs)
-        dbase.insert_photo(cur, **kwargs)
-        # retrieve uuid of inserted photo
 
+        # Update the last time of request
+        self.state['req_time'] = time.time()
+        # self.state['last_photo'] = target
         self.logger.debug(f"Photo took {toc-tic} seconds to take")
         post_capture = {
             "kwargs": {"msg": f"Taken photo {fn}", "level": "info"},

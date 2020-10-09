@@ -27,12 +27,13 @@ def do_request(cur, method="GET"):
     msg = request.get_json()
     # Create or update state of current camera
     state = msg["state"]
+    # print(state)
     # check if the device exists.
     if dbase.is_device(cur, state["device_uuid"]):
-        dbase.update_device(cur, state["device_uuid"], states[state["status"]])
+        dbase.update_device(cur, state["device_uuid"], states[state["status"]], state["req_time"]) # TODO: add last_photo once database structure complete, last_photo=state["last_photo"])
     else:
         dbase.insert_device(
-            cur, state["device_uuid"], state["device_name"], states[state["status"]]
+            cur, state["device_uuid"], state["device_name"], states[state["status"]], state["req_time"]
         )
     log_msg = f'Cam {state["device_uuid"]} on {state["ip"]} - {method} {msg["req"]}'
     logger.debug(log_msg)
@@ -52,23 +53,23 @@ def do_request(cur, method="GET"):
     #     return 'method failed', 500
 
 
-def get_project(cur, state):
+def get_online(cur, state):
     """
     :return:
     dict representation of the root folder
     """
-    cur_project = dbase.query_project_active(cur, as_dict=True)
-    # retrieve project with project_id
-    if len(cur_project) == 0:
-        return {"task": "wait", "kwargs": {}}
-
+    # cur_project = dbase.query_project_active(cur, as_dict=True)
+    # # retrieve project with project_id
+    # if len(cur_project) == 0:
     logger.info(
-        f"Giving project {cur_project['project_id']} to Cam {state['device_uuid']}"
+        f"Cam {state['device_uuid']} is now online"
     )
-    project = dbase.query_projects(
-        cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
-    )
-    return {"project": project}
+    return {"task": "wait", "kwargs": {}}
+
+    # project = dbase.query_projects(
+    #     cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
+    # )
+    # return {"project": project}
 
 
 def get_task(cur, state):
@@ -84,28 +85,26 @@ def get_task(cur, state):
     task: str - name of task method to be performed on child side
     kwargs: dict - set of key word arguments and their values to provide to that task
     """
-    # TODO: remove the automatic stopping after 10 secs
     rig = dbase.query_project_active(cur, as_dict=True)
-
     cur_device = dbase.query_devices(
         cur, device_uuid=state["device_uuid"], as_dict=True, flatten=True
     )
     # get states of parent and child in human readable format
     device_status = utils.get_key_state(cur_device["status"])
-    rig_status = utils.get_key_state(rig["status"])
+    if len(rig) > 0:
+        rig_status = utils.get_key_state(rig["status"])
+        if device_status != rig_status:
+            # something needs to be done to get the states the same
+            if (device_status == "idle") and (rig_status == "ready"):
+                # initialize the camera
+                logger.info("Sending camera initialization ")
+                return {"task": "init", "kwargs": {}}
+            elif (device_status == "ready") and (rig_status == "capture"):
+                return activate_camera(cur, state)
 
-    if device_status != rig_status:
-        # something needs to be done to get the states the same
-        if (device_status == "idle") and (rig_status == "ready"):
-            # initialize the camera
-            logger.info("Sending camera initialization ")
-            return {"task": "init", "kwargs": {}}
-        elif (device_status == "ready") and (rig_status == "capture"):
-            return activate_camera(cur, state)
-
-        elif (device_status == "capture") and (rig_status == "ready"):
-            return {"task": "stop", "kwargs": {}}
-        # camera is already capturing, so just wait for further instructions (stop)
+            elif (device_status == "capture") and (rig_status == "ready"):
+                return {"task": "stop", "kwargs": {}}
+            # camera is already capturing, so just wait for further instructions (stop)
     return {"task": "wait", "kwargs": {}}
 
 

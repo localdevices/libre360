@@ -122,89 +122,103 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
     # initiate the state of the child as 'idle'
     log_msg = ""  # start with an empty msg
     state = {
-        "status": "idle",
+        "status": "offline",
         "ip": ip,
         "device_uuid": device_uuid,
         "device_name": device_name,
+        "req_time": time.time(),
+        "last_photo": "",
     }
-
-    get_project_msg = {"state": state, "req": "PROJECT"}
+    get_project_msg = {"state": state, "req": "ONLINE"}
     # try to get in contact with the right host
     logger.debug("Initializing search for server")
-    host_found = False
-    while not (host_found):
-        for host, status in all_ips:
+    # host_found = False
+    while True:
+        if state['status'] == "offline":
+    # while not (host_found):
+            for host, status in all_ips:
+                try:
+                    r = requests.get(
+                        f"http://{host}:{port}/picam",
+                        data=json.dumps(get_project_msg),
+                        headers=headers,
+                    )
+                    # logger.debug(f'Received {r.text}')
+                    msg = r.json()
+                    if "task" in msg:
+                        # ip address with server found! make this a constraint for all further msgs.
+                        all_ips = [(host, status)]
+                        # state becomes idle!
+                        state['status'] = 'idle'
+                        # setup camera object
+                        try:
+                            camera = Camera360Pi(
+                                state, logger=logger, debug=debug, host=host, port=port
+                            )  # start without any project info, **msg['project'])
+                        except:
+                            raise IOError(
+                                "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
+                            )
+                        # state['status'] = camera.state
+                        logger.info(f"Found host on {host}:{port}")
+                        # host_found = True
+                        break
+                    else:
+                        logger.debug(
+                            f"No suitable answer so skipping going online"
+                        )
+
+                except:
+                    # sleep for 2 seconds before trying again
+                    time.sleep(2)
+        else:
+            # we have contact, now continuously ask for information and report back
             try:
+    #     while True:
+            # update req_time
+                camera.state['req_time'] = time.time()
+                # ask for a task
+                get_task_msg = {
+                    "state": camera.state,
+                    "req": "TASK",
+                }
                 r = requests.get(
                     f"http://{host}:{port}/picam",
-                    data=json.dumps(get_project_msg),
+                    data=json.dumps(get_task_msg),
                     headers=headers,
                 )
-                # logger.debug(f'Received {r.text}')
+                logger.debug(f"Received {r.text}")
                 msg = r.json()
-                if "project" in msg:
-                    # setup camera object
-                    try:
-                        camera = Camera360Pi(
-                            state, logger=logger, debug=debug, host=host, port=port
-                        )  # start without any project info, **msg['project'])
-                    except:
-                        raise IOError(
-                            "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
-                        )
-                    # state['status'] = camera.state
-                    logger.info(f"Found host on {host}:{port}")
-                    host_found = True
-                    break
+                task = msg["task"]
+                kwargs = msg["kwargs"]
+                f = getattr(camera, task)
+                # execute function with kwargs provided
+                log_msg = f(**kwargs)
+                # update status to camera.state
+                # state['status'] = camera.state
+                post_log_msg = {
+                    "kwargs": log_msg,
+                    "req": "LOG",
+                    "state": camera.state,
+                }
+                r = requests.post(
+                    f"http://{host}:{port}/picam",
+                    data=json.dumps(post_log_msg),
+                    headers=headers,
+                )
+                success = r.json()
+                if success["success"]:
+                    logger.debug("POST was successful")
                 else:
-                    logger.debug(
-                        f"No project as answer, meaning that there is no suitable project to work on yet"
-                    )
-            except:
-                # sleep for 2 seconds before trying again
-                time.sleep(2)
-    # we have contact, now continuously ask for information and report back
-    try:
-        while True:
-            # ask for a task
-            get_task_msg = {
-                # 'device_uuid': device_uuid,
-                "state": camera.state,
-                "req": "TASK",
-            }
-            r = requests.get(
-                f"http://{host}:{port}/picam",
-                data=json.dumps(get_task_msg),
-                headers=headers,
-            )
-            logger.debug(f"Received {r.text}")
-            msg = r.json()
-            task = msg["task"]
-            kwargs = msg["kwargs"]
-            f = getattr(camera, task)
-            # execute function with kwargs provided
-            log_msg = f(**kwargs)
-            # update status to camera.state
-            # state['status'] = camera.state
-            post_log_msg = {
-                "kwargs": log_msg,
-                "req": "LOG",
-                "state": camera.state,
-            }
-            r = requests.post(
-                f"http://{host}:{port}/picam",
-                data=json.dumps(post_log_msg),
-                headers=headers,
-            )
-            success = r.json()
-            if success["success"]:
-                logger.debug("POST was successful")
-            else:
-                logger.error("POST was not successful")
+                    logger.error("POST was not successful")
+                # FIXME: implement capture_continuous method on Camera360Pi side
+            except Exception as e:
+                # logger.exception(e)
+                logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
+                camera.stop()
+                camera.state['status'] = "offline"
             time.sleep(timeout)
-            # FIXME: implement capture_continuous method on Camera360Pi side
-    except Exception as e:
-        logger.exception(e)
+            state = camera.state
 
 
 def child_serial(timeout=1.0, logger=logger, port="/dev/ttySO", deub=False):

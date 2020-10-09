@@ -47,7 +47,7 @@ def insert(cur, sql_command):
     #     raise IOError(f'Insertion command {sql_command} failed')
 
 
-def insert_device(cur, device_uuid, device_name, status):
+def insert_device(cur, device_uuid, device_name, status, req_time):
     """
     insert a new device in table (leave out last_photo since it is not available yet).
     :param cur: cursor
@@ -55,7 +55,7 @@ def insert_device(cur, device_uuid, device_name, status):
     :param status: int - status of device, each int has a specific meaning
     :return:
     """
-    sql_command = f"INSERT INTO devices(device_uuid, device_name, status) VALUES ('{device_uuid}', '{device_name}', {status});"
+    sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
     insert(cur, sql_command)
 
 
@@ -219,7 +219,7 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
-            "last_photo": d[3],
+            "last_photo": d[3],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
         }
         for n, d in enumerate(devices_raw)
     ]
@@ -233,7 +233,7 @@ def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=Fal
         sql_command = sql_command + f""" WHERE status={status}"""
     if device_uuid is not None:
         sql_command = sql_command + f""" WHERE device_uuid='{device_uuid}'"""
-
+    sql_command = sql_command + """;"""
     return query_table(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
@@ -339,7 +339,7 @@ def truncate_table(cur, table):
     cur.connection.commit()
 
 
-def update_device(cur, device_uuid, status, last_photo=None):
+def update_device(cur, device_uuid, status, req_time, last_photo=None):
     """
     Update the status of a given (existing) device in devices table
     :param cur: cursor
@@ -352,11 +352,11 @@ def update_device(cur, device_uuid, status, last_photo=None):
         raise KeyError(
             f'device "{device_uuid}" does not exist in table "device_status"'
         )
-    if last_photo is not None:
-        sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}' WHERE device_uuid='{device_uuid}'"
+    if (last_photo is not None) and (last_photo != ""):
+        sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}', req_time={req_time} WHERE device_uuid='{device_uuid}'"
     else:
         sql_command = (
-            f"UPDATE devices SET status={status} WHERE device_uuid='{device_uuid}'"
+            f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
         )
     cur.execute(sql_command)
 
