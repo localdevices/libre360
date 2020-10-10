@@ -91,49 +91,6 @@ def insert_project(cur, project_name, n_cams, dt):
     insert(cur, sql_command)
 
 
-def insert_photo(
-    cur,
-    project_id,
-    survey_run,
-    device_uuid,
-    device_name,
-    photo_filename,
-    fn,
-    photo_uuid=None,
-    photo=None,
-    thumb=None,
-):
-    """
-    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
-    :param cur: cursor
-    :param project_id: int - project id
-    :param survey_run: string - id of survey within project
-    :param device_uuid: uuid - id of device
-    :param fn: string - filename
-    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
-    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
-    :return:
-    """
-    sql_command = f"""
-    INSERT INTO photos_child
-    (
-    device_uuid
-    ,project_id
-    ,survey_run
-    ,device_name
-    ,photo_filename
-    ) VALUES
-    (
-    '{device_uuid}'
-    ,'{project_id}'
-    ,'{survey_run}'
-    ,'{device_name}'
-    ,'{photo_filename}'
-    );"""
-
-    insert(cur, sql_command)
-
-
 def is_table(cur, table_name):
     """
     Simple check to see if table exists or not

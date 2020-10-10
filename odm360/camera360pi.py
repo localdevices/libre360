@@ -124,19 +124,19 @@ class Camera360Pi(PiCamera):
         # self.dst_fn = os.path.join(self._root, fn)
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
-        kwargs = {
-            "device_uuid": self._device_uuid,
-            "project_id": self._project_id,
-            "survey_run": self._survey_run,
-            "device_name": self._device_name,
-            "photo_filename": photo_filename,
-        }
+        # kwargs = {
+        #     "device_uuid": self._device_uuid,
+        #     "project_id": self._project_id,
+        #     "survey_run": self._survey_run,
+        #     "device_name": self._device_name,
+        #     "photo_filename": photo_filename,
+        # }
         tic = time.time()
         if not (self.debug):
             super().capture(target, "jpeg")
         toc = time.time()
-        # store details about photo in database
-        dbase.insert_photo(cur, **kwargs)
+        # # store details about photo in database
+        # dbase.insert_photo(cur, **kwargs)
 
         # Update the last time of request
         self.state['req_time'] = time.time()
