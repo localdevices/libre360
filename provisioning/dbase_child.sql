@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "multicorn";
 
 -- drop any tables if they exist
 DROP TABLE IF EXISTS device;
-DROP TABLE IF EXISTS photos;
+DROP TABLE IF EXISTS photos_child;
 
 -- create device table (only one col and one row)
 CREATE TABLE IF NOT EXISTS device
@@ -36,7 +36,7 @@ CREATE FOREIGN TABLE photos_child (
 
 
 ALTER TABLE device OWNER TO odm360;
-ALTER TABLE photos OWNER TO odm360;
+ALTER TABLE photos_child OWNER TO odm360;
 -- Now add one device
 INSERT INTO device (name) VALUES ('picam');
 -- And that's it! Only one device entry ever!
