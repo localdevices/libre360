@@ -116,18 +116,20 @@ class Camera360Pi(PiCamera):
         return {"msg": msg, "level": "info"}
 
     def capture(self, timeout=1.0, cur=cur):
-        fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
+        root_dir = '/home/pi/piimages'
+        photo_filename = f'{self._device_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        fn = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_filename}.jpg'
+        target = os.path.join(root_dir, fn)
         # capture to local file
-        self.dst_fn = os.path.join(self._root, fn)
-        self.logger.info(f"Writing to {self.dst_fn}")
-        target = self.dst_fn
+        # self.dst_fn = os.path.join(self._root, fn)
+        self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
         kwargs = {
+            "device_uuid": self._device_uuid,
             "project_id": self._project_id,
             "survey_run": self._survey_run,
-            "device_uuid": self._device_uuid,
             "device_name": self._device_name,
-            "fn": fn,
+            "photo_filename": photo_filename,
         }
         tic = time.time()
         if not (self.debug):

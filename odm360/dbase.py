@@ -97,6 +97,7 @@ def insert_photo(
     survey_run,
     device_uuid,
     device_name,
+    photo_filename,
     fn,
     photo_uuid=None,
     photo=None,
@@ -113,73 +114,22 @@ def insert_photo(
     :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
     :return:
     """
-    _photo = psycopg2.Binary(
-        photo
-    )  # note: photo can be retrieved with _photo.tobytes()
-    if photo_uuid is not None:
-        # occurs when parent-side storage is done, no binary data is stored
-        sql_command = f"""
-        INSERT INTO photos
-        (
-        photo_uuid
-        ,project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ) VALUES
-        (
-        '{photo_uuid}'
-        ,'{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        );"""
-
-    elif thumb is None:
-        sql_command = f"""
-        INSERT INTO photos
-        (
-        project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ) VALUES
-        (
-        '{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        );"""
-    else:
-        _thumb = psycopg2.Binary(thumb)
-        sql_command = f"""
-        INSERT INTO photos_child
-        (
-        project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ,thumbnail
-        ) VALUES
-        (
-        '{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        ,{_thumb}
-        );"""
+    sql_command = f"""
+    INSERT INTO photos_child
+    (
+    device_uuid
+    ,project_id
+    ,survey_run
+    ,device_name
+    ,photo_filename
+    ) VALUES
+    (
+    '{device_uuid}'
+    ,'{project_id}'
+    ,'{survey_run}'
+    ,'{device_name}'
+    ,'{photo_filename}'
+    );"""
 
     insert(cur, sql_command)
 

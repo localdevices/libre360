@@ -20,7 +20,7 @@ CREATE SERVER filesystem_srv foreign data wrapper multicorn options (
 );
 
 -- create photos table (dependent on projects)
-CREATE FOREIGN TABLE photos (
+CREATE FOREIGN TABLE photos_child (
     photo_uuid uuid DEFAULT uuid_generate_v4()
     ,device_uuid UUID
     ,project_id INT
