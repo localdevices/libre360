@@ -1,5 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS postgres_fdw;
+CREATE EXTENSION IF NOT EXISTS "multicorn";
 
 -- drop any tables if they exist
 DROP TABLE IF EXISTS device;
@@ -13,18 +14,26 @@ CREATE TABLE IF NOT EXISTS device
     ,PRIMARY KEY(device_uuid)
 );
 
+-- add file system foreign data wrapper
+CREATE SERVER filesystem_srv foreign data wrapper multicorn options (
+    wrapper 'multicorn.fsfdw.FilesystemFdw'
+);
+
 -- create photos table (dependent on projects)
-CREATE TABLE IF NOT EXISTS photos
-(
-    photo_uuid uuid DEFAULT uuid_generate_v4 ()
+CREATE FOREIGN TABLE photos (
+    photo_uuid uuid DEFAULT uuid_generate_v4()
+    ,device_uuid UUID
     ,project_id INT
-    ,survey_run text NOT NULL
-    ,device_name text NOT NULL
-    ,photo_filename text NOT NULL
-    ,photo BYTEA NOT NULL
-    ,thumbnail BYTEA
-    ,device_uuid uuid
-    ,PRIMARY KEY(photo_uuid)
+    ,survey_run text
+    ,device_name text
+    ,photo_filename text
+    ,photo bytea
+    ,filename character varying
+) server filesystem_srv options(
+    root_dir    '/home/pi/piimages'
+    ,pattern '{device_uuid}/{project_id}/{survey_run}/{photo_filename}.jpg'
+    ,content_column 'photo'
+    ,filename_column 'filename'
 );
 
 
