@@ -24,6 +24,11 @@ sudo -u postgres psql -d odm360 -f dbase_child.sql
 # make sure that the database folder is prepared
 sudo mkdir /home/pi/piimages
 
+# ensure external access to database
+sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/11/main/postgresql.conf
+echo "host    all             all              0.0.0.0/0                       md5" | sudo tee -a /etc/postgresql/11/main/pg_hba.conf
+echo "host    all             all              ::/0                            md5" | sudo tee -a /etc/postgresql/11/main/pg_hba.conf
+
 echo ##########################################################
 echo Now you should have a Postgresql database with a user and password properly configured to connect to using psycopg2 from Python.
 echo ##########################################################
