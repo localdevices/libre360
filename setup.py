@@ -28,6 +28,7 @@ setup(
         "pytz",
         "tzlocal",
         "uuid",
+        "zipstream",
         "gphoto2",
         "schedule",
         "picamera",

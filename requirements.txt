@@ -2,3 +2,17 @@
 --no-binary=:all:
 # Get requirements from setup.py
 .
+
+setuptools_scm~=4.1.2
+psycopg2~=2.8.6
+zipstream~=1.1.4
+flask~=1.1.2
+odm360~=0.1.dev11+g6d83a65.d20200616
+pyserial~=3.4
+python-nmap~=0.6.1
+pytz~=2020.1
+tzlocal~=2.1
+gphoto2~=2.2.2
+requests~=2.23.0
+schedule~=0.6.0
+setuptools~=47.3.0
