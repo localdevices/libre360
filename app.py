@@ -245,7 +245,6 @@ def _zip_files():
     # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
     def generator():
         z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-        z.write
         z.write_iter("/home/hcwinsemius/temp/odm360/1.jpg", _generator("http://i.imgur.com/9DpELbT.jpg"))
         z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
         # add all the necessary files here
