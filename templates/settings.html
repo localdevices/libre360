@@ -8,42 +8,31 @@
 {% block content %}
 <div class="container">
 <br><br>
+<form action="/settings" method="POST">
 <div id="settings_service_space" class="form-group">
     <div class="row">
         <div class="col py-3 border bg-light">
-            <b>NodeODM address</b>
+            <b>SSID</b>
             <div class="form-group">
-                <input type="url" class="form-control" placeholder="web address">
+                <input type="text" class="form-control" name="ssid" placeholder="WiFi SSID">
             </div>
         </div>
     </div>
     <div class="row">
         <div class="col py-3 border bg-light">
-            <b>Port</b>
+            <b>Pass phrase</b>
             <div class="form-group">
-                <input type="number" class="form-control" placeholder="443" min="0">
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Token</b>
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="NodeODM key">
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Options</b>
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="dsm: True, .......">
+                <input type="password" class="form-control" name="password" placeholder="psk-password">
             </div>
         </div>
     </div>
     <br>
-    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="submit" name="submit_button" value="save" class="btn btn-primary">Save</button>
+    <button type="submit" name="submit_button" value="hotspot" class="btn btn-primary">WiFi Hotspot</button>
 </div>
+</form>
+<br>
+This page is not finalized yet and may not work.
 
 {% endblock %}
 

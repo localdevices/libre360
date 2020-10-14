@@ -178,13 +178,39 @@ def logs_page():
     return render_template("logs.html")
 
 
-@app.route("/settings")
+@app.route("/nodeodm")
+def nodeodm_page():
+    """
+        The data web pages where you can download/delete the raw gnss data
+    """
+    return render_template("nodeodm.html")
+
+@app.route("/settings", methods=["GET", "POST"])
 def settings_page():
     """
         The data web pages where you can download/delete the raw gnss data
     """
-    return render_template("settings.html")
+    if request.method == "POST":
+        form = cleanopts(request.form)
+        if form["submit_button"] == 'hotspot':
+            logger.info('Switching to local hotspot')
+            # switch to serving a hotspot, and tell all children to switch to hotspot
+        else:
+            ssid = form["ssid"]
+            passwd = form["password"]
+            if ssid != "" and passwd != "":
+                logger.info(f'Switching to ssid: {ssid} with passwd: {passwd}')
+                # Check if all children for current job are online. If not, don't change, as all children need to be online first
+                # TODO: implement check
+                # Instruct all children to switch networks
 
+                # TODO: make instruction upon task request
+                # Switch network yourself.
+                # TODO: make switcher for wifi network
+            else:
+                logger.error(f"ssid or password missing")
+
+    return render_template("settings.html")
 
 @app.route("/cams")
 def cam_page():
