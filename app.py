@@ -199,11 +199,18 @@ def settings_page():
             ssid = form["ssid"]
             passwd = form["password"]
             if ssid != "" and passwd != "":
-                logger.info(f'Switching to ssid: {ssid} with passwd: {passwd}')
                 # Check if all children for current job are online. If not, don't change, as all children need to be online first
                 # TODO: implement check
-                # Instruct all children to switch networks
-
+                devices_ready = dbase.query_devices(cur, status=states["ready"])
+                cur_project = dbase.query_project_active(cur)
+                project = dbase.query_projects(
+                    cur, project_id=cur_project[0][0], as_dict=True, flatten=True
+                )
+                if project["n_cams"] == len(devices_ready):
+                    # Instruct all children to switch networks
+                    logger.info(f'Switching to ssid: {ssid} with passwd: {passwd}')
+                else:
+                    logger.error(f"Not all expected children ({len(devices_ready)}/{project['n_cams']}) ready")
                 # TODO: make instruction upon task request
                 # Switch network yourself.
                 # TODO: make switcher for wifi network
