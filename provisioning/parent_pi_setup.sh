@@ -18,6 +18,48 @@ fi
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
+# Install dnsmasq and hostapd only if on a raspi
+if [[ "#onpi" == "yes" ]]; then
+    echo "Installing hostapd and dnsmasq"
+    sudo apt install -y hostapd dnsmasq
+    echo "Setting up local access point via wlan0"
+    # add denyinterfaces to dhcp conf
+    sudo echo "denyinterfaces wlan0" >> /etc/dhcpcd.conf
+
+    sudo cat >> /etc/network/interfaces <<EOF
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+allow-hotplug wlan0
+iface wlan0 inet static
+    address 192.168.5.1
+    netmask 255.255.255.0
+    network 192.168.5.0
+    broadcast 192.168.5.255
+EOF
+    sudo cat >> /etc/hostapd/hostapd.conf <<EOF
+interface=wlan0
+driver=nl80211
+ssid=odm360
+hw_mode=g
+channel=6
+ieee80211n=1
+wmm_enabled=1
+ht_capab=[HT40][SHORT-GI-20][DSSS_CCK-40]
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_key_mgmt=WPA-PSK
+wpa_passphrase=zanzibar
+rsn_pairwise=CCMP
+EOF
+
+fi
+
 echo Running database setup script
 provisioning/database_setup.sh
 
