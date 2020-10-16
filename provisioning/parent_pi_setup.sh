@@ -19,7 +19,7 @@ echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
 # Install dnsmasq and hostapd only if on a raspi
-if [[ "#onpi" == "yes" ]]; then
+if [[ onpi == "yes" ]]; then
   provisioning/wifi_setup.sh
 fi
 
