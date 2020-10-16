@@ -58,6 +58,49 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
     insert(cur, sql_command)
 
+def insert_photo(
+    cur,
+    photo_uuid,
+    project_id,
+    survey_run,
+    device_uuid,
+    device_name,
+    photo_filename,
+    fn,
+):
+    """
+    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
+    :param cur: cursor
+    :param project_id: int - project id
+    :param survey_run: string - id of survey within project
+    :param device_uuid: uuid - id of device
+    :param fn: string - filename
+    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
+    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
+    :return:
+    """
+    # occurs when parent-side storage is done, no binary data is stored
+    sql_command = f"""
+    INSERT INTO photos_child
+    (
+    photo_uuid
+    ,project_id
+    ,survey_run
+    ,device_uuid
+    ,device_name
+    ,photo_filename
+    ,photo
+    ) SELECT
+    '{photo_uuid}'
+    , {project_id}
+    , '{survey_run}'
+    , '{device_uuid}'
+    , '{device_name}'
+    , '{photo_filename}'
+    , pg_read_binary_file('{fn}')
+    ;"""
+    insert(cur, sql_command)
+
 
 def insert_project_active(cur, project_id):
     sql_command = (
