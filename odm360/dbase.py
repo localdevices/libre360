@@ -4,6 +4,36 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
+def create_foreign_table(cur, host, name):
+    sql_command = f"""
+CREATE SERVER IF NOT EXISTS child_{name}
+    FOREIGN DATA WRAPPER postgres_fdw 
+    OPTIONS (host '{host}', port '5432', dbname 'odm360');
+    """
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+    sql_command = f"""
+CREATE FOREIGN TABLE IF NOT EXISTS child_{name} (
+photo_uuid uuid
+,project_id BIGINT
+,survey_run text NOT NULL
+,device_uuid uuid NOT NULL
+,device_name text, photo_filename text NOT NULL
+,photo BYTEA NOT NULL)
+SERVER child_{name} OPTIONS (schema_name 'public', table_name 'photos_child');
+"""
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+    sql_command = f"""
+CREATE USER MAPPING IF NOT EXISTS FOR odm360 
+    SERVER child_{name}
+    OPTIONS (user 'odm360', password 'zanzibar');
+"""
+    cur.execute(sql_command)
+    cur.connection.commit()
+
 
 def delete_project(cur, project_name=None, project_id=None):
     """
