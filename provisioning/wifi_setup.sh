@@ -73,6 +73,8 @@ sudo netfilter-persistent save
 
 sudo sed -i '/^exit 0/i iptables-restore < /etc/iptables.ipv4.nat' /etc/rc.local
 
+# finally unblock the wlan adapter so that it can be used!
+sudo rfkill unblock wlan
 
 echo "************************************"
 echo WiFi AP is setup on parent.
