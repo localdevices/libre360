@@ -65,7 +65,7 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/home/pi/odm360
-ExecStart=/home/pi/odm360/uwsgi --ini /home/pi/uwsgi.ini
+ExecStart=/home/pi/odm360/uwsgi --ini /home/pi/odm360/uwsgi.ini
 
 [Install]
 WantedBy=multi-user.target
