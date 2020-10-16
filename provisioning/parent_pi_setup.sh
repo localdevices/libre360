@@ -18,6 +18,11 @@ fi
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
+# Install dnsmasq and hostapd only if on a raspi
+if [[ $onpi == "yes" ]]; then
+  provisioning/wifi_setup.sh
+fi
+
 echo Running database setup script
 provisioning/database_setup.sh
 
@@ -60,7 +65,7 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/home/pi/odm360
-ExecStart=/home/pi/odm360/uwsgi --ini /home/pi/uwsgi.ini
+ExecStart=/home/pi/odm360/uwsgi --ini /home/pi/odm360/uwsgi.ini
 
 [Install]
 WantedBy=multi-user.target
