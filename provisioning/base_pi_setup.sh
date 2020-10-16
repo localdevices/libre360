@@ -21,7 +21,7 @@ if [[ "$model" == "" ]]; then
 fi
 
 # Check if on RPi before doing stuff specific to Pi
-if [[ onpi == "yes" ]]; then
+if [[ $onpi == "yes" ]]; then
     # TODO check if already done before sedding in the disable flag
     echo Disabling IPv6
     sudo sed -i '$s/$/ ipv6.disable=1/' /boot/cmdline.txt
