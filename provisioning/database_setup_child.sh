@@ -21,6 +21,10 @@ sudo -u postgres psql -c "CREATE DATABASE odm360 WITH OWNER odm360;"
 echo Adding extensions and tables to database odm360
 sudo -u postgres psql -d odm360 -f dbase_child.sql
 
+# retrieve the child's uuid and change the hostname of child accordingly
+hostname_prefix=`sudo -u postgres psql -d odm360 -t -c "SELECT (device_uuid) FROM device;"`
+echo $hostname_prefix | sudo tee /etc/hostname
+sudo sed -i "s/raspberrypi/$hostname_prefix/g" /etc/hosts
 # make sure that the database folder is prepared
 sudo mkdir /home/pi/piimages
 
