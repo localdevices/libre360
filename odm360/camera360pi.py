@@ -117,26 +117,29 @@ class Camera360Pi(PiCamera):
 
     def capture(self, timeout=1.0, cur=cur):
         root_dir = '/home/pi/piimages'
-        photo_filename = f'{self._device_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
-        fn = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_filename}.jpg'
-        target = os.path.join(root_dir, fn)
+        photo_uuid = uuid.uuid4()
+        photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        photo_filename = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg'
+        target = os.path.join(root_dir, photo_filename)
         # capture to local file
         # self.dst_fn = os.path.join(self._root, fn)
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
-        # kwargs = {
-        #     "device_uuid": self._device_uuid,
-        #     "project_id": self._project_id,
-        #     "survey_run": self._survey_run,
-        #     "device_name": self._device_name,
-        #     "photo_filename": photo_filename,
-        # }
+        kwargs = {
+            "photo_uuid": photo_uuid,
+            "project_id": self._project_id,
+            "survey_run": self._survey_run,
+            "device_uuid": self._device_uuid,
+            "device_name": self._device_name,
+            "photo_filename": photo_filename,
+            "fn": target,
+        }
         tic = time.time()
         if not (self.debug):
             super().capture(target, "jpeg")
         toc = time.time()
         # # store details about photo in database
-        # dbase.insert_photo(cur, **kwargs)
+        dbase.insert_photo(cur, **kwargs)
 
         # Update the last time of request
         self.state['req_time'] = time.time()
