@@ -8,7 +8,7 @@ pad_diameter = 7;
 pad_height = 6;
 length_cam_case = 37;
 width_cam_case = 37;
-offset_distance = 7;
+offset_distance = 0;
 offset_hole_distance = offset_distance + length_cam_case / 2;
 
 // Don't touch
