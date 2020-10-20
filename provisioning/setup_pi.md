@@ -39,89 +39,13 @@ I copy the contents of that example, navigate to the root of the ```boot``` part
   - Didn't work? ```Could not resolve hostname...``` or something like it? Sigh. Ok, try to figure out if the Pi is on the WiFi. You can try [nmap](https://nmap.org/) to attempt to identify every device on your local subnet with ```nmap -sP 192.168.X.0/24```, but I recently found a lovely FOSS application called [Angry IP Scanner](https://angryip.org/); it's great. Try it. If you're lucky, you'll see the Pi on the network along with its IP address, and maybe you can ssh into it using the IP address instead of the ```raspberrypi.local``` alias. If not, you'll have to dive into the world of Google, StackExchange, and the Raspberry Pi forums until you get it sorted.
 - Log into the Pi using the default password, which is ```raspberry```. Once you're in, immediately type ```passwd``` (_without_ ```sudo```) and—at the prompts—enter first the old and then the new password (twice). Try not to forget the new password.
 - Get everything up to date with ```sudo apt update && sudo apt upgrade -y```. This will take a few minutes, more if your Internet connection is slow.
-- You might as well install a few more basic infrastructure bits while you're at it:
 
-```
-sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran
-```
 - Fetch and install the ODM360 code
 
 ```
 git clone https://github.com/OpenDroneMap/odm360
 cd odm360
 pip3 install -e .
-
-```
-
-
-From here you have a basic Raspberry Pi configuration; you can make it into a Parent, a Child, or a TimeServer with the next steps.
-
-## Postgresql and accessing it from Python
-
-Install posgresql:
-
-```
-sudo apt install postgresql postgresql-contrib
-```
-
-Set up a user and database.
-
-- Create a postgres user by
-```
-sudo su postgres
-createuser --interactive
-```
-Give the user a sensible name like ```odm360``` and make it a superuser
-
-- Run psql and set up that user and a database
-```
-psql
-# GIVE USER A PASSWORD, CREATE A DATABASE, SET DATABASE OWNER TO THE USER, ETC
-```
-
-Install psycopg2, an adapter (sort of like a driver) for Python to connect to Postgres
-
-```
-sudo apt install libpq-dev
-pip3 install psycopg2
-```
-
-Try connecting to the database in Python with a connection and a cursor. Proper documentation [here[(https://www.psycopg.org/docs/usage.html). Sample code:
-
-```
-import psycopg2
-
-con = psycopg2.connect('dbname=odm360 user=odm360 host=localhost password=mypassword')
-cur = con.cursor()
-```
-
-Try making a table with the cursor:
-
-```
-cur.execute("CREATE TABLE photos(uuid serial PRIMARY KEY, project VARCHAR (50) NOT NULL, survey_run VARCHAR (50) NOT NULL, device VARCHAR (50) NOT NULL, photo_filename VARCHAR (100) NOT NULL, photo_id VARCHAR (50) NOT NULL)")
-con.commit()
-```
-
-Try sticking some data into that table:
-
-```
-cur.execute("INSERT INTO photos VALUES (1,'stonetown', '2020-09-11', 'cam3', 'in/that/folder', 'DCIM123456.jpg');")
-con.commit()
-```
-
-Try reading it:
-
-```
-cur.execute("SELECT * FROM photos")
-data = cur.fetchall()
-data
-```
-
-Clean up after yerself:
-```
-cur.close()
-con.close()
-```
 
 
 ## Physical wiring
