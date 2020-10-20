@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Set up a Raspberry Pi as an ODM360 Parent. Must be run after the base_pi_setup.sh script.
+# Set up a Raspberry Pi as an ODM360 Parent.
 
 model="$( cat /proc/device-tree/model )"
 onpi="no"
@@ -19,6 +19,9 @@ fi
 if [[ $onpi == "yes" ]]; then
   provisioning/wifi_setup.sh
 fi
+
+echo Running base pi setup
+provisioning/base_pi_setup.sh
 
 echo Running database setup script
 provisioning/database_setup.sh
