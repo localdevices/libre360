@@ -20,8 +20,8 @@ See also: https://www.opendronemap.org/2020/05/360-cameras/
 - Change the default password ```passwd```, update, upgrade ```sudo apt update && sudo apt upgrade -y``` and install Git ```sudo apt install git -y```.
 
 #### TODO: correct this
-= Add the package repo to ```/etc/apt/sources.list```
-= Install using ```dpkg --install odm360.deb```
+- Add the package repo to ```/etc/apt/sources.list```
+- Install using ```dpkg --install odm360.deb```
 
 ## Slightly less quick start: Install from scripts
 
