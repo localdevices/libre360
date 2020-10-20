@@ -46,7 +46,7 @@ I copy the contents of that example, navigate to the root of the ```boot``` part
 git clone https://github.com/OpenDroneMap/odm360
 cd odm360
 pip3 install -e .
-
+```
 
 ## Physical wiring
 
