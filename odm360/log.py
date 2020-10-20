@@ -38,8 +38,9 @@ def add_filehandler(logger, path, log_level=20, fmt=FMT):
     else:
         logger.debug(f"Writing log messages to new file {path}.")
 
-
-def start_logger(verbose, quiet, name="odm360"):
+# writing to home directory for now.
+# TODO switch to /var/log (probably use Syslog)
+def start_logger(verbose, quiet, name="/home/pi/odm360"):
     if verbose:
         verbose = 2
     else:
