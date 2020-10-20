@@ -53,7 +53,9 @@ def start_logger(verbose, quiet, name="odm360"):
     logger.info("starting...")
     return logger
 
-def stream_logger(fn="odm360.log", truncate=100):
+# writing to home directory for now.
+# TODO switch to /var/log (probably use Syslog)
+def stream_logger(fn="/home/pi/odm360.log", truncate=100):
     # open file for reading
     with open(fn) as f:
         while True:

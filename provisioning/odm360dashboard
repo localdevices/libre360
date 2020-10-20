@@ -1,0 +1,8 @@
+server {
+    listen 80;
+    server_name localhost;
+    location / {
+        include uwsgi_params;
+        uwsgi_pass unix:~/odm360.sock;
+    }
+}

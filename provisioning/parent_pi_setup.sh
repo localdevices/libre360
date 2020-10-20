@@ -26,30 +26,13 @@ provisioning/base_pi_setup.sh
 echo Running database setup script
 provisioning/database_setup.sh
 
-#echo putting ~/.local/bin on PATH for flask
-#export PATH="$HOME/.local/bin:$PATH"
-#echo and appending line to .bashrc to always do that
-# TODO check if already done
-#echo export PATH="$HOME/.local/bin:$PATH" | sudo tee -a "$HOME/.bashrc"
-
 echo installing nginx and configuring it to use uwsgi
 sudo apt install -y nginx
 
 sudo rm /etc/nginx/sites-enabled/default
-echo adding the odm360dashboard site to nginx
-cat > odm360dashboard <<EOF
-server {
-    listen 80;
-    server_name localhost;
-    location / {
-        include uwsgi_params;
-        uwsgi_pass unix:~/odm360.sock;
-    }
-}
-EOF
-
-sudo mv odm360dashboard /etc/nginx/sites-available/
-
+echo adding the odm360dashboard site config file to nginx
+sudo cp odm360dashboard /etc/nginx/sites-available/
+sudo cp provisioning/systemd_services/odm360dashboard.service /etc/nginx/sites-enabled/
 sudo ln -s /etc/nginx/sites-available/odm360dashboard /etc/nginx/sites-enabled/
 
 sudo mv odm360dashboard.service /etc/systemd/system/
