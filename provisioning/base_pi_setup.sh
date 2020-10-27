@@ -67,6 +67,11 @@ sudo apt install -y vim
 echo Installing requirements from setup.py using pip
 pip3 install -e .
 
+echo Installing requirements for mDNS: allows for distributed name resolution.
+echo This is super useful for finding child pis based on domain name
+sudo apt-get install avahi-daemon
+
+
 echo "************************************"
 echo Now you should have a $model set up with the basic infrastructure common to all devices in the ODM360 rig. The next steps depend whether this device is intended to be a Parent or Child.
 echo "************************************"
