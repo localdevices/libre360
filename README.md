@@ -26,7 +26,7 @@ This is a quick listing of install steps, intended for someone who already knows
 
 ## Requirements
 
-This project is built around raspbian, but can likely be deployed on almost any linux flavor.
+This project is built around Raspberry Pi OS (formerly called Raspbian), but can likely be deployed on almost any linux flavor.
 
 If you wish to test and develop code, we recommend establishing a Miniconda environment.
 When deploying on a raspberry pi, you can skip this part. 

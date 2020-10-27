@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+{{super()}}
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+<br><br>
+<div id="settings_service_space" class="form-group">
+    <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>NodeODM address</b>
+            <div class="form-group">
+                <input type="url" class="form-control" placeholder="web address">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>Port</b>
+            <div class="form-group">
+                <input type="number" class="form-control" placeholder="443" min="0">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>Token</b>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="NodeODM key">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>Options</b>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="dsm: True, .......">
+            </div>
+        </div>
+    </div>
+    <br>
+    <button type="submit" class="btn btn-primary">Save</button>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+{{super()}}
+<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>-->
+{% endblock %}
