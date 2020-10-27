@@ -55,7 +55,14 @@ echo Installing ODM infrastructure
 sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran nmap
 
 echo Installing emacs because it is the best editor and IDE. You are welcome.
+echo We assure you that this is not a wask of 160+ MB of space just to edit text
+echo Y̷o̷u̷ ̷a̷r̷e̷ ̷w̷e̷l̷c̷o̷m̷e̷
 sudo apt install -y emacs-nox
+
+echo Installing vim. You will have a delightful editing experience and grow spiritually. You are welcome.
+echo Our sincere apologies about the emacs guy on the team. He\'s a good and 
+echo useful person, in spite of this flaw.
+sudo apt install -y vim
 
 echo Installing requirements from setup.py using pip
 pip3 install -e .
