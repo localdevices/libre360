@@ -31,11 +31,10 @@ sudo apt install -y nginx
 
 sudo rm /etc/nginx/sites-enabled/default
 echo adding the odm360dashboard site config file to nginx
-sudo cp odm360dashboard /etc/nginx/sites-available/
-sudo cp provisioning/systemd_services/odm360dashboard.service /etc/nginx/sites-enabled/
+sudo cp provisioning/odm360dashboard /etc/nginx/sites-available/
 sudo ln -s /etc/nginx/sites-available/odm360dashboard /etc/nginx/sites-enabled/
 
-sudo mv odm360dashboard.service /etc/systemd/system/
+sudo cp provisioning/systemd_services/odm360dashboard.service /etc/systemd/system/
 echo starting and enabling the odm360dashboard service with Systemd
 sudo systemctl start odm360dashboard.service
 sudo systemctl enable odm360dashboard.service
