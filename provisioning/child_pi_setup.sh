@@ -34,6 +34,14 @@ if [[ "$onpi" ]]; then
     echo "gpu_mem=256           # Set GPU memory" | sudo tee --append /boot/config.txt
 fi
 
+# add the parent default Access Point with highest priority to wpa_supplicant
+echo $'network={
+ ssid="odm360"
+ psk="zanzibar"
+ priority=1
+}
+' | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
+
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
 echo 'About to reboot to enable camera... (15s)'

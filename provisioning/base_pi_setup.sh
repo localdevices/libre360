@@ -21,7 +21,7 @@ if [[ "$model" == "" ]]; then
 fi
 
 # Check if on RPi before doing stuff specific to Pi
-if [[ onpi == "yes" ]]; then
+if [[ $onpi == "yes" ]]; then
     # TODO check if already done before sedding in the disable flag
     echo Disabling IPv6
     sudo sed -i '$s/$/ ipv6.disable=1/' /boot/cmdline.txt
@@ -33,17 +33,23 @@ if [[ onpi == "yes" ]]; then
     echo enabling UART
     echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
 
-    echo Making perl shut up about locales
-    echo by setting to en_US.UTF-8
-    sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
-    export LANGUAGE=en_US.UTF-8
-    export LANG=en_US.UTF-8
-    export LC_ALL=en_US.UTF-8
-    sudo locale-gen
+    # TODO: Perl whines constantly about locales.
+    # Changing locale fails, apparently due to a
+    # permission issue.
+    # Works using raspi-config
+    #echo Making perl shut up about locales
+    #echo by setting to en_US.UTF-8
+    #sudo sed -i "s/# en_US.UTF-8/en_US.UTF-8/g" /etc/locale.gen
+    #sudo locale-gen en_US.UTF-8
+    # sudo update-locale en_US.UTF-8 #FAILS
+    #export LANGUAGE=en_US.UTF-8
+    #export LANG=en_US.UTF-8
+    #export LC_ALL=en_US.UTF-8 #FAILS
 fi
 
 echo updating
 sudo apt update && sudo apt upgrade -y
+sudo apt autoremove -y
 
 echo Installing ODM infrastructure
 sudo apt install -y git python3-pip libgphoto2-dev libatlas-base-dev gfortran nmap

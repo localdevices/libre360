@@ -37,6 +37,7 @@ setup(
         "Flask-Login",
         "Bootstrap-Flask",
         "psycopg2",
+        "uwsgi",
     ],
     extras_require={
         "dev": ["pytest", "pytest-cov", "black"],

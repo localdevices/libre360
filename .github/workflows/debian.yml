@@ -1,0 +1,88 @@
+name: build-packages
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "*"
+      - "!apt-repo"
+jobs:
+  build-amd64:
+    name: Build amd64 packages
+    runs-on: ubuntu-latest
+    container: debian:buster-slim
+    steps:
+      - name: Download build tools
+        run: apt-get update && apt-get install -y devscripts git
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install build dependencies
+        run: yes | mk-build-deps -ri
+      - name: Update changelog with snapshot version
+        run: .github/scripts/set-snapshot-version.sh
+      - name: Build packages
+        run: dpkg-buildpackage --build=all,any
+      - name: Save packages
+        run: cp ../*.deb /github/home
+      - name: Upload packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: odm360-amd64-debs
+          path: /github/home/*.deb
+          if-no-files-found: error
+      - name: Upload changelog
+        uses: actions/upload-artifact@v2
+        with:
+          name: changelog
+          path: debian/changelog
+          if-no-files-found: error
+
+  build-armhf:
+    name: Build armhf packages
+    needs: build-amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get changelog from amd64 build
+        uses: actions/download-artifact@v2
+        with:
+          name: changelog
+      - name: Overwrite existing changelog
+        run: mv changelog debian
+      - name: Start QEMU for 32-bit ARM emulation
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+      - name: Install dependencies and build packages
+        uses: docker://arm32v7/debian:buster-slim
+        with:
+          args: >
+            bash -c "apt-get update && \
+                     apt-get install -y devscripts && \
+                     yes | mk-build-deps -ri && \
+                     dpkg-buildpackage --build=any && \
+                     eval 'cp -v ../*.deb .'"
+      - name: Upload packages
+        uses: actions/upload-artifact@v2
+        with:
+          name: odm360-armhf-debs
+          path: ${{ github.workspace }}/*.deb
+          if-no-files-found: error
+
+  apt-repo:
+    name: Build apt repository
+    runs-on: ubuntu-latest
+    needs: [build-amd64, build-armhf]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ~/artifacts
+      - name: Build package repository
+        run: .github/scripts/build-apt-repo.sh ~/artifacts/**/*.deb
