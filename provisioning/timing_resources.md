@@ -22,6 +22,7 @@
 - Turns out GPSD is terribly complicated. [Here's a FAQ](https://gpsd.gitlab.io/gpsd/faq.html#raspberry) that might help.
 - And a great writeup on PPP that includes some discussion of [how to control the ublox from GPSD tools](https://gpsd.gitlab.io/gpsd/ppp-howto.html)
 - The [protocol spec for u-blox GNSS devices](https://www.u-blox.com/sites/default/files/products/documents/u-blox6_ReceiverDescrProtSpec_%28GPS.G6-SW-10018%29_Public.pdf), which includes a description of the .ubx binary format on page 85. This includes the _control_ message protocols, which we could eventually use to replace u-center configuration with our own messages.
+
 ## Hardware and wiring
 - [Good diagrams of Pi Zero pinouts](https://pi4j.com/1.2/pins/model-zero-rev1.html)
 - Incredibly annoying how complicated it is just to [enable serial pin communicatcion](https://learn.adafruit.com/raspberry-pi-zero-creation/enable-uart).
