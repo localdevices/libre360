@@ -96,7 +96,7 @@ def parent_serial(
         logger.exception(e)
 
 
-def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
+def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, timeoff=5.):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -105,6 +105,7 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
     :param timeout: time in seconds to wait until next call to server is made
     :param logger: logger object
     :param port: port number to host server
+    :param timeoff: maximum time allowed for no responses to assume server-client connection is still available
     :return:
     """
     from odm360.camera360pi import Camera360Pi, device_uuid, device_name
@@ -164,8 +165,10 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
                         else:
                             # camera exists, contact is made so set status back to idle
                             camera.state["status"] = "idle"
+                            camera.state["success_time"] = time.time()
                         # state['status'] = camera.state
                         logger.info(f"Found host on {host}:{port}")
+
                         # host_found = True
                         break
                     else:
@@ -217,13 +220,17 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
                 else:
                     logger.error("POST was not successful")
                 # FIXME: implement capture_continuous method on Camera360Pi side
+                camera.state["success_time"] = time.time()
             except Exception as e:
-                # logger.exception(e)
-                logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
-                if camera.state['status'] != "offline":
-                    # go offline if not already so!
-                    camera.stop()
-                    camera.state['status'] = "offline"
+                if time.time() - camera.state["success_time"] > timeoff:
+                    # logger.exception(e)
+                    logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
+                    if camera.state['status'] != "offline":
+                        # go offline if not already so!
+                        camera.stop()
+                        camera.state['status'] = "offline"
+                else:
+                    logger.warning("No contact with server, trying again for some time")
             time.sleep(timeout)
             state = camera.state
 
