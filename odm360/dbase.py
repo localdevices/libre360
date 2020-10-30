@@ -56,6 +56,33 @@ def delete_project(cur, project_name=None, project_id=None):
     cur.connection.commit()
 
 
+def delete_server(cur, device_uuid):
+    srvoptions = f'host={device_uuid},port=5432,dbname=odm360'
+    sql_command = "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'";
+    cur.execute(sql_command)
+    server_name = cur.fetchone()
+    # delete server from database
+    cur.execute(f"DROP SERVER IF EXISTS {server_name[0]} CASCADE")
+    cur.connection.commit()
+
+
+def delete_servers(cur):
+    """
+    Deletes all foreign servers from the connected database, including any connected views
+
+    :param cur: cursor
+    :return:
+    """
+
+    # find names of all existing servers
+    cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")
+    server_names = cur.fetchall()
+
+    for server_name in server_names:
+        cur.execute(f"DROP SERVER IF EXISTS {server_name[0]} CASCADE")
+        cur.connection.commit()
+
+
 def drop_photo(cur):
     # FIXME: implement
     raise NotImplementedError("Not yet implemented")
