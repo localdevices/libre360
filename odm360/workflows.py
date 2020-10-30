@@ -216,7 +216,7 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
             except Exception as e:
                 # logger.exception(e)
                 logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
-                if camera.state['status'] != "offline"
+                if camera.state['status'] != "offline":
                     # go offline if not already so!
                     camera.stop()
                     camera.state['status'] = "offline"
