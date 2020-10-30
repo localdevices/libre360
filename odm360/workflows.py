@@ -127,6 +127,7 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
         "device_uuid": device_uuid,
         "device_name": device_name,
         "req_time": time.time(),
+        "success_time": time.time(),
         "last_photo": "",
     }
     get_project_msg = {"state": state, "req": "ONLINE"}
@@ -215,8 +216,10 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
             except Exception as e:
                 # logger.exception(e)
                 logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
-                camera.stop()
-                camera.state['status'] = "offline"
+                if camera.state['status'] != "offline"
+                    # go offline if not already so!
+                    camera.stop()
+                    camera.state['status'] = "offline"
             time.sleep(timeout)
             state = camera.state
 
