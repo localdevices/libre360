@@ -161,6 +161,9 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
                                 raise IOError(
                                     "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
                                 )
+                        else:
+                            # camera exists, contact is made so set status back to idle
+                            camera.state["status"] = "idle"
                         # state['status'] = camera.state
                         logger.info(f"Found host on {host}:{port}")
                         # host_found = True
