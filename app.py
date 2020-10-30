@@ -51,10 +51,10 @@ def check_offline(cur=cur, max_idle=5):
                     # set back to ready
                     logger.warning(f"Stopping capturing")
                     dbase.update_project_active(cur, states["ready"])
-                    logger.warning(f"Setting connection to offline")
-                    dbase.update_device(cur, device_uuid=dev[0], status=states["offline"])
-                    # remove foreign server
-                    dbase.delete_server(cur, dev[0])
+                logger.warning(f"Setting connection to offline")
+                dbase.update_device(cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"])
+                # TODO: remove foreign server once this is initialized in camera360rig, function already prepared.
+                # dbase.delete_server(cur, dev[0])
 
 
 
