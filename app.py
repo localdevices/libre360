@@ -29,7 +29,7 @@ db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
-def check_offline(cur=cur, max_idle=5):
+def check_offline(cur=cur, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
     is switched off in this case.

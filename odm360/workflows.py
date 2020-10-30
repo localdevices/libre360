@@ -96,7 +96,7 @@ def parent_serial(
         logger.exception(e)
 
 
-def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, timeoff=5.):
+def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, timeoff=60.):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
