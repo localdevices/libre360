@@ -51,11 +51,16 @@ def check_offline(cur=cur, max_idle=5):
                     # set back to ready
                     dbase.update_project_active(cur, states["ready"])
                     logger.warning(f"Stopping capturing")
+                    # remove foreign server
+                    dbase.delete_server(cur, dev[0])
+
 
 
 
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
+# make sure no server connections are present
+dbase.delete_servers(cur)
 time.sleep(0.2)
 # start logger
 logger = start_logger("True", "False")
