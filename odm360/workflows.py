@@ -152,14 +152,15 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False):
                         # state becomes idle!
                         state['status'] = 'idle'
                         # setup camera object
-                        try:
-                            camera = Camera360Pi(
-                                state, logger=logger, debug=debug, host=host, port=port
-                            )  # start without any project info, **msg['project'])
-                        except:
-                            raise IOError(
-                                "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
-                            )
+                        if not('camera' in locals()):
+                            try:
+                                camera = Camera360Pi(
+                                    state, logger=logger, debug=debug, host=host, port=port
+                                )  # start without any project info, **msg['project'])
+                            except:
+                                raise IOError(
+                                    "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
+                                )
                         # state['status'] = camera.state
                         logger.info(f"Found host on {host}:{port}")
                         # host_found = True
