@@ -119,7 +119,6 @@ def gps_page():
                 cur, states["ready"]
             )  # status 1 means auto_start cameras once they are all online
 
-    # FIXME: replace by checking for projects in database
     # first check what projects already exist and list those in the status page as selectors
     projects = dbase.query_projects(cur)
     project_ids = [p[0] for p in projects]
@@ -233,7 +232,12 @@ def cam_page():
 
 @app.route("/file_page")
 def file_page():
-    return render_template("file_page.html")
+    projects = dbase.query_projects(cur)
+    project_ids = [p[0] for p in projects]
+    project_names = [p[1] for p in projects]
+    projects = zip(project_ids, project_names)
+
+    return render_template("file_page.html", projects=projects)
 
 
 @app.route("/log_stream", methods=["GET"])
