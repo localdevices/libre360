@@ -41,7 +41,7 @@ def check_offline(cur=cur, max_idle=60):
     for dev in devices:
         # check the last time the device was online
         time_idle = time.time() - dev[3]  # seconds
-        if time_idle > max_idle:
+        if (time_idle > max_idle) and (dev[2] != 0):
             logger.warning(f"Device {dev[0]} is offline...")
             # check if there is an active project
             rig = dbase.query_project_active(cur, as_dict=True)
@@ -53,10 +53,8 @@ def check_offline(cur=cur, max_idle=60):
                     dbase.update_project_active(cur, states["ready"])
                 logger.warning(f"Setting connection to offline")
                 dbase.update_device(cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"])
-                # TODO: remove foreign server once this is initialized in camera360rig, function already prepared.
-                # dbase.delete_server(cur, dev[0])
-
-
+                # remove foreign server belonging to offline device
+                dbase.delete_server(cur, dev[0])
 
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")

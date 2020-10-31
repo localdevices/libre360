@@ -18,8 +18,8 @@ for server_name in server_names:
     cur.connection.commit()
 
 # once a device comes online, make a foreign server + table
-dbase.create_foreign_table(cur, device_uuid1, 1)
-dbase.create_foreign_table(cur, device_uuid2, 2)
+dbase.create_foreign_table(cur, device_uuid1)
+dbase.create_foreign_table(cur, device_uuid2)
 
 # collate all photos into one view
 cur.execute("select foreign_table_name from information_schema.foreign_tables");
@@ -34,6 +34,7 @@ for n, table in enumerate(tables):
 sql_command += """);"""
 
 print(sql_command)
+
 
 data = []
 for n, table in enumerate(tables):
