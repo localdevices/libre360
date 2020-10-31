@@ -14,6 +14,8 @@ from flask_bootstrap import Bootstrap
 import psycopg2
 import logging
 import time
+import requests
+import zipstream
 
 from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
@@ -27,7 +29,7 @@ db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
-def check_offline(cur=cur, max_idle=5):
+def check_offline(cur=cur, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
     is switched off in this case.
@@ -47,13 +49,19 @@ def check_offline(cur=cur, max_idle=5):
                 # check if project is capturing
                 if get_key_state(rig['status']) == "capture":
                     # set back to ready
-                    dbase.update_project_active(cur, states["ready"])
                     logger.warning(f"Stopping capturing")
+                    dbase.update_project_active(cur, states["ready"])
+                logger.warning(f"Setting connection to offline")
+                dbase.update_device(cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"])
+                # TODO: remove foreign server once this is initialized in camera360rig, function already prepared.
+                # dbase.delete_server(cur, dev[0])
 
 
 
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
+# make sure no server connections are present
+dbase.delete_servers(cur)
 time.sleep(0.2)
 # start logger
 logger = start_logger("True", "False")
@@ -271,6 +279,24 @@ def cam_summary():
     return jsonify(cams)
 
 
+@app.route("/odm360.zip", methods=["GET"], endpoint='_zip_files')
+def _zip_files():
+    # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
+    def generator():
+        z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+        z.write_iter("/home/hcwinsemius/temp/odm360/1.jpg", _generator("http://i.imgur.com/9DpELbT.jpg"))
+        z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
+        # add all the necessary files here
+        z.write_iter("/home/hcwinsemius/temp/odm360/3.png", _generator("http://i.imgur.com/Phhjhbn.png"))
+        # here is where the magic happens. Each call will iterate the generator we wrote for each file
+        # one at a time until all files are completed.
+        for chunk in z:
+            yield chunk
+    response = Response(generator(), mimetype='application/zip')
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format('files.zip')
+    return response
+
+
 @app.route("/picam", methods=["GET", "POST"])
 def picam():
     if request.method == "POST":
@@ -292,6 +318,13 @@ def run(app):
     logger.info(f"Running application on http://{server}:{port}")
     app.run(debug=False, port=5000, host="0.0.0.0")
 
+def _generator(photo_url):
+    # download a file and stream it
+    r = requests.get(photo_url, stream=True)
+    if r.status_code != 200:
+        return
+    for chunk in r.iter_content(1024):
+        yield chunk
 
 if __name__ == "__main__":
     run(app)

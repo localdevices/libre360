@@ -4,6 +4,36 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
+def create_foreign_table(cur, host, name):
+    sql_command = f"""
+CREATE SERVER IF NOT EXISTS child_{name}
+    FOREIGN DATA WRAPPER postgres_fdw 
+    OPTIONS (host '{host}', port '5432', dbname 'odm360');
+    """
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+    sql_command = f"""
+CREATE FOREIGN TABLE IF NOT EXISTS child_{name} (
+photo_uuid uuid
+,project_id BIGINT
+,survey_run text NOT NULL
+,device_uuid uuid NOT NULL
+,device_name text, photo_filename text NOT NULL
+,photo BYTEA NOT NULL)
+SERVER child_{name} OPTIONS (schema_name 'public', table_name 'photos_child');
+"""
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+    sql_command = f"""
+CREATE USER MAPPING IF NOT EXISTS FOR odm360 
+    SERVER child_{name}
+    OPTIONS (user 'odm360', password 'zanzibar');
+"""
+    cur.execute(sql_command)
+    cur.connection.commit()
+
 
 def delete_project(cur, project_name=None, project_id=None):
     """
@@ -24,6 +54,33 @@ def delete_project(cur, project_name=None, project_id=None):
 
     cur.execute(sql_command)
     cur.connection.commit()
+
+
+def delete_server(cur, device_uuid):
+    srvoptions = f'host={device_uuid},port=5432,dbname=odm360'
+    sql_command = "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'";
+    cur.execute(sql_command)
+    server_name = cur.fetchone()
+    # delete server from database
+    cur.execute(f"DROP SERVER IF EXISTS {server_name[0]} CASCADE")
+    cur.connection.commit()
+
+
+def delete_servers(cur):
+    """
+    Deletes all foreign servers from the connected database, including any connected views
+
+    :param cur: cursor
+    :return:
+    """
+
+    # find names of all existing servers
+    cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")
+    server_names = cur.fetchall()
+
+    for server_name in server_names:
+        cur.execute(f"DROP SERVER IF EXISTS {server_name[0]} CASCADE")
+        cur.connection.commit()
 
 
 def drop_photo(cur):
@@ -58,6 +115,49 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
     insert(cur, sql_command)
 
+def insert_photo(
+    cur,
+    photo_uuid,
+    project_id,
+    survey_run,
+    device_uuid,
+    device_name,
+    photo_filename,
+    fn,
+):
+    """
+    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
+    :param cur: cursor
+    :param project_id: int - project id
+    :param survey_run: string - id of survey within project
+    :param device_uuid: uuid - id of device
+    :param fn: string - filename
+    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
+    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
+    :return:
+    """
+    # occurs when parent-side storage is done, no binary data is stored
+    sql_command = f"""
+    INSERT INTO photos_child
+    (
+    photo_uuid
+    ,project_id
+    ,survey_run
+    ,device_uuid
+    ,device_name
+    ,photo_filename
+    ,photo
+    ) SELECT
+    '{photo_uuid}'
+    , {project_id}
+    , '{survey_run}'
+    , '{device_uuid}'
+    , '{device_name}'
+    , '{photo_filename}'
+    , pg_read_binary_file('{fn}')
+    ;"""
+    insert(cur, sql_command)
+
 
 def insert_project_active(cur, project_id):
     sql_command = (
@@ -88,99 +188,6 @@ def insert_project(cur, project_name, n_cams, dt):
     ,{dt}
     );
     """
-    insert(cur, sql_command)
-
-
-def insert_photo(
-    cur,
-    project_id,
-    survey_run,
-    device_uuid,
-    device_name,
-    fn,
-    photo_uuid=None,
-    photo=None,
-    thumb=None,
-):
-    """
-    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
-    :param cur: cursor
-    :param project_id: int - project id
-    :param survey_run: string - id of survey within project
-    :param device_uuid: uuid - id of device
-    :param fn: string - filename
-    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
-    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
-    :return:
-    """
-    _photo = psycopg2.Binary(
-        photo
-    )  # note: photo can be retrieved with _photo.tobytes()
-    if photo_uuid is not None:
-        # occurs when parent-side storage is done, no binary data is stored
-        sql_command = f"""
-        INSERT INTO photos
-        (
-        photo_uuid
-        ,project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ) VALUES
-        (
-        '{photo_uuid}'
-        ,'{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        );"""
-
-    elif thumb is None:
-        sql_command = f"""
-        INSERT INTO photos
-        (
-        project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ) VALUES
-        (
-        '{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        );"""
-    else:
-        _thumb = psycopg2.Binary(thumb)
-        sql_command = f"""
-        INSERT INTO photos_child
-        (
-        project_id
-        ,survey_run
-        ,device_uuid
-        ,device_name
-        ,photo_filename
-        ,photo
-        ,thumbnail
-        ) VALUES
-        (
-        '{project_id}'
-        ,'{survey_run}'
-        ,'{device_uuid}'
-        ,'{device_name}'
-        ,'{fn}'
-        ,{_photo}
-        ,{_thumb}
-        );"""
-
     insert(cur, sql_command)
 
 

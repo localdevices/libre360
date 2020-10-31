@@ -21,8 +21,6 @@ fi
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
-# TODO set up the database specifically for a child
-
 # Set up pi camera
 if [[ "$onpi" ]]; then
     echo "" | sudo tee --append /boot/config.txt # Add blank line before camera setup in config

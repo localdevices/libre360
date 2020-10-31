@@ -4,6 +4,7 @@ import logging
 import json
 import requests
 import psycopg2
+import uuid
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -20,9 +21,8 @@ cur = conn.cursor()
 # get the uuid of the device
 try:
     cur.execute("SELECT * FROM device")
-    device_uuid, device_name = cur.fetchone()[0]
+    device_uuid, device_name = cur.fetchone()
 except:
-    import uuid
     device_uuid, device_name = str(uuid.uuid4()), "dummy"
 try:
     from picamera import PiCamera
@@ -70,7 +70,7 @@ class Camera360Pi(PiCamera):
             os.makedirs(self._root)
         super().__init__()
         # now set the resolution explicitly. If you do not set it, the camera will fail after first photo is taken
-        self.resolution = (4056, 3040)
+        self.resolution = (2028, 1520)
 
     def init(self):
         try:
@@ -116,32 +116,36 @@ class Camera360Pi(PiCamera):
         return {"msg": msg, "level": "info"}
 
     def capture(self, timeout=1.0, cur=cur):
-        fn = f'photo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.jpg'
+        root_dir = '/home/pi/piimages'
+        photo_uuid = uuid.uuid4()
+        photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        photo_filename = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg'
+        target = os.path.join(root_dir, 'tmp.jpg')
         # capture to local file
-        self.dst_fn = os.path.join(self._root, fn)
-        self.logger.info(f"Writing to {self.dst_fn}")
-        target = self.dst_fn
+        self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
         kwargs = {
+            "photo_uuid": photo_uuid,
             "project_id": self._project_id,
             "survey_run": self._survey_run,
             "device_uuid": self._device_uuid,
             "device_name": self._device_name,
-            "fn": fn,
+            "photo_filename": photo_filename,
+            "fn": target,
         }
         tic = time.time()
         if not (self.debug):
             super().capture(target, "jpeg")
-        toc = time.time()
-        # store details about photo in database
+        # # store details about photo in database
         dbase.insert_photo(cur, **kwargs)
 
         # Update the last time of request
         self.state['req_time'] = time.time()
+        toc = time.time()
         # self.state['last_photo'] = target
         self.logger.debug(f"Photo took {toc-tic} seconds to take")
         post_capture = {
-            "kwargs": {"msg": f"Taken photo {fn}", "level": "info"},
+            "kwargs": {"msg": f"Taken photo {photo_filename}", "level": "info"},
             "req": "LOG",
             "state": self.state,
         }

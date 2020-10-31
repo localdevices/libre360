@@ -2,22 +2,28 @@
 CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 
 -- This will need done each time a child is added
-CREATE SERVER child_id_1_foreign_server
+CREATE SERVER pi1_foreign_server
         FOREIGN DATA WRAPPER postgres_fdw
         OPTIONS (host '<child_pi_1_hostname>', port '5432', dbname 'child_hostname_db');
-        
-CREATE FOREIGN TABLE child_id_1_foreign_table (
-	photoid BIGINT
-	,projectid BIGINT
+
+-- not sure if needed
+CREATE USER MAPPING
+    FOR odm360
+ SERVER pi1_foreign_server
+OPTIONS (user 'odm360', password 'zanzibar');
+
+CREATE FOREIGN TABLE pi1_foreign_table (
+	photo_uuid uuid
+	,project_id BIGINT
 	,survey_run text NOT NULL
-	,device text NOT NULL
+	,device_name text NOT NULL
 	,photo_filename text NOT NULL
-	,photo BYTEA NOT NULL
+	,photo BYTEA
 	,thumbnail BYTEA
-        ,child_pi_id text -- we need the child pi id in the table so we know where the data came from when we merge the tables together
-)
-        SERVER child_id_1_foreign_server
-        OPTIONS (schema_name 'public', table_name 'cameras');
+	,device_uuid uuid
+	)
+        SERVER pi1_foreign_server
+        OPTIONS (schema_name 'public', table_name 'photos');
 
 -- This will be needed every time a child is detected removed
 DROP SERVER IF EXISTS child_id_1_foreign_server;        
