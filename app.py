@@ -230,8 +230,16 @@ def cam_page():
     return render_template("cam_status.html")
 
 
-@app.route("/file_page")
+@app.route("/file_page") #, methods=["GET", "POST"])
 def file_page():
+    # if request.method == "POST":
+    #     form = cleanopts(request.form)
+    #     project = dbase.query_projects(cur, project_name=form["project"])
+    #
+    #     if form["submit_button"] == 'hotspot':
+    #         logger.info('Switching to local hotspot')
+    #         # switch to serving a hotspot, and tell all children to switch to hotspot
+
     projects = dbase.query_projects(cur)
     project_ids = [p[0] for p in projects]
     project_names = [p[1] for p in projects]
@@ -271,6 +279,16 @@ def cameras():
         )
 
     return jsonify(devices)
+
+
+@app.route("/_files", methods=["GET", "POST"])
+def files():
+    args = cleanopts(request.args)
+    project = dbase.query_projects(
+        cur, project_id=args["project_id"], as_dict=True, flatten=True
+    )
+    fns = dbase.query_photo_names(cur, project_id=project["project_id"])
+    return jsonify(fns)
 
 
 @app.route("/_cam_summary")

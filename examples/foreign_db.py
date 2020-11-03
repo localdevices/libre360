@@ -8,14 +8,8 @@ cur = conn.cursor()
 device_uuid1 = 'c9f1c734-ac7a-4241-8988-2d1fb30cc0e7.local'
 device_uuid2 = 'd9f1c734-ac7a-4241-8988-2d1fb30cc0e7.local'
 
-# find names of all existing servers
+# delete all existing servers
 dbase.delete_servers(cur)
-cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")
-server_names = cur.fetchall()
-
-for server_name in server_names:
-    cur.execute(f"DROP SERVER IF EXISTS {server_name[0]} CASCADE")
-    cur.connection.commit()
 
 # once a device comes online, make a foreign server + table
 dbase.create_foreign_table(cur, device_uuid1)
