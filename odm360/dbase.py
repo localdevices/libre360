@@ -268,21 +268,42 @@ def query_photo(cur, fn):
     )
 
 
-def query_photos(cur, project_id=None, as_dict=False, flatten=False):
+def query_photo_names(cur, project_id=None):
     """
     queries all photos for a given project name
     :param cur: cursor
     :param project_id: int - project id
     :return: list of results
     """
-    table_name = "photos"
-    if project_id is None:
-        raise ValueError("provide a project_id")
-    sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
-
-    return query_table(
-        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
-    )
+    # query all available foreign table names
+    cur.execute("select foreign_table_name from information_schema.foreign_tables");
+    tables = cur.fetchall()
+    cols = ['photo_filename', 'survey_run']
+    fns = []
+    for n, table in enumerate(tables):
+        # get further information about the server (table names and server names are the same)
+        cur.execute(f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';")
+        host = cur.fetchone()[0][0].split('=')[-1]
+        sql_command = f"SELECT photo_filename, survey_run from {table[0]} WHERE project_id={project_id};"
+        data = query_table(cur, sql_command, table_name=table[0])
+        fns_server = [dict(zip(cols, d)) for d in data]
+        # add the device id
+        for n in range(len(fns_server)):
+            fns_server[n]['device_uuid'] = host
+            fns_server[n]['srvname'] = table[0]
+        fns += fns_server
+    return fns
+    # # For each foreign table, query its content for filenames
+    # # accumulate these into one list
+    #
+    # table_name = "photos"
+    # if project_id is None:
+    #     raise ValueError("provide a project_id")
+    # sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
+    #
+    # return query_table(
+    #     cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    # )
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -336,9 +357,11 @@ def query_table(cur, sql_command, table_name=None, as_dict=False, flatten=False)
         cur.execute(sql_command)
         cols = [c[0] for c in cur.fetchall()]
         if flatten and (len(data) == 1):
-            return {k: v[0] for k, v in zip(cols, zip(*data))}
+            return dict(zip(cols, data[0]))
+        # return {k: v[0] for k, v in zip(cols, zip(*data))}
         else:
-            return {k: list(v) for k, v in zip(cols, zip(*data))}
+            return [dict(zip(cols, d)) for d in data]
+            #return {k: list(v) for k, v in zip(cols, zip(*data))}
 
     else:
         return data

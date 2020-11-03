@@ -10,7 +10,7 @@
 <br>
 <div class="container">
     <div id="query_files"></div>
-    <form action="" method="POST">
+<!--    <form action="" method="POST">-->
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
@@ -43,16 +43,20 @@
                 </select>
         </div>
     </div>
-    </form>
+    <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">Submit</button>
+    <br>
+    <br>
+<!--    </form>-->
 </div>
 <br>
 <div class="container">
     <table id="logtable" data-toggle="table">
         <thead>
           <tr>
-            <th data-field="name" data-sortable="true">File name</th>
-            <th data-field="format" data-sortable="true">type</th>
-            <th data-field="size" data-sortable="true">size (MB)</th>
+            <th data-field="device_uuid" data-sortable="true">Device uuid</th>
+            <th data-field="photo_filename" data-sortable="true">File name</th>
+            <th data-field="survey_run" data-sortable="true">Survey run</th>
+<!--            <th data-field="size" data-sortable="true">size (MB)</th>-->
 <!--            <th data-field="actions" data-formatter="actionFormatter" data-events="operateEvents">actions</th>-->
           </tr>
         </thead>
@@ -64,5 +68,27 @@
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
-<
+<script>
+function loadTable()
+{
+    $(function () {
+      $('#logtable').bootstrapTable({
+      });
+    });
+}
+function fetchFiles(){
+    $.getJSON(
+        "_files",
+        {
+            project_id: $('#project').val()
+        },
+        function(data){
+            $('#logtable').bootstrapTable("load", data);
+        }
+    );
+}
+loadTable();
+<!--document.getElementById("query").onclick(fetchFiles())-->
+
+</script>
 {% endblock %}
