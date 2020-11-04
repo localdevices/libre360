@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo Installing NTP
 sudo apt install -y ntp
 
@@ -11,4 +13,4 @@ sudo /etc/init.d ntp start
 
 echo at this point the setup depends whether this device is the parent (which will be the NTP server) or a child (which will be an NTP client)
 
-
+echo test this using ntpq -pn
