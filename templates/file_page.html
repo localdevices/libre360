@@ -70,7 +70,7 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script>
-var data;
+var photos;
 function loadTable()
 {
     $(function () {
@@ -86,16 +86,30 @@ function fetchFiles(){
         },
         function(data){
             $('#logtable').bootstrapTable("load", data);
+            photos = JSON.stringify(data);
         }
     );
 }
+<!--function downloadFiles(){-->
+<!--    fetch(-->
+<!--        "odm360.zip"-->
+<!--    ).then( res => res.blob() )-->
+<!--     .then( blob => {-->
+<!--         var file = window.URL.createObjectURL(blob);-->
+<!--         window.location.assign(file);-->
+<!--       }-->
+<!--     );-->
+<!--}-->
 function downloadFiles(){
-    $.getJSON(
-	"_download",
+    $.post(
+	"odm360.zip",
 	    {
-	        project_id: $('#project').val()
+	        photos
 	    },
-
+	    function(status)
+	    {
+	        console.log(`Download status: ${status}`)
+        }
     );
 }
 loadTable();

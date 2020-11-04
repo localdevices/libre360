@@ -12,6 +12,7 @@ from flask import (
 from flask_bootstrap import Bootstrap
 
 import psycopg2
+import json
 import logging
 import time
 import zipstream
@@ -24,12 +25,7 @@ from odm360.utils import cleanopts, get_key_state
 from odm360.timer import RepeatedTimer
 
 
-db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
-conn = psycopg2.connect(db)
-cur = conn.cursor()
-
-
-def _check_offline(cur=cur, max_idle=60):
+def _check_offline(cur, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
     is switched off in this case.
@@ -59,17 +55,14 @@ def _check_offline(cur=cur, max_idle=60):
                 dbase.delete_server(cur, dev[0])
 
 
-def _generator(cur, table, fn, chunksize=1024):
-    # print(table, fn)
-    sql_command = f"SELECT photo from {table} where photo_filename='{fn}'"
-    print(sql_command)
-    cur.connection.rollback()
-    cur.execute(sql_command)
-    photo = cur.fetchall()[0][0]
-    for n in range(0, len(photo), chunksize):
-        chunk = photo[n : n + chunksize]
-        yield chunk
+db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
+conn = psycopg2.connect(db)
 
+# cursor for requests
+cur = conn.cursor()
+
+# dedicated cursor for checking the offline status of child devices
+cur_check = conn.cursor()
 
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
@@ -85,7 +78,7 @@ if len(cur_project) == 1:
     dbase.update_project_active(cur, states["ready"])
 
 # start scheduled task to check for offline devices
-checker = RepeatedTimer(5, _check_offline, start_time=time.time())
+# checker = RepeatedTimer(5, _check_offline, start_time=time.time(), cur=cur_check)
 
 app = Flask(__name__)
 log = logging.getLogger("werkzeug")
@@ -319,24 +312,25 @@ def cam_summary():
     return jsonify(cams)
 
 
-@app.route("/odm360.zip", methods=["GET"], endpoint="download")
-def download():
+@app.route("/odm360.zip", methods=["GET"], endpoint="_download")
+def _download():
     # for now hard coded so that we can test
+    args = cleanopts(request.args)
+    fns = json.loads(args["photos"])
     # open a dedicated connection for the download
     db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
     conn2 = psycopg2.connect(db)
-    cur2 = conn2.cursor()
-
-    project = 1
-    photos = dbase.query_photo_names(cur2, project_id=project)
+    cur_download = conn2.cursor()
+    # project = 1
+    # photos = dbase.query_photo_names(cur_download, project_id=project)
 
     # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
-    def generator(cur):
+    def generator(cur_download):
         z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
-        for photo in photos[-3:]:
+        for fn in fns:
             z.write_iter(
-                photo["photo_filename"],
-                _generator(cur, photo["srvname"], photo["photo_filename"]),
+                fn["photo_filename"],
+                _generator(cur_download, fn["srvname"], fn["photo_uuid"]),
             )
         # z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
         # # add all the necessary files here
@@ -346,7 +340,7 @@ def download():
         for chunk in z:
             yield chunk
 
-    response = Response(generator(cur2), mimetype="application/zip")
+    response = Response(generator(cur_download), mimetype="application/zip")
     response.headers["Content-Disposition"] = "attachment; filename={}".format(
         "odm360.zip"
     )
@@ -374,6 +368,19 @@ def run(app):
     logger.info(f"Running application on http://{server}:{port}")
     app.run(debug=False, port=5000, host="0.0.0.0")
 
+
+def _generator(cur_download, table, uuid, chunksize=1024):
+    # print(table, fn)
+    sql_command = f"SELECT photo from {table} where photo_uuid='{uuid}'"
+    print(sql_command)
+    # cur_download.connection.rollback()
+    cur_download.execute(sql_command)
+    photo = cur_download.fetchall()
+    print(photo)
+    photo = photo[0][0]
+    for n in range(0, len(photo), chunksize):
+        chunk = photo[n : n + chunksize]
+        yield chunk
 
 # def _generator(photo_url):
 #     # download a file and stream it

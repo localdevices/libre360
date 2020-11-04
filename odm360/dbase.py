@@ -255,7 +255,7 @@ def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=Fal
     )
 
 
-def query_photo(cur, fn):
+def query_photo(cur, uuid):
     """
 
     :param cur: cursor
@@ -266,7 +266,7 @@ def query_photo(cur, fn):
     table_name = "photos"
     if fn is None:
         raise ValueError("Must provide filename as string")
-    sql_command = f"SELECT * FROM {table_name} WHERE photo_filename='{fn}'"
+    sql_command = f"SELECT * FROM {table_name} WHERE photo_uuid='{uuid}'"
     # as we are looking for one unique, photo, as_dict and flatten need to be True
     return query_table(
         cur, sql_command, table_name=table_name, as_dict=True, flatten=True
@@ -283,7 +283,7 @@ def query_photo_names(cur, project_id=None):
     # query all available foreign table names
     cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ["photo_filename", "survey_run"]
+    cols = ["photo_filename", "photo_uuid", "survey_run"]
     fns = []
     for n, table in enumerate(tables):
         # get further information about the server (table names and server names are the same)
@@ -291,7 +291,7 @@ def query_photo_names(cur, project_id=None):
             f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';"
         )
         host = cur.fetchone()[0][0].split("=")[-1]
-        sql_command = f"SELECT photo_filename, survey_run from {table[0]} WHERE project_id={project_id};"
+        sql_command = f"SELECT photo_filename, photo_uuid, survey_run from {table[0]} WHERE project_id={project_id};"
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
         # add the device id
