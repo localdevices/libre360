@@ -11,6 +11,6 @@ echo Starting the full NTP server
 sudo /etc/init.d/ntp stop
 sudo /etc/init.d/ntp start
 
-echo at this point the setup depends whether this device is the parent (which will be the NTP server) or a child (which will be an NTP client)
+echo At this point the setup depends whether this device is the parent which will be the NTP server or a child which will be an NTP client
 
 echo test this using ntpq -pn

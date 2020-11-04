@@ -29,6 +29,14 @@ provisioning/database_setup.sh
 echo Running NTP setup script
 provisioning/ntp_setup.sh
 
+echo Setting NTP to server
+cat <<EOF >> /etc/ntp.conf
+restrict 192.168.1.0 mask 255.255.255.0
+
+broadcast 192.168.1.255
+broadcast 224.0.1.1
+EOF
+
 echo installing nginx and configuring it to use uwsgi
 sudo apt install -y nginx
 
