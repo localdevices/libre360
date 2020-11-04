@@ -45,6 +45,7 @@
     </div>
     <br>
     <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">Submit</button>
+    <button onclick="downloadFiles()" id="download" name="download" class="btn btn-primary">Download</button>
     <br>
 <!--    </form>-->
 </div>
@@ -69,6 +70,7 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script>
+var data;
 function loadTable()
 {
     $(function () {
@@ -87,8 +89,16 @@ function fetchFiles(){
         }
     );
 }
+function downloadFiles(){
+    $.getJSON(
+	"_download",
+	    {
+	        project_id: $('#project').val()
+	    },
+
+    );
+}
 loadTable();
-<!--document.getElementById("query").onclick(fetchFiles())-->
 
 </script>
 {% endblock %}

@@ -14,7 +14,6 @@ from flask_bootstrap import Bootstrap
 import psycopg2
 import logging
 import time
-import requests
 import zipstream
 
 from odm360.log import start_logger, stream_logger
@@ -29,7 +28,7 @@ db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
-def check_offline(cur=cur, max_idle=60):
+def _check_offline(cur=cur, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
     is switched off in this case.
@@ -56,6 +55,18 @@ def check_offline(cur=cur, max_idle=60):
                 # remove foreign server belonging to offline device
                 dbase.delete_server(cur, dev[0])
 
+def _generator(cur, table, fn, chunksize=1024):
+    # print(table, fn)
+    sql_command = f"SELECT photo from {table} where photo_filename='{fn}'"
+    print(sql_command)
+    cur.connection.rollback()
+    cur.execute(sql_command)
+    photo = cur.fetchall()[0][0]
+    for n in range(0, len(photo), chunksize):
+        chunk = photo[n:n + chunksize]
+        yield chunk
+
+
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
 # make sure no server connections are present
@@ -70,7 +81,7 @@ if len(cur_project) == 1:
     dbase.update_project_active(cur, states["ready"])
 
 # start scheduled task to check for offline devices
-checker = RepeatedTimer(5, check_offline, start_time=time.time())
+checker = RepeatedTimer(5, _check_offline, start_time=time.time())
 
 app = Flask(__name__)
 log = logging.getLogger("werkzeug")
@@ -299,21 +310,31 @@ def cam_summary():
     return jsonify(cams)
 
 
-@app.route("/odm360.zip", methods=["GET"], endpoint='_zip_files')
-def _zip_files():
+@app.route("/odm360.zip", methods=["GET"], endpoint='download')
+def download():
+    # for now hard coded so that we can test
+    # open a dedicated connection for the download
+    db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
+    conn2 = psycopg2.connect(db)
+    cur2 = conn2.cursor()
+
+    project = 1
+    photos = dbase.query_photo_names(cur2, project_id=project)
+
     # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
-    def generator():
+    def generator(cur):
         z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
-        z.write_iter("/home/hcwinsemius/temp/odm360/1.jpg", _generator("http://i.imgur.com/9DpELbT.jpg"))
-        z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
-        # add all the necessary files here
-        z.write_iter("/home/hcwinsemius/temp/odm360/3.png", _generator("http://i.imgur.com/Phhjhbn.png"))
+        for photo in photos[-3:]:
+            z.write_iter(photo["photo_filename"], _generator(cur, photo["srvname"], photo["photo_filename"]))
+        # z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
+        # # add all the necessary files here
+        # z.write_iter("/home/hcwinsemius/temp/odm360/3.png", _generator("http://i.imgur.com/Phhjhbn.png"))
         # here is where the magic happens. Each call will iterate the generator we wrote for each file
         # one at a time until all files are completed.
         for chunk in z:
             yield chunk
-    response = Response(generator(), mimetype='application/zip')
-    response.headers['Content-Disposition'] = 'attachment; filename={}'.format('files.zip')
+    response = Response(generator(cur2), mimetype='application/zip')
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format('odm360.zip')
     return response
 
 
@@ -338,13 +359,14 @@ def run(app):
     logger.info(f"Running application on http://{server}:{port}")
     app.run(debug=False, port=5000, host="0.0.0.0")
 
-def _generator(photo_url):
-    # download a file and stream it
-    r = requests.get(photo_url, stream=True)
-    if r.status_code != 200:
-        return
-    for chunk in r.iter_content(1024):
-        yield chunk
+# def _generator(photo_url):
+#     # download a file and stream it
+#     r = requests.get(photo_url, stream=True)
+#     if r.status_code != 200:
+#         return
+#     for chunk in r.iter_content(10240):
+#         print(type(chunk))
+#         yield chunk
 
 if __name__ == "__main__":
     run(app)
