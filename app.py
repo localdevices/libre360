@@ -382,6 +382,7 @@ def _generator(cur_download, table, uuid, chunksize=1024):
         chunk = photo[n : n + chunksize]
         yield chunk
 
+
 # def _generator(photo_url):
 #     # download a file and stream it
 #     r = requests.get(photo_url, stream=True)
