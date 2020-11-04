@@ -26,6 +26,9 @@ provisioning/base_pi_setup.sh
 echo Running database setup script
 provisioning/database_setup.sh
 
+echo Running NTP setup script
+provisioning/ntp_setup.sh
+
 echo installing nginx and configuring it to use uwsgi
 sudo apt install -y nginx
 
