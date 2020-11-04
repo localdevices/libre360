@@ -35,7 +35,7 @@ restrict 192.168.1.0 mask 255.255.255.0
 
 broadcast 192.168.1.255
 broadcast 224.0.1.1
-' | sudo tee /etc/ntp.conf
+' | sudo tee -a /etc/ntp.conf
 
 echo installing nginx and configuring it to use uwsgi
 sudo apt install -y nginx
