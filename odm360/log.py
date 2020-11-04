@@ -13,7 +13,7 @@ def setuplog(name, path=None, log_level=20, fmt=FMT):
     logger = logging.getLogger(name)
     logger.setLevel(log_level)
 
-    syslog = logging.handlers.SysLogHandler(address='/dev/log')
+    syslog = logging.handlers.SysLogHandler(address="/dev/log")
     syslog.setLevel(log_level)
     syslog.setFormatter(logging.Formatter(fmt))
 
@@ -46,6 +46,7 @@ def add_filehandler(logger, path, log_level=20, fmt=FMT):
     else:
         logger.debug(f"Writing log messages to new file {path}.")
 
+
 # writing to home directory for now.
 # TODO switch to /var/log (probably use Syslog)
 def start_logger(verbose, quiet, name="odm360"):
@@ -61,6 +62,7 @@ def start_logger(verbose, quiet, name="odm360"):
     logger = setuplog(name, f"{name}.log", log_level=log_level)
     logger.info("starting...")
     return logger
+
 
 # writing to home directory for now.
 # TODO switch to /var/log (probably use Syslog)

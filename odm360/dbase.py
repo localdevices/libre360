@@ -4,10 +4,10 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
+
 def create_foreign_table(cur, host):
     cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")
     nr_of_servers = len(cur.fetchall())
-
 
     sql_command = f"""
 CREATE SERVER IF NOT EXISTS child_{nr_of_servers}
@@ -61,8 +61,10 @@ def delete_project(cur, project_name=None, project_id=None):
 
 
 def delete_server(cur, device_uuid):
-    srvoptions = f'host={device_uuid},port=5432,dbname=odm360'
-    sql_command = "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'";
+    srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
+    sql_command = (
+        "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'"
+    )
     cur.execute(sql_command)
     server_name = cur.fetchone()
     # delete server from database
@@ -118,6 +120,7 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     """
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
     insert(cur, sql_command)
+
 
 def insert_photo(
     cur,
@@ -230,7 +233,9 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
-            "last_photo": d[3],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
+            "last_photo": d[
+                3
+            ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
         }
         for n, d in enumerate(devices_raw)
     ]
@@ -276,21 +281,23 @@ def query_photo_names(cur, project_id=None):
     :return: list of results
     """
     # query all available foreign table names
-    cur.execute("select foreign_table_name from information_schema.foreign_tables");
+    cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ['photo_filename', 'survey_run']
+    cols = ["photo_filename", "survey_run"]
     fns = []
     for n, table in enumerate(tables):
         # get further information about the server (table names and server names are the same)
-        cur.execute(f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';")
-        host = cur.fetchone()[0][0].split('=')[-1]
+        cur.execute(
+            f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';"
+        )
+        host = cur.fetchone()[0][0].split("=")[-1]
         sql_command = f"SELECT photo_filename, survey_run from {table[0]} WHERE project_id={project_id};"
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
         # add the device id
         for n in range(len(fns_server)):
-            fns_server[n]['device_uuid'] = host
-            fns_server[n]['srvname'] = table[0]
+            fns_server[n]["device_uuid"] = host
+            fns_server[n]["srvname"] = table[0]
         fns += fns_server
     return fns
     # # For each foreign table, query its content for filenames
@@ -361,7 +368,7 @@ def query_table(cur, sql_command, table_name=None, as_dict=False, flatten=False)
         # return {k: v[0] for k, v in zip(cols, zip(*data))}
         else:
             return [dict(zip(cols, d)) for d in data]
-            #return {k: list(v) for k, v in zip(cols, zip(*data))}
+            # return {k: list(v) for k, v in zip(cols, zip(*data))}
 
     else:
         return data
@@ -389,9 +396,7 @@ def update_device(cur, device_uuid, status, req_time, last_photo=None):
     if (last_photo is not None) and (last_photo != ""):
         sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}', req_time={req_time} WHERE device_uuid='{device_uuid}'"
     else:
-        sql_command = (
-            f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
-        )
+        sql_command = f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
     cur.execute(sql_command)
 
 

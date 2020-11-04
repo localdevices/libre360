@@ -28,6 +28,7 @@ db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 cur = conn.cursor()
 
+
 def _check_offline(cur=cur, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
@@ -46,14 +47,17 @@ def _check_offline(cur=cur, max_idle=60):
             rig = dbase.query_project_active(cur, as_dict=True)
             if len(rig) > 0:
                 # check if project is capturing
-                if get_key_state(rig['status']) == "capture":
+                if get_key_state(rig["status"]) == "capture":
                     # set back to ready
                     logger.warning(f"Stopping capturing")
                     dbase.update_project_active(cur, states["ready"])
                 logger.warning(f"Setting connection to offline")
-                dbase.update_device(cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"])
+                dbase.update_device(
+                    cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"]
+                )
                 # remove foreign server belonging to offline device
                 dbase.delete_server(cur, dev[0])
+
 
 def _generator(cur, table, fn, chunksize=1024):
     # print(table, fn)
@@ -63,7 +67,7 @@ def _generator(cur, table, fn, chunksize=1024):
     cur.execute(sql_command)
     photo = cur.fetchall()[0][0]
     for n in range(0, len(photo), chunksize):
-        chunk = photo[n:n + chunksize]
+        chunk = photo[n : n + chunksize]
         yield chunk
 
 
@@ -88,6 +92,7 @@ log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
+
 
 @app.route("/", methods=["GET", "POST"])
 def gps_page():
@@ -201,6 +206,7 @@ def nodeodm_page():
     """
     return render_template("nodeodm.html")
 
+
 @app.route("/settings", methods=["GET", "POST"])
 def settings_page():
     """
@@ -208,8 +214,8 @@ def settings_page():
     """
     if request.method == "POST":
         form = cleanopts(request.form)
-        if form["submit_button"] == 'hotspot':
-            logger.info('Switching to local hotspot')
+        if form["submit_button"] == "hotspot":
+            logger.info("Switching to local hotspot")
             # switch to serving a hotspot, and tell all children to switch to hotspot
         else:
             ssid = form["ssid"]
@@ -224,9 +230,11 @@ def settings_page():
                 )
                 if project["n_cams"] == len(devices_ready):
                     # Instruct all children to switch networks
-                    logger.info(f'Switching to ssid: {ssid} with passwd: {passwd}')
+                    logger.info(f"Switching to ssid: {ssid} with passwd: {passwd}")
                 else:
-                    logger.error(f"Not all expected children ({len(devices_ready)}/{project['n_cams']}) ready")
+                    logger.error(
+                        f"Not all expected children ({len(devices_ready)}/{project['n_cams']}) ready"
+                    )
                 # TODO: make instruction upon task request
                 # Switch network yourself.
                 # TODO: make switcher for wifi network
@@ -235,13 +243,14 @@ def settings_page():
 
     return render_template("settings.html")
 
+
 @app.route("/cams")
 def cam_page():
     # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
     return render_template("cam_status.html")
 
 
-@app.route("/file_page") #, methods=["GET", "POST"])
+@app.route("/file_page")  # , methods=["GET", "POST"])
 def file_page():
     # if request.method == "POST":
     #     form = cleanopts(request.form)
@@ -310,7 +319,7 @@ def cam_summary():
     return jsonify(cams)
 
 
-@app.route("/odm360.zip", methods=["GET"], endpoint='download')
+@app.route("/odm360.zip", methods=["GET"], endpoint="download")
 def download():
     # for now hard coded so that we can test
     # open a dedicated connection for the download
@@ -323,9 +332,12 @@ def download():
 
     # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
     def generator(cur):
-        z = zipstream.ZipFile(mode='w', compression=zipstream.ZIP_DEFLATED)
+        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
         for photo in photos[-3:]:
-            z.write_iter(photo["photo_filename"], _generator(cur, photo["srvname"], photo["photo_filename"]))
+            z.write_iter(
+                photo["photo_filename"],
+                _generator(cur, photo["srvname"], photo["photo_filename"]),
+            )
         # z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
         # # add all the necessary files here
         # z.write_iter("/home/hcwinsemius/temp/odm360/3.png", _generator("http://i.imgur.com/Phhjhbn.png"))
@@ -333,8 +345,11 @@ def download():
         # one at a time until all files are completed.
         for chunk in z:
             yield chunk
-    response = Response(generator(cur2), mimetype='application/zip')
-    response.headers['Content-Disposition'] = 'attachment; filename={}'.format('odm360.zip')
+
+    response = Response(generator(cur2), mimetype="application/zip")
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(
+        "odm360.zip"
+    )
     return response
 
 
@@ -358,6 +373,7 @@ def run(app):
     port = 5000
     logger.info(f"Running application on http://{server}:{port}")
     app.run(debug=False, port=5000, host="0.0.0.0")
+
 
 # def _generator(photo_url):
 #     # download a file and stream it
