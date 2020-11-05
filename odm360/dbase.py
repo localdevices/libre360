@@ -4,6 +4,23 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
+def _generator(cur, table, uuid, chunksize=1024):
+    """
+    Generator for streaming photos to zip files
+    :param cur: cursor
+    :param table: name of (foreign) table to retrieve photos from
+    :param uuid: photo_uuid of current photo
+    :param chunksize: nr of bytes to return per yield
+    :return: chunk of photo
+    """
+    sql_command = f"SELECT photo from {table} where photo_uuid='{uuid}'"
+    cur.execute(sql_command)
+    photo = cur.fetchall()
+    photo = photo[0][0]
+    for n in range(0, len(photo), chunksize):
+        chunk = photo[n : n + chunksize]
+        yield chunk
+
 
 def create_foreign_table(cur, host):
     cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")

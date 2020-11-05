@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}"
+      xmlns="http://www.w3.org/1999/html">
 {{super()}}
 {% endblock %}
 
@@ -10,7 +11,6 @@
 <br>
 <div class="container">
     <div id="query_files"></div>
-<!--    <form action="" method="POST">-->
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
@@ -45,24 +45,22 @@
     </div>
     <br>
     <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">Submit</button>
-    <button onclick="downloadFiles()" id="download" name="download" class="btn btn-primary">Download</button>
+    <button onclick="downloadFiles()" id="download" name="download" class="btn btn-primary" type="button" disabled>Download</button>
     <br>
-<!--    </form>-->
 </div>
 <br>
 <div class="container">
-    <table id="logtable" data-toggle="table">
+    <table
+            id="logtable">
         <thead>
           <tr>
             <th data-field="device_uuid" data-sortable="true">Device uuid</th>
             <th data-field="photo_filename" data-sortable="true">File name</th>
             <th data-field="survey_run" data-sortable="true">Survey run</th>
-<!--            <th data-field="size" data-sortable="true">size (MB)</th>-->
 <!--            <th data-field="actions" data-formatter="actionFormatter" data-events="operateEvents">actions</th>-->
           </tr>
         </thead>
       </table>
-    We only show the files relevant for the project
 </div>
 {% endblock %}
 
@@ -74,8 +72,12 @@ var photos;
 function loadTable()
 {
     $(function () {
-      $('#logtable').bootstrapTable({
-      });
+          $('#logtable').bootstrapTable({
+              pagination: true,
+              pageList: [10, 15, 20, 50, 100],
+              pageSize: 10,
+              pageNumber: 1
+          });
     });
 }
 function fetchFiles(){
@@ -86,33 +88,20 @@ function fetchFiles(){
         },
         function(data){
             $('#logtable').bootstrapTable("load", data);
-            photos = JSON.stringify(data);
+            if(data.length > 0)
+            {
+                photos = JSON.stringify(data);
+                // make download button active if data is received
+                document.getElementById("download").disabled = false
+            }
         }
     );
 }
-<!--function downloadFiles(){-->
-<!--    fetch(-->
-<!--        "odm360.zip"-->
-<!--    ).then( res => res.blob() )-->
-<!--     .then( blob => {-->
-<!--         var file = window.URL.createObjectURL(blob);-->
-<!--         window.location.assign(file);-->
-<!--       }-->
-<!--     );-->
-<!--}-->
 function downloadFiles(){
-    $.post(
-	"odm360.zip",
-	    {
-	        photos
-	    },
-	    function(status)
-	    {
-	        console.log(`Download status: ${status}`)
-        }
-    );
+    // redirect to download page
+    var url = '/odm360.zip?photos=' + photos
+    window.location.replace(url)
 }
 loadTable();
-
 </script>
 {% endblock %}

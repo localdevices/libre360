@@ -297,10 +297,11 @@ def cameras():
 @app.route("/_files", methods=["GET", "POST"])
 def files():
     args = cleanopts(request.args)
-    project = dbase.query_projects(
-        cur, project_id=args["project_id"], as_dict=True, flatten=True
-    )
-    fns = dbase.query_photo_names(cur, project_id=project["project_id"])
+    with conn.cursor() as cur_files:
+        project = dbase.query_projects(
+            cur_files, project_id=args["project_id"], as_dict=True, flatten=True
+        )
+        fns = dbase.query_photo_names(cur, project_id=project["project_id"])
     return jsonify(fns)
 
 
@@ -314,32 +315,30 @@ def cam_summary():
 
 @app.route("/odm360.zip", methods=["GET"], endpoint="_download")
 def _download():
-    # for now hard coded so that we can test
-    args = cleanopts(request.args)
-    fns = json.loads(args["photos"])
-    # open a dedicated connection for the download
-    db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
-    conn2 = psycopg2.connect(db)
-    cur_download = conn2.cursor()
-    # project = 1
-    # photos = dbase.query_photo_names(cur_download, project_id=project)
-
-    # FIXME: retrieve queried photos from combined postgresql view and prepare stream zip
-    def generator(cur_download):
+    """
+    # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
+    # zip file
+    """
+    def generator(cur):
+        """
+        generator for zip archive
+        :param cur: cursor for retrieval of individual files
+        :return: chunk (i.e. one photo) for zip stream
+        """
         z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],
-                _generator(cur_download, fn["srvname"], fn["photo_uuid"]),
+                dbase._generator(cur, fn["srvname"], fn["photo_uuid"]),
             )
-        # z.write_iter("/home/hcwinsemius/temp/odm360/2.jpg", _generator("http://i.imgur.com/uAWnH3S.jpg"))
-        # # add all the necessary files here
-        # z.write_iter("/home/hcwinsemius/temp/odm360/3.png", _generator("http://i.imgur.com/Phhjhbn.png"))
-        # here is where the magic happens. Each call will iterate the generator we wrote for each file
-        # one at a time until all files are completed.
         for chunk in z:
             yield chunk
 
+    # retrieve arguments (stringified json)
+    args = cleanopts(request.args)
+    fns = json.loads(args["photos"])
+    # open a dedicated connection for the download
+    cur_download = conn.cursor()
     response = Response(generator(cur_download), mimetype="application/zip")
     response.headers["Content-Disposition"] = "attachment; filename={}".format(
         "odm360.zip"
@@ -368,19 +367,6 @@ def run(app):
     logger.info(f"Running application on http://{server}:{port}")
     app.run(debug=False, port=5000, host="0.0.0.0")
 
-
-def _generator(cur_download, table, uuid, chunksize=1024):
-    # print(table, fn)
-    sql_command = f"SELECT photo from {table} where photo_uuid='{uuid}'"
-    print(sql_command)
-    # cur_download.connection.rollback()
-    cur_download.execute(sql_command)
-    photo = cur_download.fetchall()
-    print(photo)
-    photo = photo[0][0]
-    for n in range(0, len(photo), chunksize):
-        chunk = photo[n : n + chunksize]
-        yield chunk
 
 
 # def _generator(photo_url):
