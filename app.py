@@ -301,7 +301,7 @@ def files():
         project = dbase.query_projects(
             cur_files, project_id=args["project_id"], as_dict=True, flatten=True
         )
-        fns = dbase.query_photo_names(cur, project_id=project["project_id"])
+        fns = dbase.query_photo_names(cur_files, project_id=project["project_id"])
     return jsonify(fns)
 
 
@@ -368,17 +368,18 @@ def _delete():
 
 @app.route("/picam", methods=["GET", "POST"])
 def picam():
-    if request.method == "POST":
+    with conn.cursor() as cur_request:
+        if request.method == "POST":
 
-        r, status_code = do_request(cur, method="POST")
-        return make_response(jsonify(r), status_code)
+            r, status_code = do_request(cur_request, method="POST")
+            return make_response(jsonify(r), status_code)
 
-    elif request.method == "GET":
-        r, status_code = do_request(
-            cur, method="GET"
-        )  # response is passed back to client
-        # print(r, status_code)
-        return make_response(jsonify(r), status_code)
+        elif request.method == "GET":
+            r, status_code = do_request(
+                cur_request, method="GET"
+            )  # response is passed back to client
+            # print(r, status_code)
+            return make_response(jsonify(r), status_code)
 
 
 def run(app):
