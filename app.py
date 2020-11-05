@@ -345,6 +345,25 @@ def _download():
     )
     return response
 
+@app.route("/_delete", methods=["GET"], endpoint="_delete")
+def _delete():
+    """
+    delete selection
+    """
+    # retrieve arguments (stringified json)
+    args = cleanopts(request.args)
+    fns = json.loads(args["photos"])
+    # open a dedicated connection for the download
+    cur_delete = conn.cursor()
+    # TODO: delete selection return positive response.
+
+    # response = Response(generator(cur_download), mimetype="application/zip")
+    # response.headers["Content-Disposition"] = "attachment; filename={}".format(
+    #     "odm360.zip"
+    # )
+    return make_response(jsonify('Files successfully deleted', 200))
+
+
 
 @app.route("/picam", methods=["GET", "POST"])
 def picam():

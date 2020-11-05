@@ -46,6 +46,7 @@
     <br>
     <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">Submit</button>
     <button onclick="downloadFiles()" id="download" name="download" class="btn btn-primary" type="button" disabled>Download</button>
+    <button onclick="deleteFiles()" id="delete" name="delete" class="btn btn-primary" type="button" disabled>Delete</button>
     <br>
 </div>
 <br>
@@ -93,15 +94,26 @@ function fetchFiles(){
                 photos = JSON.stringify(data);
                 // make download button active if data is received
                 document.getElementById("download").disabled = false
+                document.getElementById("delete").disabled = false
             }
         }
     );
 }
+
 function downloadFiles(){
     // redirect to download page
     var url = '/odm360.zip?photos=' + photos
     window.location.replace(url)
 }
+
+function deleteFiles(){
+    if (confirm("Are you sure you want to delete the selection?")) {
+    // redirect to download page
+    var url = '/_delete?photos=' + photos
+    window.location.href = url;
+    }
+}
+
 loadTable();
 </script>
 {% endblock %}
