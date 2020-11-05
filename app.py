@@ -325,7 +325,8 @@ def _download():
         :param cur: cursor for retrieval of individual files
         :return: chunk (i.e. one photo) for zip stream
         """
-        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED)
+        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
+                              )
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],
