@@ -17,17 +17,17 @@ fi
 
 # Install dnsmasq and hostapd only if on a raspi
 if [[ $onpi == "yes" ]]; then
-  provisioning/wifi_setup.sh
+  provisioning/wifi_setup.sh >> setup.log
 fi
 
 echo Running base pi setup
-provisioning/base_pi_setup.sh
+provisioning/base_pi_setup.sh >> setup.log
 
 echo Running database setup script
-provisioning/database_setup.sh
+provisioning/database_setup.sh >> setup.log
 
 echo Running NTP setup script
-provisioning/ntp_setup.sh
+provisioning/ntp_setup.sh >> setup.log
 
 echo Setting NTP to server
 echo '
@@ -38,7 +38,7 @@ broadcast 224.0.1.1
 ' | sudo tee -a /etc/ntp.conf
 
 echo installing nginx and configuring it to use uwsgi
-sudo apt install -y nginx
+sudo apt install -y nginx >> setup.log
 
 sudo rm /etc/nginx/sites-enabled/default
 echo adding the odm360dashboard site config file to nginx
