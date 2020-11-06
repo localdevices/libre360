@@ -3,7 +3,7 @@
 # Set up a Postgresql database ready for use with odm360
 
 echo Installing posgresql
-sudo apt install -y postgresql postgresql-contrib libpq-dev
+sudo apt install -y postgresql postgresql-contrib libpq-dev  >> provisioning/setup.log 2>> provisioning/error.log
 
 echo Creating postgres user odm360
 # TODO This is a pretty obvious password (it's md5 hashed).

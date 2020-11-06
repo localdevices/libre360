@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo Installing NTP
-sudo apt install -y ntp
+sudo apt install -y ntp  >> provisioning/setup.log 2>> provisioning/error.log
 
 echo Stopping the default timesync daemon
 sudo systemctl stop systemd-timesyncd
