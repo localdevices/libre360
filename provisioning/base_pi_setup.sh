@@ -60,11 +60,11 @@ echo We assure you that this is not a waste of 160+ MB of space just to edit tex
 echo Y̷o̷u̷ ̷a̷r̷e̷ ̷w̷e̷l̷c̷o̷m̷e̷
 sudo apt install -y emacs-nox >> provisioning/setup.log 2>> provisioning/error.log
 
-echo Installing vim. You will have a delightful editing experience and grow spiritually. You are welcome.
+echo Installing vim. You will have a delightful editing experience and grow spiritually as you attempt to remember the arcane series of keystrokes needed to escape the program. You are welcome.
 echo Our sincere apologies about the emacs guy on the team. He\'s a good and 
 echo useful person, in spite of this flaw.
 echo *******************************************************************************
-echo \nIf you are the person who put this apology in the code,
+echo If you are the person who put this apology in the code,
 echo please take 30 seconds to think about what you have done.
 echo *******************************************************************************
 sleep 30
