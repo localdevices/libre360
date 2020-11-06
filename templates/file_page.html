@@ -132,12 +132,9 @@ function deleteFiles(onDone){
         },
         function(data){
             console.log('deleting data');
-            $('#logtable').bootstrapTable({
-                pagination: true,
-                pageList: [10, 15, 20, 50, 100],
-                pageSize: 10,
-                pageNumber: 1
-            });
+            $('#logtable').bootstrapTable(
+                "load", []
+            );
             onDone();
         }
     );
