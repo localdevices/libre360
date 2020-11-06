@@ -106,9 +106,10 @@ def delete_servers(cur):
         cur.connection.commit()
 
 
-def drop_photo(cur):
-    # FIXME: implement
-    raise NotImplementedError("Not yet implemented")
+def delete_photos(cur, table, survey_run):
+    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
+    cur.execute(sql_command)
+    cur.connection.commit()
 
 
 def insert(cur, sql_command):
@@ -120,7 +121,7 @@ def insert(cur, sql_command):
     :return:
     """
     # try:
-    cur.connection.rollback()
+    # cur.connection.rollback()
     cur.execute(sql_command)
     cur.connection.commit()
     # except:
@@ -415,6 +416,7 @@ def update_device(cur, device_uuid, status, req_time, last_photo=None):
     else:
         sql_command = f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
     cur.execute(sql_command)
+    cur.connection.commit()
 
 
 def update_project_active(cur, status, start_time=None):

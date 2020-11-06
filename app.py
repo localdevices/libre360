@@ -25,7 +25,7 @@ from odm360.utils import cleanopts, get_key_state
 from odm360.timer import RepeatedTimer
 
 
-def _check_offline(cur, max_idle=60):
+def _check_offline(conn, max_idle=60):
     """
     Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
     is switched off in this case.
@@ -33,26 +33,27 @@ def _check_offline(cur, max_idle=60):
     :return:
     """
     """Run scheduled job."""
-    devices = dbase.query_devices(cur)
-    for dev in devices:
-        # check the last time the device was online
-        time_idle = time.time() - dev[3]  # seconds
-        if (time_idle > max_idle) and (dev[2] != 0):
-            logger.warning(f"Device {dev[0]} is offline...")
-            # check if there is an active project
-            rig = dbase.query_project_active(cur, as_dict=True)
-            if len(rig) > 0:
-                # check if project is capturing
-                if get_key_state(rig["status"]) == "capture":
-                    # set back to ready
-                    logger.warning(f"Stopping capturing")
-                    dbase.update_project_active(cur, states["ready"])
-                logger.warning(f"Setting connection to offline")
-                dbase.update_device(
-                    cur, device_uuid=dev[0], req_time=dev[3], status=states["offline"]
-                )
-                # remove foreign server belonging to offline device
-                dbase.delete_server(cur, dev[0])
+    with conn.cursor() as cur_check:
+        devices = dbase.query_devices(cur_check)
+        for dev in devices:
+            # check the last time the device was online
+            time_idle = time.time() - dev[3]  # seconds
+            if (time_idle > max_idle) and (dev[2] != 0):
+                logger.warning(f"Device {dev[0]} is offline...")
+                # check if there is an active project
+                rig = dbase.query_project_active(cur_check, as_dict=True)
+                if len(rig) > 0:
+                    # check if project is capturing
+                    if get_key_state(rig["status"]) == "capture":
+                        # set back to ready
+                        logger.warning(f"Stopping capturing")
+                        dbase.update_project_active(cur_check, states["ready"])
+                    logger.warning(f"Setting connection to offline")
+                    dbase.update_device(
+                        cur_check, device_uuid=dev[0], req_time=dev[3], status=states["offline"]
+                    )
+                    # remove foreign server belonging to offline device
+                    dbase.delete_server(cur_check, dev[0])
 
 
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
@@ -61,8 +62,8 @@ conn = psycopg2.connect(db)
 # cursor for requests
 cur = conn.cursor()
 
-# dedicated cursor for checking the offline status of child devices
-cur_check = conn.cursor()
+# # dedicated cursor for checking the offline status of child devices
+# cur_check = conn.cursor()
 
 # make sure devices is empty
 dbase.truncate_table(cur, "devices")
@@ -78,7 +79,7 @@ if len(cur_project) == 1:
     dbase.update_project_active(cur, states["ready"])
 
 # start scheduled task to check for offline devices
-# checker = RepeatedTimer(5, _check_offline, start_time=time.time(), cur=cur_check)
+# checker = RepeatedTimer(5, _check_offline, start_time=time.time(), conn=conn)
 
 app = Flask(__name__)
 log = logging.getLogger("werkzeug")
@@ -245,14 +246,6 @@ def cam_page():
 
 @app.route("/file_page")  # , methods=["GET", "POST"])
 def file_page():
-    # if request.method == "POST":
-    #     form = cleanopts(request.form)
-    #     project = dbase.query_projects(cur, project_name=form["project"])
-    #
-    #     if form["submit_button"] == 'hotspot':
-    #         logger.info('Switching to local hotspot')
-    #         # switch to serving a hotspot, and tell all children to switch to hotspot
-
     projects = dbase.query_projects(cur)
     project_ids = [p[0] for p in projects]
     project_names = [p[1] for p in projects]
@@ -319,14 +312,13 @@ def _download():
     # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
     # zip file
     """
-    def generator(cur):
+    def generator(cur, fns):
         """
         generator for zip archive
         :param cur: cursor for retrieval of individual files
         :return: chunk (i.e. one photo) for zip stream
         """
-        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
-                              )
+        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],
@@ -340,23 +332,33 @@ def _download():
     fns = json.loads(args["photos"])
     # open a dedicated connection for the download
     cur_download = conn.cursor()
-    response = Response(generator(cur_download), mimetype="application/zip")
+    response = Response(generator(cur_download, fns), mimetype="application/zip")
     response.headers["Content-Disposition"] = "attachment; filename={}".format(
         "odm360.zip"
     )
     return response
 
-@app.route("/_delete", methods=["GET"], endpoint="_delete")
+@app.route("/_delete", methods=["GET"])
 def _delete():
     """
     delete selection
     """
     # retrieve arguments (stringified json)
+    logger.info('Deleting file selection')
     args = cleanopts(request.args)
     fns = json.loads(args["photos"])
+    # find unique survey runs
+    survey_runs = set([fn["survey_run"] for fn in fns])
+    # find unique servers
+    srvnames = set([fn["srvname"] for fn in fns])
+
     # open a dedicated connection for the download
     cur_delete = conn.cursor()
+    for srvname in srvnames:
+        for survey_run in survey_runs:
+            dbase.delete_photos(cur_delete, srvname, survey_run.upper())  # conversion to upper case needed after json-text conversion
     # TODO: delete selection return positive response.
+    logger.info('Delete is done')
 
     # response = Response(generator(cur_download), mimetype="application/zip")
     # response.headers["Content-Disposition"] = "attachment; filename={}".format(

@@ -2,6 +2,8 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}"
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap4-toggle.min.css') }}"
+
       xmlns="http://www.w3.org/1999/html">
 {{super()}}
 {% endblock %}
@@ -14,7 +16,7 @@
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
-                <select name="project" id="project">
+                <select class="btn btn-primary dropdown-toggle" name="project" id="project">
                     {% if projects %}
                       {% for project_id, project_name in projects %}
                         {% if project_id == cur_project_id %}
@@ -44,9 +46,14 @@
         </div>
     </div>
     <br>
-    <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">Submit</button>
-    <button onclick="downloadFiles()" id="download" name="download" class="btn btn-primary" type="button" disabled>Download</button>
-    <button onclick="deleteFiles()" id="delete" name="delete" class="btn btn-danger" type="button" disabled>Delete</button>
+<!--    <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">-->
+    <button id="query" name="query" class="btn btn-primary">
+        Load</button>
+
+    <button id="download" name="download" class="btn btn-primary" type="button" disabled>
+        Download</button>
+    <button id="delete" name="delete" class="btn btn-danger" type="button" disabled>
+        Delete</button>
     <br>
 </div>
 <br>
@@ -68,6 +75,7 @@
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
 <script>
 var photos;
 function loadTable()
@@ -81,13 +89,15 @@ function loadTable()
           });
     });
 }
-function fetchFiles(){
+
+function fetchFiles(onDone){
     $.getJSON(
         "_files",
         {
             project_id: $('#project').val()
         },
         function(data){
+            console.log('data loaded');
             $('#logtable').bootstrapTable("load", data);
             if(data.length > 0)
             {
@@ -96,24 +106,76 @@ function fetchFiles(){
                 document.getElementById("download").disabled = false
                 document.getElementById("delete").disabled = false
             }
+            else
+            {
+                document.getElementById("download").disabled = true
+                document.getElementById("delete").disabled = true
+            }
+
+            onDone();
         }
     );
 }
 
-function downloadFiles(){
+function downloadFiles(onDone){
     // redirect to download page
     var url = '/odm360.zip?photos=' + photos
     window.location.replace(url)
+    onDone();
 }
 
-function deleteFiles(){
-    if (confirm("Are you sure you want to delete the selection?")) {
-    // redirect to download page
-    var url = '/_delete?photos=' + photos
-    window.location.href = url;
-    }
+function deleteFiles(onDone){
+    $.getJSON(
+        "_delete",
+        {
+            photos: photos
+        },
+        function(data){
+            console.log('deleting data');
+            $('#logtable').bootstrapTable({
+                pagination: true,
+                pageList: [10, 15, 20, 50, 100],
+                pageSize: 10,
+                pageNumber: 1
+            });
+            onDone();
+        }
+    );
 }
-
 loadTable();
+$('#query').click(function() {
+    $('#query').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Loading...').addClass('disabled');
+    fetchFiles(function(){
+        $('#query').removeClass("disabled");
+        $('#query').html('Load');
+    });
+
+    console.log('Query is done.')
+});
+
+$('#download').click(function() {
+    $('#download').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Downloading...').addClass('disabled');
+    downloadFiles(function(){
+        $('#download').removeClass("disabled");
+        $('#download').html('Download');
+    });
+    console.log('Download is done')
+});
+
+$('#delete').click(function() {
+    $('#delete').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Deleting...').addClass('disabled');
+    document.getElementById("download").disabled = true
+    document.getElementById("query").disabled = true
+    document.getElementById("delete").disabled = true
+
+    deleteFiles(function(){
+        $('#delete').removeClass("disabled");
+        $('#delete').html('Delete');
+        document.getElementById("query").disabled = false
+
+    });
+    console.log('Delete is done')
+});
+
 </script>
 {% endblock %}
