@@ -391,15 +391,5 @@ def run(app):
     app.run(debug=False, port=5000, host="0.0.0.0")
 
 
-
-# def _generator(photo_url):
-#     # download a file and stream it
-#     r = requests.get(photo_url, stream=True)
-#     if r.status_code != 200:
-#         return
-#     for chunk in r.iter_content(10240):
-#         print(type(chunk))
-#         yield chunk
-
 if __name__ == "__main__":
     run(app)
