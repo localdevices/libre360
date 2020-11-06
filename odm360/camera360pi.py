@@ -116,11 +116,11 @@ class Camera360Pi(PiCamera):
         return {"msg": msg, "level": "info"}
 
     def capture(self, timeout=1.0, cur=cur):
-        root_dir = '/home/pi/piimages'
+        root_dir = "/home/pi/piimages"
         photo_uuid = uuid.uuid4()
         photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
-        photo_filename = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg'
-        target = os.path.join(root_dir, 'tmp.jpg')
+        photo_filename = f"{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg"
+        target = os.path.join(root_dir, "tmp.jpg")
         # capture to local file
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
@@ -140,7 +140,7 @@ class Camera360Pi(PiCamera):
         dbase.insert_photo(cur, **kwargs)
 
         # Update the last time of request
-        self.state['req_time'] = time.time()
+        self.state["req_time"] = time.time()
         toc = time.time()
         # self.state['last_photo'] = target
         self.logger.debug(f"Photo took {toc-tic} seconds to take")

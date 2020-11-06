@@ -96,7 +96,9 @@ def parent_serial(
         logger.exception(e)
 
 
-def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, timeoff=60.):
+def child_tcp_ip(
+    timeout=1.0, logger=logger, host=None, port=5000, debug=False, timeoff=60.0
+):
     """
     Start a child in tcp ip mode. Can handle multiplexing
 
@@ -136,8 +138,8 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, 
     logger.debug("Initializing search for server")
     # host_found = False
     while True:
-        if state['status'] == "offline":
-    # while not (host_found):
+        if state["status"] == "offline":
+            # while not (host_found):
             for host, status in all_ips:
                 try:
                     r = requests.get(
@@ -151,12 +153,16 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, 
                         # ip address with server found! make this a constraint for all further msgs.
                         all_ips = [(host, status)]
                         # state becomes idle!
-                        state['status'] = 'idle'
+                        state["status"] = "idle"
                         # setup camera object
-                        if not('camera' in locals()):
+                        if not ("camera" in locals()):
                             try:
                                 camera = Camera360Pi(
-                                    state, logger=logger, debug=debug, host=host, port=port
+                                    state,
+                                    logger=logger,
+                                    debug=debug,
+                                    host=host,
+                                    port=port,
                                 )  # start without any project info, **msg['project'])
                             except:
                                 raise IOError(
@@ -172,9 +178,7 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, 
                         # host_found = True
                         break
                     else:
-                        logger.debug(
-                            f"No suitable answer so skipping going online"
-                        )
+                        logger.debug(f"No suitable answer so skipping going online")
 
                 except:
                     # sleep for 2 seconds before trying again
@@ -182,9 +186,9 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, 
         else:
             # we have contact, now continuously ask for information and report back
             try:
-    #     while True:
-            # update req_time
-                camera.state['req_time'] = time.time()
+                #     while True:
+                # update req_time
+                camera.state["req_time"] = time.time()
                 # ask for a task
                 get_task_msg = {
                     "state": camera.state,
@@ -224,11 +228,13 @@ def child_tcp_ip(timeout=1.0, logger=logger, host=None, port=5000, debug=False, 
             except Exception as e:
                 if time.time() - camera.state["success_time"] > timeoff:
                     # logger.exception(e)
-                    logger.warning("It seems the server went offline or provided an incorrect message back, switching to offline state.")
-                    if camera.state['status'] != "offline":
+                    logger.warning(
+                        "It seems the server went offline or provided an incorrect message back, switching to offline state."
+                    )
+                    if camera.state["status"] != "offline":
                         # go offline if not already so!
                         camera.stop()
-                        camera.state['status'] = "offline"
+                        camera.state["status"] = "offline"
                 else:
                     logger.warning("No contact with server, trying again for some time")
             time.sleep(timeout)

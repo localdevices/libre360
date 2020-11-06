@@ -30,11 +30,20 @@ def do_request(cur, method="GET"):
     # print(state)
     # check if the device exists.
     if dbase.is_device(cur, state["device_uuid"]):
-        dbase.update_device(cur, state["device_uuid"], states[state["status"]], state["req_time"]) # TODO: add last_photo once database structure complete, last_photo=state["last_photo"])
+        dbase.update_device(
+            cur, state["device_uuid"], states[state["status"]], state["req_time"]
+        )
     else:
         dbase.insert_device(
-            cur, state["device_uuid"], state["device_name"], states[state["status"]], state["req_time"]
+            cur,
+            state["device_uuid"],
+            state["device_name"],
+            states[state["status"]],
+            state["req_time"],
         )
+        # also add a foreign server + table to the database
+        dbase.create_foreign_table(cur, state["device_uuid"])
+
     log_msg = f'Cam {state["device_uuid"]} on {state["ip"]} - {method} {msg["req"]}'
     logger.debug(log_msg)
     # check if task exists and sent instructions back
@@ -61,9 +70,7 @@ def get_online(cur, state):
     # cur_project = dbase.query_project_active(cur, as_dict=True)
     # # retrieve project with project_id
     # if len(cur_project) == 0:
-    logger.info(
-        f"Cam {state['device_uuid']} is now online"
-    )
+    logger.info(f"Cam {state['device_uuid']} is now online")
     return {"task": "wait", "kwargs": {}}
 
     # project = dbase.query_projects(

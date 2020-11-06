@@ -4,9 +4,30 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
-def create_foreign_table(cur, host, name):
+def _generator(cur, table, uuid, chunksize=1024):
+    """
+    Generator for streaming photos to zip files
+    :param cur: cursor
+    :param table: name of (foreign) table to retrieve photos from
+    :param uuid: photo_uuid of current photo
+    :param chunksize: nr of bytes to return per yield
+    :return: chunk of photo
+    """
+    sql_command = f"SELECT photo from {table} where photo_uuid='{uuid}'"
+    cur.execute(sql_command)
+    photo = cur.fetchall()
+    photo = photo[0][0]
+    for n in range(0, len(photo), chunksize):
+        chunk = photo[n : n + chunksize]
+        yield chunk
+
+
+def create_foreign_table(cur, host):
+    cur.execute("SELECT foreign_server_name FROM information_schema.foreign_servers;")
+    nr_of_servers = len(cur.fetchall())
+
     sql_command = f"""
-CREATE SERVER IF NOT EXISTS child_{name}
+CREATE SERVER IF NOT EXISTS child_{nr_of_servers}
     FOREIGN DATA WRAPPER postgres_fdw 
     OPTIONS (host '{host}', port '5432', dbname 'odm360');
     """
@@ -14,21 +35,21 @@ CREATE SERVER IF NOT EXISTS child_{name}
     cur.connection.commit()
 
     sql_command = f"""
-CREATE FOREIGN TABLE IF NOT EXISTS child_{name} (
+CREATE FOREIGN TABLE IF NOT EXISTS child_{nr_of_servers} (
 photo_uuid uuid
 ,project_id BIGINT
 ,survey_run text NOT NULL
 ,device_uuid uuid NOT NULL
 ,device_name text, photo_filename text NOT NULL
 ,photo BYTEA NOT NULL)
-SERVER child_{name} OPTIONS (schema_name 'public', table_name 'photos_child');
+SERVER child_{nr_of_servers} OPTIONS (schema_name 'public', table_name 'photos_child');
 """
     cur.execute(sql_command)
     cur.connection.commit()
 
     sql_command = f"""
 CREATE USER MAPPING IF NOT EXISTS FOR odm360 
-    SERVER child_{name}
+    SERVER child_{nr_of_servers}
     OPTIONS (user 'odm360', password 'zanzibar');
 """
     cur.execute(sql_command)
@@ -57,8 +78,10 @@ def delete_project(cur, project_name=None, project_id=None):
 
 
 def delete_server(cur, device_uuid):
-    srvoptions = f'host={device_uuid},port=5432,dbname=odm360'
-    sql_command = "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'";
+    srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
+    sql_command = (
+        "select srvname from pg_foreign_server WHERE srvoptions='{" + srvoptions + "}'"
+    )
     cur.execute(sql_command)
     server_name = cur.fetchone()
     # delete server from database
@@ -83,9 +106,10 @@ def delete_servers(cur):
         cur.connection.commit()
 
 
-def drop_photo(cur):
-    # FIXME: implement
-    raise NotImplementedError("Not yet implemented")
+def delete_photos(cur, table, survey_run):
+    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
+    cur.execute(sql_command)
+    cur.connection.commit()
 
 
 def insert(cur, sql_command):
@@ -97,7 +121,7 @@ def insert(cur, sql_command):
     :return:
     """
     # try:
-    cur.connection.rollback()
+    # cur.connection.rollback()
     cur.execute(sql_command)
     cur.connection.commit()
     # except:
@@ -114,6 +138,7 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     """
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
     insert(cur, sql_command)
+
 
 def insert_photo(
     cur,
@@ -226,7 +251,9 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
-            "last_photo": d[3],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
+            "last_photo": d[
+                3
+            ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
         }
         for n, d in enumerate(devices_raw)
     ]
@@ -246,7 +273,7 @@ def query_devices(cur, status=None, device_uuid=None, as_dict=False, flatten=Fal
     )
 
 
-def query_photo(cur, fn):
+def query_photo(cur, uuid):
     """
 
     :param cur: cursor
@@ -257,28 +284,51 @@ def query_photo(cur, fn):
     table_name = "photos"
     if fn is None:
         raise ValueError("Must provide filename as string")
-    sql_command = f"SELECT * FROM {table_name} WHERE photo_filename='{fn}'"
+    sql_command = f"SELECT * FROM {table_name} WHERE photo_uuid='{uuid}'"
     # as we are looking for one unique, photo, as_dict and flatten need to be True
     return query_table(
         cur, sql_command, table_name=table_name, as_dict=True, flatten=True
     )
 
 
-def query_photos(cur, project_id=None, as_dict=False, flatten=False):
+def query_photo_names(cur, project_id=None):
     """
     queries all photos for a given project name
     :param cur: cursor
     :param project_id: int - project id
     :return: list of results
     """
-    table_name = "photos"
-    if project_id is None:
-        raise ValueError("provide a project_id")
-    sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
-
-    return query_table(
-        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
-    )
+    # query all available foreign table names
+    cur.execute("select foreign_table_name from information_schema.foreign_tables")
+    tables = cur.fetchall()
+    cols = ["photo_filename", "photo_uuid", "survey_run"]
+    fns = []
+    for n, table in enumerate(tables):
+        # get further information about the server (table names and server names are the same)
+        cur.execute(
+            f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';"
+        )
+        host = cur.fetchone()[0][0].split("=")[-1]
+        sql_command = f"SELECT photo_filename, photo_uuid, survey_run from {table[0]} WHERE project_id={project_id};"
+        data = query_table(cur, sql_command, table_name=table[0])
+        fns_server = [dict(zip(cols, d)) for d in data]
+        # add the device id
+        for n in range(len(fns_server)):
+            fns_server[n]["device_uuid"] = host
+            fns_server[n]["srvname"] = table[0]
+        fns += fns_server
+    return fns
+    # # For each foreign table, query its content for filenames
+    # # accumulate these into one list
+    #
+    # table_name = "photos"
+    # if project_id is None:
+    #     raise ValueError("provide a project_id")
+    # sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
+    #
+    # return query_table(
+    #     cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    # )
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -332,9 +382,11 @@ def query_table(cur, sql_command, table_name=None, as_dict=False, flatten=False)
         cur.execute(sql_command)
         cols = [c[0] for c in cur.fetchall()]
         if flatten and (len(data) == 1):
-            return {k: v[0] for k, v in zip(cols, zip(*data))}
+            return dict(zip(cols, data[0]))
+        # return {k: v[0] for k, v in zip(cols, zip(*data))}
         else:
-            return {k: list(v) for k, v in zip(cols, zip(*data))}
+            return [dict(zip(cols, d)) for d in data]
+            # return {k: list(v) for k, v in zip(cols, zip(*data))}
 
     else:
         return data
@@ -362,10 +414,9 @@ def update_device(cur, device_uuid, status, req_time, last_photo=None):
     if (last_photo is not None) and (last_photo != ""):
         sql_command = f"UPDATE devices SET status={status}, last_photo='{last_photo}', req_time={req_time} WHERE device_uuid='{device_uuid}'"
     else:
-        sql_command = (
-            f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
-        )
+        sql_command = f"UPDATE devices SET status={status}, req_time={req_time} WHERE device_uuid='{device_uuid}'"
     cur.execute(sql_command)
+    cur.connection.commit()
 
 
 def update_project_active(cur, status, start_time=None):
