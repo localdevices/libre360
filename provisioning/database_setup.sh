@@ -13,7 +13,7 @@ echo Creating postgres user odm360
 # with the prefix 'md5' (the hash below begins with 44ec)
 sudo -u postgres psql -c "CREATE ROLE odm360 WITH PASSWORD 'md544ec1a1a609f26f78f20decd3a34bd2d';"
 sudo -u postgres psql -c "ALTER ROLE odm360 WITH LOGIN"
-sudo -u postgres psql -c "ALTER ROLE odm360 WITH CREATEDB"
+sudo -u postgres psql -c "ALTER ROLE odm360 WITH SUPERUSER"
 
 echo Creating database odm360
 sudo -u postgres psql -c "CREATE DATABASE odm360 WITH OWNER odm360;"
