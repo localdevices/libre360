@@ -22,7 +22,7 @@
           </tr>
         </thead>
       </table>
-<!--</div>-->
+</div>
 <!--<form id="broadcast" method="POST" action='#'>-->
 <!--    <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">-->
 <!--    <input type="submit" value="Broadcast">-->
@@ -77,7 +77,6 @@ $(document).ready(function(){
     socket.on('stream_response', (msg) => {
             document.querySelector('#streamed-image').src = msg.image;
         });
-
     $('form#emit').submit(function(event) {
         socket.emit('my event', {data: $('#emit_data').val()});
         return false;
@@ -86,6 +85,13 @@ $(document).ready(function(){
         socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
         return false;
     });
+    document.querySelector('#play-btn').addEventListener('click', () => {
+        socket.emit('request_video', {});
+    });
+    window.addEventListener("beforeunload", function (event) {
+        socket.disconnect()
+    });
 });
+
 </script>
 {% endblock %}

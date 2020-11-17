@@ -89,7 +89,7 @@ app.logger.disabled = True
 bootstrap = Bootstrap(app)
 socketio = SocketIO(app)
 
-users = []
+clients = []
 @socketio.on('my event', namespace='/test')
 def test_message(message):
     emit('my response', {'data': message['data']})
@@ -102,18 +102,32 @@ def test_message(message):
 @socketio.on('connect', namespace='/test')
 def test_connect():
     # users[:] = []
-    users.append(request.sid)
-    print(f"A client connected {users}")
+    clients.append(request.sid)
+    print(f"A client connected {request.sid}")
     emit('my response', {'data': 'Connected'})
 
 @socketio.on('disconnect', namespace='/test')
 def test_disconnect():
-    print('Client disconnected')
+    # remove client from list of clients
+    clients.remove(request.sid)
+    print(f"Client disconnected, connected clients are {clients}")
+    if len(clients) == 1:  ## TODO: add if stop button is pressed
+        # apparently no-one's watching anymore so stop!
+        emit("_stop", {}, namespace='/test', broadcast=True)
 
 @socketio.on('stream_request', namespace='/test')
 def stream_video(message):
-    print("Received .jpg, now emitting")
-    emit('stream_response', {'image': message['image']}, broadcast=True)
+    # print("Received .jpg, now emitting")
+    socketio.emit('stream_response', {'image': message['image']}, namespace='/test', broadcast=True)
+    socketio.sleep(0)
+    # return
+
+@socketio.on('request_video', namespace='/test')
+def request_video(message):
+    print("Received request for video stream, emitting to clients")
+    socketio.emit('_video', {}, namespace='/test', broadcast=True)
+    socketio.sleep(0)
+    # return
 
 @app.route("/", methods=["GET", "POST"])
 def gps_page():
