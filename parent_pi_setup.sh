@@ -50,6 +50,9 @@ echo starting and enabling the odm360dashboard service with Systemd
 sudo systemctl start odm360dashboard.service
 sudo systemctl enable odm360dashboard.service
 
+echo Naming the parent
+echo parent.local | sudo tee -a /etc/hostname
+
 echo "************************************"
 echo Now you should have a $model set up as a Parent for an ODM360 rig.
 echo "************************************"
