@@ -27,6 +27,7 @@ echo $hostname_prefix | sudo tee /etc/hostname
 sudo sed -i "s/raspberrypi/$hostname_prefix/g" /etc/hosts
 # make sure that the database folder is prepared
 sudo mkdir /home/pi/piimages
+sudo chown pi:pi /home/pi/piimages
 
 # ensure external access to database
 sudo sed -i -e "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/11/main/postgresql.conf
