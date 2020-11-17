@@ -1,72 +1,78 @@
 {% extends 'base.html' %}
 
 {% block styles %}
-    {{super()}}
-    <link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
+{{super()}}
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
 {% endblock %}
 
 {% block content %}
-<!-- TODO: establish a connection with satellite reception -->
+
+<div class="container">
+    <table id="table">
+        <thead>
+          <tr>
+            <th data-field="device_no" data-sortable="true">Device no.</th>
+            <th data-field="device_uuid" data-sortable="true">Device uuid</th>
+            <th data-field="device_name" data-sortable="true">Device name</th>
+<!--            <th data-field="ip" data-sortable="true">IP address</th>-->
+            <th data-field="status" data-sortable="true">Status</th>
+            <th data-field="last_photo" data-sortable="true">Last photo</th>
+<!--            <th data-field="actions" data-formatter="actionFormatter" data-events="operateEvents">actions</th>-->
+          </tr>
+        </thead>
+      </table>
+</div>
 <br>
+<br>
+<!--<form id="broadcast" method="POST" action='#'>-->
+<!--    <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">-->
+<!--    <input type="submit" value="Broadcast">-->
+<!--</form>-->
+<!--<h2>Receive:</h2>-->
+<!--<div id="log"></div>-->
 <div class="container">
     <div id="bar-chart"></div>
-    <div class="row">
-        <div class="col py-3 border bg-light">
-            <b>Select project</b>
-            <form action="" method="POST">
-                <select class="btn btn-primary dropdown-toggle" name="project" id="project">
-                    {% if projects %}
-                      {% for project_id, project_name in projects %}
-                        {% if project_id == cur_project_id %}
-                          <option selected value="{{ project_id }}">{{ project_name }}</option>
+        <div class="row">
+            <div class="col py-3 border bg-light">
+                <b>Select project</b>
+                <form action="" method="POST">
+                    <select class="btn btn-primary dropdown-toggle" name="project" id="project">
+                        {% if projects %}
+                          {% for project_id, project_name in projects %}
+                            {% if project_id == cur_project_id %}
+                              <option selected value="{{ project_id }}">{{ project_name }}</option>
+                            {% else %}
+                              <option value="{{ project_id }}">{{ project_name }}</option>
+                            {% endif %}
+                          {% endfor %}
+                      {% endif %}
+                    </select>
+                </form>
+            </div>
+            <div class="col py-3 border bg-light">
+                <b>Main service:</b>
+                <form action="" method="POST">
+                    <label class="switch">
+                        {% if service_active==3 %}
+                          <input name="service" id="service" type="checkbox" checked>
                         {% else %}
-                          <option value="{{ project_id }}">{{ project_name }}</option>
+                          <input name="service" id="service" type="checkbox">
                         {% endif %}
-                      {% endfor %}
-                  {% endif %}
-                </select>
-            </form>
+                      <span class="slider round"></span>
+                    </label>
+                </form>
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Latitude: </b><span id="lat_value"></span></div>
+</div>
+
+<div class="container">
+    <div style="overflow:auto; height:auto; width:auto">
+        <img id="streamed-image" src="">  <!--  width="360px" height="200px" -->
     </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Longitude: </b><span id="lon_value"></span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Height: </b><span id="height_value"></span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Solution type: </b><span id="solution_value"></span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>PDOP: </b><span id="pdop_value"></span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Satellites: </b><span id="sat_nr"></span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Total cameras online: </b><span id="cam_total">?</span></div>
-    </div>
-    <div class="row">
-        <div class="col py-3 border bg-light"><b>Cameras ready: </b><span id="cam_ready">?</span></div>
-    </div>
-    <br>
-    <div class="row">
-        <div class="col"><b>Main service:</b></div>
-        <div class="col">
-        <form action="" method="POST">
-            <label class="switch">
-                {% if service_active==3 %}
-                  <input name="service" id="service" type="checkbox" checked>
-                {% else %}
-                  <input name="service" id="service" type="checkbox">
-                {% endif %}
-              <span class="slider round"></span>
-            </label>
-        </form>
-        </div>
+    <div class="contents">
+        <button id='play-btn'>PLAY</button>
     </div>
 </div>
 
@@ -74,32 +80,55 @@
 
 {% block scripts %}
 {{super()}}
-<!-- TODO consider reusing parts of stuff below -->
-<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>-->
+<script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>
 <script>
-function get_cam_sum() {
-    $.getJSON("_cam_summary",
-            function (data) {
-                $('#cam_ready').text(data.ready)
-                $('#cam_total').text(data.total)
+    function loadTable()
+    {
+        $(function () {
+          $('#table').bootstrapTable({
+          });
+        });
+    }
+    function fetchdevices(){
+        $.getJSON(
+            "_cameras",
+            function(data){
+                $('#table').bootstrapTable("load",
+                data
+                );
             }
-    );
-}
-setInterval('get_cam_sum()', 1000);
+        );
+    }
+    loadTable();
+    setInterval(fetchdevices, 1000);
 </script>
-<script type="text/javascript">
-  jQuery(function() {
-    jQuery('#project').change(function() {
-        this.form.submit();
+<script>
+$(document).ready(function(){
+    var url = 'http://' + document.domain + ':' + location.port + '/test'
+    console.log(url)
+    var socket = io.connect(url);
+    socket.on('my response', function(msg) {
+        $('#log').append('<p>Received: ' + msg.data + '</p>');
+    });
+    socket.on('stream_response', (msg) => {
+            document.querySelector('#streamed-image').src = msg.image;
+        });
+    $('form#emit').submit(function(event) {
+        socket.emit('my event', {data: $('#emit_data').val()});
+        return false;
+    });
+    $('form#broadcast').submit(function(event) {
+        socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
+        return false;
+    });
+    document.querySelector('#play-btn').addEventListener('click', () => {
+        socket.emit('request_video', {});
+    });
+    window.addEventListener("beforeunload", function (event) {
+        socket.disconnect()
     });
 });
-</script>
-<script type="text/javascript">
-  jQuery(function() {
-    jQuery('#service').change(function() {
-        this.form.submit();
-    });
-});
-</script>
 
+</script>
 {% endblock %}

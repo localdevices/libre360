@@ -129,8 +129,9 @@ def request_video(message):
     socketio.sleep(0)
     # return
 
+
 @app.route("/", methods=["GET", "POST"])
-def gps_page():
+def status():
     # check devices that are online and ready for capturing
     devices_ready = dbase.query_devices(cur, status=states["ready"])
     devices_total = dbase.query_devices(cur)
@@ -192,13 +193,11 @@ def gps_page():
             # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states["ready"])
 
-    return render_template(
-        "status.html",
-        projects=projects,
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    return render_template("status.html", projects=projects,
         cur_project_id=cur_project_id,
         service_active=service_active,
-    )
-
+        )
 
 @app.route("/project", methods=["GET", "POST"])
 def project_page():
@@ -207,10 +206,8 @@ def project_page():
     """
     if request.method == "POST":
         # config = current_app.config['config']
-        # FIXME: put inputs into the database and remove config stuff below
         form = cleanopts(request.form)
         # set the config options as provided
-
         dbase.insert_project(
             cur, form["project_name"], n_cams=int(form["n_cams"]), dt=int(form["dt"])
         )
@@ -278,13 +275,6 @@ def settings_page():
 
     return render_template("settings.html")
 
-
-@app.route("/cams")
-def cam_page():
-    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
-    return render_template("cam_status.html")
-
-
 @app.route("/file_page")  # , methods=["GET", "POST"])
 def file_page():
     projects = dbase.query_projects(cur)
@@ -326,7 +316,6 @@ def cameras():
         )
 
     return jsonify(devices)
-
 
 @app.route("/_files", methods=["GET", "POST"])
 def files():
