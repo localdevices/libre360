@@ -10,6 +10,7 @@ from flask import (
     Response,
 )
 from flask_bootstrap import Bootstrap
+from flask_socketio import SocketIO, emit
 
 import psycopg2
 import json
@@ -86,7 +87,33 @@ log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
+socketio = SocketIO(app)
 
+users = []
+@socketio.on('my event', namespace='/test')
+def test_message(message):
+    emit('my response', {'data': message['data']})
+
+@socketio.on('my broadcast event', namespace='/test')
+def test_message(message):
+    print(f"Received message {message}")
+    emit('my response', {'data': message['data']}, broadcast=True)
+
+@socketio.on('connect', namespace='/test')
+def test_connect():
+    # users[:] = []
+    users.append(request.sid)
+    print(f"A client connected {users}")
+    emit('my response', {'data': 'Connected'})
+
+@socketio.on('disconnect', namespace='/test')
+def test_disconnect():
+    print('Client disconnected')
+
+@socketio.on('stream_request', namespace='/test')
+def stream_video(message):
+    print("Received .jpg, now emitting")
+    emit('stream_response', {'image': message['image']}, broadcast=True)
 
 @app.route("/", methods=["GET", "POST"])
 def gps_page():
@@ -366,6 +393,33 @@ def _delete():
     # )
     return make_response(jsonify('Files successfully deleted', 200))
 
+##### SOME FIDDLING WITH A VIRTUAL CAM OBJECT JUST FOR TESTING
+class Camera(object):
+    def __init__(self):
+        import glob
+        fns = glob.glob('/home/hcwinsemius/temp/c9f1c734-ac7a-4241-8988-2d1fb30cc0e7/6/2020-11-10t13:00:30/*.jpg')
+        self.frames = [open(fn, 'rb').read() for fn in fns]
+
+    def get_frame(self):
+        return self.frames[int(time.time()) % len(self.frames)]
+
+
+def gen(camera):
+    while True:
+        # TODO replace frame by a stream from a POST request
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route("/_video", methods=["GET", "POST"])
+def _video():
+    """
+    Receive a video stream with request.stream
+    :return:
+    """
+    if request.method == "GET":
+        return Response(gen(Camera()),
+                        mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route("/picam", methods=["GET", "POST"])
@@ -388,7 +442,8 @@ def run(app):
     server = "0.0.0.0"
     port = 5000
     logger.info(f"Running application on http://{server}:{port}")
-    app.run(debug=False, port=5000, host="0.0.0.0")
+    socketio.run(app, debug=True, port=5000, host="0.0.0.0")
+    # app.run(debug=False, port=5000, host="0.0.0.0")
 
 
 if __name__ == "__main__":

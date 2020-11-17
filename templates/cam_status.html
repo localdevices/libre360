@@ -22,13 +22,29 @@
           </tr>
         </thead>
       </table>
-</div>
+<!--</div>-->
+<!--<form id="broadcast" method="POST" action='#'>-->
+<!--    <input type="text" name="broadcast_data" id="broadcast_data" placeholder="Message">-->
+<!--    <input type="submit" value="Broadcast">-->
+<!--</form>-->
+<!--<h2>Receive:</h2>-->
+<!--<div id="log"></div>-->
+
+    <div class="container">
+        <div class="images">
+            <img id="streamed-image" src="">
+        </div>
+        <div class="contents">
+            <button id='play-btn'>PLAY</button>
+        </div>
+    </div>
 
 {% endblock %}
 
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>
 <script>
     function loadTable()
     {
@@ -50,5 +66,26 @@
     loadTable();
     setInterval(fetchdevices, 1000);
 </script>
+<script>
+$(document).ready(function(){
+    var url = 'http://' + document.domain + ':' + location.port + '/test'
+    console.log(url)
+    var socket = io.connect(url);
+    socket.on('my response', function(msg) {
+        $('#log').append('<p>Received: ' + msg.data + '</p>');
+    });
+    socket.on('stream_response', (msg) => {
+            document.querySelector('#streamed-image').src = msg.image;
+        });
 
+    $('form#emit').submit(function(event) {
+        socket.emit('my event', {data: $('#emit_data').val()});
+        return false;
+    });
+    $('form#broadcast').submit(function(event) {
+        socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
+        return false;
+    });
+});
+</script>
 {% endblock %}
