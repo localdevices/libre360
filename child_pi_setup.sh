@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# Set up a Raspberry Pi as an ODM360 Child.
-
+# Set up a Raspberry Pi as a Child for an ODM360 rig
+echo checking if this is running on a Raspberry Pi
+# for some reason this produces a cryptic Bash error
+# warning: command substitution: ignored null byte in input
+# but it works so I am ignoring it for now
 model="$( cat /proc/device-tree/model )"
 onpi="no"
 if [[ "$model" == *"Raspberry Pi"* ]]; then
@@ -15,20 +18,26 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-echo Running base pi setup
-provisioning/base_pi_setup.sh
+# Set up pi camera
+if [[ "$onpi" ]]; then
+    echo "" | sudo tee --append /boot/config.txt # Add blank line before camera setup in config
+    echo "# Enable camera and set GPU memory to allow for maximum resolution." | sudo tee --append /boot/config.txt
+    echo "start_x=1             # Enable camera" | sudo tee --append /boot/config.txt
+    echo "gpu_mem=256           # Set GPU memory" | sudo tee --append /boot/config.txt
+fi
 
-echo Running child setup script
-provisioning/child_pi_setup.sh
-
-echo Running database setup script
-provisioning/database_setup_child.sh
+# add the parent default Access Point with highest priority to wpa_supplicant
+echo $'network={
+ ssid="odm360"
+ psk="zanzibar"
+ priority=1
+}
+' | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
 
 echo "************************************"
-echo Now you should have a $model set up as a Child for an ODM360 rig.
+echo Now you should have a $model set up as Child for an ODM360 rig.
+echo 'About to reboot to enable camera... (15s)'
 echo "************************************"
 echo
 
-echo Rebooting to enable camera in 15 seconds...
-sleep 15s
-sudo reboot
+
