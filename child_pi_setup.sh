@@ -40,6 +40,9 @@ echo $'network={
 echo Running database setup script
 provisioning/database_setup_child.sh
 
+echo Setting up ssh
+sudo systemctl enable ssh
+
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
 echo 'About to reboot to enable camera... (15s)'
