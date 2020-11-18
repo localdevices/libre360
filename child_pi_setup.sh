@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo Running base pi setup
+provisioning/base_pi_setup.sh
+
 # Set up a Raspberry Pi as a Child for an ODM360 rig
 echo checking if this is running on a Raspberry Pi
 # for some reason this produces a cryptic Bash error
@@ -34,10 +37,14 @@ echo $'network={
 }
 ' | sudo tee -a /etc/wpa_supplicant/wpa_supplicant.conf
 
+echo Running database setup script
+provisioning/database_setup_child.sh
+
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
 echo 'About to reboot to enable camera... (15s)'
 echo "************************************"
 echo
 
-
+sleep 15s
+sudo reboot
