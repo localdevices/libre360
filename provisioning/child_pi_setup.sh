@@ -18,9 +18,6 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-echo Installing postgresql
-sudo apt install -y postgresql postgresql-contrib libpq-dev
-
 # Set up pi camera
 if [[ "$onpi" ]]; then
     echo "" | sudo tee --append /boot/config.txt # Add blank line before camera setup in config
@@ -43,7 +40,4 @@ echo 'About to reboot to enable camera... (15s)'
 echo "************************************"
 echo
 
-sleep 15s
 
-# Reboot to enable camera
-sudo reboot
