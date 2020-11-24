@@ -13,9 +13,7 @@ from odm360.timer import RepeatedTimer
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
-
-
-# TODO: clean up CameraRig after camera_rig is fully integrated in Flask
+from odm360.socket import sio
 
 
 def parent_gphoto2(dt, root=".", timeout=1, logger=logger, debug=False):
@@ -154,6 +152,7 @@ def child_tcp_ip(
                         all_ips = [(host, status)]
                         # state becomes idle!
                         state["status"] = "idle"
+                        # setup a websocket
                         # setup camera object
                         if not ("camera" in locals()):
                             try:
