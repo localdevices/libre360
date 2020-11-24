@@ -14,7 +14,7 @@ from datetime import datetime
 # import odm360 methods and functions
 from odm360.timer import RepeatedTimer
 from odm360 import dbase
-from odm360.socket import sio
+# connect to child database
 # connect to child database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
@@ -68,10 +68,6 @@ class Camera360Pi(PiCamera):
         self.logger = logger
         self.host = host
         self.port = port
-        self.sio = sio.connect(f"http://{host}:{port}",
-                                        namespaces=['/test'],
-                                        )
-        self.sio.parent = self
         if not (os.path.isdir(self._root)):
             os.makedirs(self._root)
         super().__init__()

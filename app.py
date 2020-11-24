@@ -180,6 +180,7 @@ def status():
                     logger.info(
                         f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
                     )
+        elif ""
         elif len(form) == 0:
             logger.info("Stopping service")
             dbase.update_project_active(
