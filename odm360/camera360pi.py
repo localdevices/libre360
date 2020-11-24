@@ -5,6 +5,8 @@ import json
 import requests
 import psycopg2
 import uuid
+import subprocess
+from threading import Thread
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -12,7 +14,7 @@ from datetime import datetime
 # import odm360 methods and functions
 from odm360.timer import RepeatedTimer
 from odm360 import dbase
-
+from odm360.socket import sio
 # connect to child database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
@@ -66,6 +68,10 @@ class Camera360Pi(PiCamera):
         self.logger = logger
         self.host = host
         self.port = port
+        self.sio = sio.connect(f"http://{host}:{port}",
+                                        namespaces=['/test'],
+                                        )
+        self.sio.parent = self
         if not (os.path.isdir(self._root)):
             os.makedirs(self._root)
         super().__init__()
@@ -183,6 +189,33 @@ class Camera360Pi(PiCamera):
         msg = f"Camera is now capturing every {self._dt} seconds"
         logger.info(msg)
         return {"msg": msg, "level": "info"}
+
+    def capture_stream(self):
+        """
+        Done with a raspivid command so the camera has to be stopped first, and then a cvlc command has to be opened and streamed
+        :return:
+        """
+        self.recording = Thread(target=self._video, args=()).start()
+
+    def _video(self):
+        cmdline = ['cvlc',
+                   '-vvv',
+                   'stream:///dev/stdin',
+                   '--sout',
+                   '#standard{access=http,mux=ts,dst=:8554}',
+                   ' :demux=h264' ]
+
+        self.resolution = (1920, 1080)
+        myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
+        try:
+            # stop capturing in case video is still going
+            self.stop()
+        except:
+            pass
+        self.start_recording(myvlc.stdin, format='h264')
+
+    def stop_stream(self):
+        self.recording.stop()
 
     def post(self, msg):
         """

@@ -108,6 +108,7 @@ def delete_servers(cur):
 
 def delete_photos(cur, table, survey_run):
     sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
+    print(sql_command)
     cur.execute(sql_command)
     cur.connection.commit()
 

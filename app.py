@@ -12,6 +12,7 @@ from flask import (
 from flask_bootstrap import Bootstrap
 from flask_socketio import SocketIO, emit
 
+import base64
 import psycopg2
 import json
 import logging
@@ -88,6 +89,7 @@ log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
 socketio = SocketIO(app)
+socketio.frame = None
 
 clients = []
 @socketio.on('my event', namespace='/test')
@@ -118,14 +120,27 @@ def test_disconnect():
 @socketio.on('stream_request', namespace='/test')
 def stream_video(message):
     # print("Received .jpg, now emitting")
+    # socketio.frame = message["image"]
+    # with open('test.jpg', 'wb') as f:
+    #     frame = base64.b64decode(message["image"].encode("utf8"))
+    #     f.write(frame)
+
     socketio.emit('stream_response', {'image': message['image']}, namespace='/test', broadcast=True)
-    socketio.sleep(0)
+    socketio.sleep(0.)
+
     # return
 
 @socketio.on('request_video', namespace='/test')
 def request_video(message):
     print("Received request for video stream, emitting to clients")
     socketio.emit('_video', {}, namespace='/test', broadcast=True)
+    socketio.sleep(0)
+    # return
+
+@socketio.on('request_video_stop', namespace='/test')
+def request_video_stop(message):
+    print("Received request to stop video stream, emitting to clients")
+    socketio.emit('_stop', {}, namespace='/test', broadcast=True)
     socketio.sleep(0)
     # return
 
@@ -296,26 +311,27 @@ def stream():
 
 @app.route("/_cameras")
 def cameras():
-    cur_project = dbase.query_project_active(cur)
-    project = dbase.query_projects(
-        cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-    )
-    devices = dbase.make_dict_devices(cur)
-    n_online = len(devices)
-    # add offline devices
-    n_offline = int(project["n_cams"]) - n_online
-    for n in range(n_offline):
-        devices.append(
-            {
-                "device_no": f"camera{n + n_online}",
-                "device_uuid": "uknown",
-                "device_name": "unknown",
-                "status": "offline",
-                "last_photo": None,
-            }
+    with conn.cursor() as cur_camera:
+        cur_project = dbase.query_project_active(cur_camera)
+        project = dbase.query_projects(
+            cur_camera, project_id=cur_project[0][0], as_dict=True, flatten=True
         )
+        devices = dbase.make_dict_devices(cur_camera)
+        n_online = len(devices)
+        # add offline devices
+        n_offline = int(project["n_cams"]) - n_online
+        for n in range(n_offline):
+            devices.append(
+                {
+                    "device_no": f"camera{n + n_online}",
+                    "device_uuid": "uknown",
+                    "device_name": "unknown",
+                    "status": "offline",
+                    "last_photo": None,
+                }
+            )
 
-    return jsonify(devices)
+        return jsonify(devices)
 
 @app.route("/_files", methods=["GET", "POST"])
 def files():
@@ -407,10 +423,12 @@ class Camera(object):
         return self.frames[int(time.time()) % len(self.frames)]
 
 
-def gen(camera):
+# def gen(camera):
+def gen():
     while True:
         # TODO replace frame by a stream from a POST request
-        frame = camera.get_frame()
+        # frame = camera.get_frame()
+        frame = base64.b64decode(socketio.frame.encode("utf8"))
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
@@ -421,8 +439,10 @@ def _video():
     :return:
     """
     if request.method == "GET":
-        return Response(gen(Camera()),
+        return Response(gen(),
                         mimetype='multipart/x-mixed-replace; boundary=frame')
+        # return Response(gen(Camera()),
+        #                 mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @app.route("/picam", methods=["GET", "POST"])

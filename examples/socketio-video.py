@@ -31,16 +31,21 @@ class WebCamVideoStream:
 
     def update(self):
         # keep looping infinitely until the thread is stopped
+        select = 0
         while True:
             # if the thread indicator variable is set, stop the thread
             if self.stopped:
                 return
             # otherwise read the next frame from the stream
-            select = int(time.time()) % len(self.stream)
+            # select = int(time.time()) % len(self.stream)
+            if select == len(self.stream) - 1:
+                select = 0
+            else:
+                select += 1
             print(select)
             self.frame = self.stream[select]
             self.sio.emit('stream_request', {'image': encode_image(self.frame)}, namespace='/test')
-            time.sleep(1. / 5)
+            time.sleep(1. / 25)
 
     def read(self):
         # return the frame most recently read
@@ -54,7 +59,7 @@ class WebCamVideoStream:
 def encode_image(image):
     # serialize data
     image = base64.b64encode(image).decode('utf-8')
-    image = f"data:image/jpeg;base64,{image}"
+    # image = f"data:image/jpeg;base64,{image}"
     return image
 
 
@@ -98,7 +103,7 @@ def main():
 
 
 
-    # stream = cam.start()
+    stream = cam.start()
     #
     # while True:
     #     # select = int(time.time()) % len(frames)

@@ -1,5 +1,4 @@
 import socketio
-
 sio = socketio.Client(logger=True)
 
 @sio.event

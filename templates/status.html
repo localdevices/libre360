@@ -1,9 +1,22 @@
 {% extends 'base.html' %}
 
 {% block styles %}
+<style>
+        #test_video {
+            width: 720px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+</style>
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
 {{super()}}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
+<link href="https://vjs.zencdn.net/7.10.2/video-js.css" rel="stylesheet" />
+
 {% endblock %}
 
 {% block content %}
@@ -68,11 +81,15 @@
 </div>
 
 <div class="container">
-    <div style="overflow:auto; height:auto; width:auto">
-        <img id="streamed-image" src="">  <!--  width="360px" height="200px" -->
-    </div>
+<!--    <div style="overflow:auto; height:auto; width:auto">-->
+<!--    <video id="test_video" class="video-js" width="640" muted controls>&lt;!&ndash; loop muted inline controls  autoplay >&ndash;&gt;-->
+    </video>
     <div class="contents">
-        <button id='play-btn'>PLAY</button>
+        <button id="play-btn" name="play-btn" class="btn btn-primary">
+            Play</button>
+
+        <button id="stop-=btn" name="stop-btn" class="btn btn-danger">
+            Stop</button>
     </div>
 </div>
 
@@ -82,6 +99,13 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>
+<!--<script src="https://vjs.zencdn.net/7.10.2/video.js"></script>-->
+<!--<script type="text/javascript" src="{{ url_for('static', filename='video_stream2.js') }}" charset="utf-8"></script>-->
+
+<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/free.player.1.8.js') }}"></script>-->
+<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/streamedian.min.js') }}"></script>-->
+
+
 <script>
     function loadTable()
     {
@@ -101,7 +125,7 @@
         );
     }
     loadTable();
-    setInterval(fetchdevices, 1000);
+    setInterval(fetchdevices, 2000);
 </script>
 <script>
 $(document).ready(function(){
@@ -124,6 +148,9 @@ $(document).ready(function(){
     });
     document.querySelector('#play-btn').addEventListener('click', () => {
         socket.emit('request_video', {});
+    });
+    document.querySelector('#stop-btn').addEventListener('click', () => {
+        socket.emit('request_video_stop', {});
     });
     window.addEventListener("beforeunload", function (event) {
         socket.disconnect()

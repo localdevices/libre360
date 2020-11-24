@@ -10,6 +10,7 @@ var video = document.getElementById("test_video");
 //  });
 
 var CHUNK_SIZE = 65536;
+//var CHUNK_SIZE =
 var FILE = '/static/outfile.mp4';
 
 if (!window.MediaSource) {
@@ -19,7 +20,7 @@ var mediaSource = new MediaSource();
 video.src = window.URL.createObjectURL(mediaSource);
 // make an empty sourceBuffer
 mediaSource.addEventListener('sourceopen', function() {
-  var sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="avc1.640028');
+  var sourceBuffer = mediaSource.addSourceBuffer('video/mp4; codecs="avc1.640028"');
   console.log(sourceBuffer);
   console.log('MediaSource readyState: ' + this.readyState);
   get(FILE, function(uInt8Array) {
@@ -32,7 +33,7 @@ mediaSource.addEventListener('sourceopen', function() {
 
     // Slice the video into NUM_CHUNKS and append each to the media element.
     var i = 0;
-
+    var startByte = 0;
     (function readChunk_(i) { // eslint-disable-line no-shadow
       var reader = new FileReader();
 
@@ -41,7 +42,7 @@ mediaSource.addEventListener('sourceopen', function() {
       // is done (onload is fired).
       reader.onload = function(e) {
         sourceBuffer.appendBuffer(new Uint8Array(e.target.result));
-        console.log('Appending chunk: ' + i);
+        console.log('Appending chunk from startByte: ' + startByte);
 //        if (i === NUM_CHUNKS - 1) {
 //          sourceBuffer.addEventListener('updateend', function() {
 //            if (!sourceBuffer.updating && mediaSource.readyState === 'open') {
@@ -54,11 +55,13 @@ mediaSource.addEventListener('sourceopen', function() {
         }
         readChunk_(++i);
       };
-      var startByte = CHUNK_SIZE * i;
-      var chunk = file.slice(startByte, startByte + CHUNK_SIZE);
-      console.log('File size = ' + file.size);
 
+//      var startByte = CHUNK_SIZE * i;
+      var chunk = file.slice(startByte, startByte + CHUNK_SIZE);
+      console.log('Chunk size = ' + chunk.size);
       reader.readAsArrayBuffer(chunk);
+      startByte += chunk.size
+
     })(i); // Start the recursive call by self calling.
   });
 }, false);
@@ -73,11 +76,17 @@ function get(url, callback) {
   xhr.responseType = 'arraybuffer';
   xhr.send();
 
+
   xhr.onload = function() {
     if (xhr.status !== 200) {
       alert('Unexpected status code ' + xhr.status + ' for ' + url);
       return false;
     }
+//    xhr.close();
+//    xhr.open('GET', url, true);
+//    xhr.responseType = 'arraybuffer';
+//    xhr.send();
+
     callback(new Uint8Array(xhr.response));
   };
 }
