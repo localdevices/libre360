@@ -83,7 +83,7 @@
 <div class="container">
 <!--    <div style="overflow:auto; height:auto; width:auto">-->
 <!--    <video id="test_video" class="video-js" width="640" muted controls>&lt;!&ndash; loop muted inline controls  autoplay >&ndash;&gt;-->
-    </video>
+<!--    </video>-->
     <div class="contents">
         <form action="" method="POST">
             <button type="submit", id="play-btn" name="play-btn" class="btn btn-primary">
@@ -101,7 +101,7 @@
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>
+<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>-->
 <!--<script src="https://vjs.zencdn.net/7.10.2/video.js"></script>-->
 <!--<script type="text/javascript" src="{{ url_for('static', filename='video_stream2.js') }}" charset="utf-8"></script>-->
 
@@ -130,35 +130,42 @@
     loadTable();
     setInterval(fetchdevices, 2000);
 </script>
-<script>
-$(document).ready(function(){
-    var url = 'http://' + document.domain + ':' + location.port + '/test'
-    console.log(url)
-    var socket = io.connect(url);
-    socket.on('my response', function(msg) {
-        $('#log').append('<p>Received: ' + msg.data + '</p>');
-    });
-    socket.on('stream_response', (msg) => {
-            document.querySelector('#streamed-image').src = msg.image;
-        });
-    $('form#emit').submit(function(event) {
-        socket.emit('my event', {data: $('#emit_data').val()});
-        return false;
-    });
-    $('form#broadcast').submit(function(event) {
-        socket.emit('my broadcast event', {data: $('#broadcast_data').val()});
-        return false;
-    });
-    document.querySelector('#play-btn').addEventListener('click', () => {
-        socket.emit('request_video', {});
-    });
-    document.querySelector('#stop-btn').addEventListener('click', () => {
-        socket.emit('request_video_stop', {});
-    });
-    window.addEventListener("beforeunload", function (event) {
-        socket.disconnect()
+<script type="text/javascript">
+  jQuery(function() {
+    jQuery('#service').change(function() {
+        this.form.submit();
     });
 });
-
 </script>
+<!--<script>-->
+<!--$(document).ready(function(){-->
+<!--    var url = 'http://' + document.domain + ':' + location.port + '/test'-->
+<!--    console.log(url)-->
+<!--    var socket = io.connect(url);-->
+<!--    socket.on('my response', function(msg) {-->
+<!--        $('#log').append('<p>Received: ' + msg.data + '</p>');-->
+<!--    });-->
+<!--    socket.on('stream_response', (msg) => {-->
+<!--            document.querySelector('#streamed-image').src = msg.image;-->
+<!--        });-->
+<!--    $('form#emit').submit(function(event) {-->
+<!--        socket.emit('my event', {data: $('#emit_data').val()});-->
+<!--        return false;-->
+<!--    });-->
+<!--    $('form#broadcast').submit(function(event) {-->
+<!--        socket.emit('my broadcast event', {data: $('#broadcast_data').val()});-->
+<!--        return false;-->
+<!--    });-->
+<!--    document.querySelector('#play-btn').addEventListener('click', () => {-->
+<!--        socket.emit('request_video', {});-->
+<!--    });-->
+<!--    document.querySelector('#stop-btn').addEventListener('click', () => {-->
+<!--        socket.emit('request_video_stop', {});-->
+<!--    });-->
+<!--    window.addEventListener("beforeunload", function (event) {-->
+<!--        socket.disconnect()-->
+<!--    });-->
+<!--});-->
+
+<!--</script>-->
 {% endblock %}

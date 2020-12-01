@@ -166,22 +166,32 @@ def status():
             logger.info(
                 f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'"
             )
-        elif "service" in form:
-            if form["service"] == "on":
-                cur_project = dbase.query_project_active(cur)
-                project = dbase.query_projects(
-                    cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-                )
-                if project["n_cams"] == len(devices_ready):
-                    # get details of current project
+        elif ("service" in form) or ("play-btn" in form):
+            # rig has to start capturing OR streaming
+            # if form["service"] == "on":
+            cur_project = dbase.query_project_active(cur)
+            project = dbase.query_projects(
+                cur, project_id=cur_project[0][0], as_dict=True, flatten=True
+            )
+            if project["n_cams"] == len(devices_ready):
+                # get details of current project
+                if "service" in form:
+                    # start the capturing service
                     logger.info("Starting service")
                     dbase.update_project_active(cur, states["capture"])
                 else:
-                    logger.info(
-                        f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
-                    )
-        # elif "stop-btn" in form:
-        # elif "play-btn" in form:
+                    # start preview streaming
+                    logger.info("Starting camera preview")
+                    dbase.update_project_active(cur, states["stream"])
+            else:
+                logger.info(
+                    f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
+                )
+        elif "stop-btn" in form:
+            logger.info("Stopping streaming")
+            dbase.update_project_active(
+                cur, states["ready"]
+            )
 
         elif len(form) == 0:
             logger.info("Stopping service")
