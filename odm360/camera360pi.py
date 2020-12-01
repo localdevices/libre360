@@ -200,7 +200,7 @@ class Camera360Pi(PiCamera):
                    '--sout',
                    '#rtp{sdp=rtsp://:8554/}',
                    ':demux=h264' ]
-
+        self.stop_preview()
         self.resolution = (1920, 1080)
         # open pipe to vlc
         myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
@@ -218,6 +218,10 @@ class Camera360Pi(PiCamera):
         if self.recording is not None:
             try:
                 self.recording.stop()
+                self.resolution = (2028, 1520)
+                # start warming up again
+                self.start_preview()
+                time.sleep(2)
             except:
                 pass
             self.state["status"] = "ready"
