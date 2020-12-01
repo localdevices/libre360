@@ -244,14 +244,16 @@ def is_device(cur, device_uuid):
     return cur.fetchone()[0]
 
 
-def make_dict_devices(cur):
+def make_dict_devices(cur, ip):
     devices_raw = query_devices(cur)
     devices = [
         {
             "device_no": f"camera{n}",
             "device_uuid": d[0],
             "device_name": d[1],
+            "device_ip": ip,
             "status": utils.get_key_state(int(d[2])),
+            "device_stream": f'<a href="rtsp://{ip}:8554">rtsp://{ip}:8554</a>' if utils.get_key_state(int(d[2])) == "stream" else "",
             "last_photo": d[
                 3
             ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.

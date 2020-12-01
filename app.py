@@ -325,12 +325,14 @@ def stream():
 @app.route("/_cameras")
 def cameras():
     with conn.cursor() as cur_camera:
+        ip = request.remote_addr
         cur_project = dbase.query_project_active(cur_camera)
         project = dbase.query_projects(
             cur_camera, project_id=cur_project[0][0], as_dict=True, flatten=True
         )
-        devices = dbase.make_dict_devices(cur_camera)
+        devices = dbase.make_dict_devices(cur_camera, ip)
         n_online = len(devices)
+        # when streaming, add stream link
         # add offline devices
         n_offline = int(project["n_cams"]) - n_online
         for n in range(n_offline):
@@ -339,6 +341,7 @@ def cameras():
                     "device_no": f"camera{n + n_online}",
                     "device_uuid": "uknown",
                     "device_name": "unknown",
+                    "device_ip": "unknown",
                     "status": "offline",
                     "last_photo": None,
                 }
