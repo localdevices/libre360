@@ -197,7 +197,7 @@ class Camera360Pi(PiCamera):
                    "-vvv",
                    "stream:///dev/stdin",
                    "--sout",
-                   "'#standard{access=http,mux=ts,dst=:8554}'",
+                   "#rtp{sdp=rtsp://:8554/stream}",
                    " :demux=h264" ]
         # open pipe to vlc
         self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
@@ -210,19 +210,20 @@ class Camera360Pi(PiCamera):
         self.resolution = (1920, 1080)
         self.start_recording(self.myvlc.stdin, format="h264")
         self.state["status"] = "stream"
-        self.wait_recording(999999999)
         self.logger.info("Camera is streaming")
-        # self.state["status"] = "ready"
         msg = "Camera streaming started"
         self.logger.info(msg)
         return {"msg": msg, "level": "info"}
 
     def stop_stream(self):
         try:
-            self.recording.stop()
+            # first stop the camera
             self.stop_recording()
+            # then stop the stream
             self.myvlc.stdin.close()
-            self.myvlc.wait()
+            # finally kill the vlc process
+            self.myvlc.terminate()
+            # get ready for capturing
             self.resolution = (2028, 1520)
             # start warming up again
             self.start_preview()

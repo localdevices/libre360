@@ -27,7 +27,7 @@
           <tr>
             <th data-field="device_uuid" data-sortable="true">Device uuid</th>
             <th data-field="device_stream" data-sortable="true">VLC link</th>
-            <th data-field="ip" data-sortable="true">IP address</th>
+<!--            <th data-field="ip" data-sortable="true">IP address</th>-->
             <th data-field="status" data-sortable="true">Status</th>
             <th data-field="device_no" data-sortable="true">Device no.</th>
             <th data-field="last_photo" data-sortable="true">Last photo</th>
@@ -137,35 +137,5 @@
     });
 });
 </script>
-<!--<script>-->
-<!--$(document).ready(function(){-->
-<!--    var url = 'http://' + document.domain + ':' + location.port + '/test'-->
-<!--    console.log(url)-->
-<!--    var socket = io.connect(url);-->
-<!--    socket.on('my response', function(msg) {-->
-<!--        $('#log').append('<p>Received: ' + msg.data + '</p>');-->
-<!--    });-->
-<!--    socket.on('stream_response', (msg) => {-->
-<!--            document.querySelector('#streamed-image').src = msg.image;-->
-<!--        });-->
-<!--    $('form#emit').submit(function(event) {-->
-<!--        socket.emit('my event', {data: $('#emit_data').val()});-->
-<!--        return false;-->
-<!--    });-->
-<!--    $('form#broadcast').submit(function(event) {-->
-<!--        socket.emit('my broadcast event', {data: $('#broadcast_data').val()});-->
-<!--        return false;-->
-<!--    });-->
-<!--    document.querySelector('#play-btn').addEventListener('click', () => {-->
-<!--        socket.emit('request_video', {});-->
-<!--    });-->
-<!--    document.querySelector('#stop-btn').addEventListener('click', () => {-->
-<!--        socket.emit('request_video_stop', {});-->
-<!--    });-->
-<!--    window.addEventListener("beforeunload", function (event) {-->
-<!--        socket.disconnect()-->
-<!--    });-->
-<!--});-->
 
-<!--</script>-->
 {% endblock %}

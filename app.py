@@ -10,7 +10,6 @@ from flask import (
     Response,
 )
 from flask_bootstrap import Bootstrap
-from flask_socketio import SocketIO, emit
 
 import base64
 import psycopg2
@@ -88,62 +87,6 @@ log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
-socketio = SocketIO(app)
-socketio.frame = None
-
-clients = []
-@socketio.on('my event', namespace='/test')
-def test_message(message):
-    emit('my response', {'data': message['data']})
-
-@socketio.on('my broadcast event', namespace='/test')
-def test_message(message):
-    print(f"Received message {message}")
-    emit('my response', {'data': message['data']}, broadcast=True)
-
-@socketio.on('connect', namespace='/test')
-def test_connect():
-    # users[:] = []
-    clients.append(request.sid)
-    print(f"A client connected {request.sid}")
-    emit('my response', {'data': 'Connected'})
-
-@socketio.on('disconnect', namespace='/test')
-def test_disconnect():
-    # remove client from list of clients
-    clients.remove(request.sid)
-    print(f"Client disconnected, connected clients are {clients}")
-    if len(clients) == 1:  ## TODO: add if stop button is pressed
-        # apparently no-one's watching anymore so stop!
-        emit("_stop", {}, namespace='/test', broadcast=True)
-
-@socketio.on('stream_request', namespace='/test')
-def stream_video(message):
-    # print("Received .jpg, now emitting")
-    # socketio.frame = message["image"]
-    # with open('test.jpg', 'wb') as f:
-    #     frame = base64.b64decode(message["image"].encode("utf8"))
-    #     f.write(frame)
-
-    socketio.emit('stream_response', {'image': message['image']}, namespace='/test', broadcast=True)
-    socketio.sleep(0.)
-
-    # return
-
-@socketio.on('request_video', namespace='/test')
-def request_video(message):
-    print("Received request for video stream, emitting to clients")
-    socketio.emit('_video', {}, namespace='/test', broadcast=True)
-    socketio.sleep(0)
-    # return
-
-@socketio.on('request_video_stop', namespace='/test')
-def request_video_stop(message):
-    print("Received request to stop video stream, emitting to clients")
-    socketio.emit('_stop', {}, namespace='/test', broadcast=True)
-    socketio.sleep(0)
-    # return
-
 
 @app.route("/", methods=["GET", "POST"])
 def status():
@@ -325,12 +268,11 @@ def stream():
 @app.route("/_cameras")
 def cameras():
     with conn.cursor() as cur_camera:
-        ip = request.remote_addr
         cur_project = dbase.query_project_active(cur_camera)
         project = dbase.query_projects(
             cur_camera, project_id=cur_project[0][0], as_dict=True, flatten=True
         )
-        devices = dbase.make_dict_devices(cur_camera, ip)
+        devices = dbase.make_dict_devices(cur_camera)
         n_online = len(devices)
         # when streaming, add stream link
         # add offline devices
@@ -428,38 +370,6 @@ def _delete():
     # )
     return make_response(jsonify('Files successfully deleted', 200))
 
-##### SOME FIDDLING WITH A VIRTUAL CAM OBJECT JUST FOR TESTING
-class Camera(object):
-    def __init__(self):
-        import glob
-        fns = glob.glob('/home/hcwinsemius/temp/c9f1c734-ac7a-4241-8988-2d1fb30cc0e7/6/2020-11-10t13:00:30/*.jpg')
-        self.frames = [open(fn, 'rb').read() for fn in fns]
-
-    def get_frame(self):
-        return self.frames[int(time.time()) % len(self.frames)]
-
-
-# def gen(camera):
-def gen():
-    while True:
-        # TODO replace frame by a stream from a POST request
-        # frame = camera.get_frame()
-        frame = base64.b64decode(socketio.frame.encode("utf8"))
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-@app.route("/_video", methods=["GET", "POST"])
-def _video():
-    """
-    Receive a video stream with request.stream
-    :return:
-    """
-    if request.method == "GET":
-        return Response(gen(),
-                        mimetype='multipart/x-mixed-replace; boundary=frame')
-        # return Response(gen(Camera()),
-        #                 mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 @app.route("/picam", methods=["GET", "POST"])
 def picam():
@@ -481,8 +391,7 @@ def run(app):
     server = "0.0.0.0"
     port = 5000
     logger.info(f"Running application on http://{server}:{port}")
-    socketio.run(app, debug=True, port=5000, host="0.0.0.0")
-    # app.run(debug=False, port=5000, host="0.0.0.0")
+    app.run(debug=False, port=5000, host="0.0.0.0")
 
 
 if __name__ == "__main__":
