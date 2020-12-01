@@ -212,7 +212,7 @@ class Camera360Pi(PiCamera):
         self.start_recording(self.myvlc.stdin, format='h264')
         self.state["status"] = "stream"
         # self.wait_recording(6000.)
-        self.state["status"] = "ready"
+        # self.state["status"] = "ready"
 
     def stop_stream(self):
         if self.recording is not None:
