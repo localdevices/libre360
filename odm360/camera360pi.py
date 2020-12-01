@@ -191,17 +191,14 @@ class Camera360Pi(PiCamera):
         Done with a raspivid command so the camera has to be stopped first, and then a cvlc command has to be opened and streamed
         :return:
         """
-        self.recording = Thread(target=self._video, args=()).start()
-
-    def _video(self):
-        cmdline = ['cvlc',
-                   '-vvv',
-                   'stream:///dev/stdin',
-                   '--sout',
-                   '#rtp{sdp=rtsp://:8554/}',
-                   ':demux=h264' ]
-        self.stop_preview()
-        self.resolution = (1920, 1080)
+        
+        # self.recording = Thread(target=self._video, args=()).start()
+        cmdline = ["cvlc",
+                   "-vvv",
+                   "stream:///dev/stdin",
+                   "--sout",
+                   "'#standard{access=http,mux=ts,dst=:8554}'",
+                   " :demux=h264" ]
         # open pipe to vlc
         self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
         try:
@@ -209,28 +206,31 @@ class Camera360Pi(PiCamera):
             self.stop()
         except:
             pass
-        self.start_recording(self.myvlc.stdin, format='h264')
+        self.stop_preview()
+        self.resolution = (1920, 1080)
+        self.start_recording(self.myvlc.stdin, format="h264")
         self.state["status"] = "stream"
-        # self.wait_recording(6000.)
+        self.wait_recording(999999999)
+        self.logger.info("Camera is streaming")
         # self.state["status"] = "ready"
+        msg = "Camera streaming started"
+        self.logger.info(msg)
+        return {"msg": msg, "level": "info"}
 
     def stop_stream(self):
-        if self.recording is not None:
-            try:
-                self.recording.stop()
-                self.stop_recording()
-                self.myvlc.stdin.close()
-                self.myvlc.wait()
-                self.resolution = (2028, 1520)
-                # start warming up again
-                self.start_preview()
-                time.sleep(2)
-            except:
-                pass
-            self.state["status"] = "ready"
-            msg = "Camera streaming stopped"
-        else:
-            msg = "No capturing taking place, do nothing"
+        try:
+            self.recording.stop()
+            self.stop_recording()
+            self.myvlc.stdin.close()
+            self.myvlc.wait()
+            self.resolution = (2028, 1520)
+            # start warming up again
+            self.start_preview()
+            time.sleep(2)
+        except:
+            pass
+        self.state["status"] = "ready"
+        msg = "Camera streaming stopped"
         self.logger.info(msg)
         return {"msg": msg, "level": "info"}
 

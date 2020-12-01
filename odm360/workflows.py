@@ -155,6 +155,7 @@ def child_tcp_ip(
                         # setup a websocket
                         # setup camera object
                         if not ("camera" in locals()):
+                            #import pdb;pdb.set_trace()
                             try:
                                 camera = Camera360Pi(
                                     state,
@@ -162,7 +163,7 @@ def child_tcp_ip(
                                     debug=debug,
                                     host=host,
                                     port=port,
-                                )  # start without any project info, **msg['project'])
+                                    )  # start without any project info, **msg['project'])
                             except:
                                 raise IOError(
                                     "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
