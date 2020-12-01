@@ -203,21 +203,24 @@ class Camera360Pi(PiCamera):
         self.stop_preview()
         self.resolution = (1920, 1080)
         # open pipe to vlc
-        myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
+        self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
         try:
             # stop capturing in case video is still going
             self.stop()
         except:
             pass
-        self.start_recording(myvlc.stdin, format='h264')
+        self.start_recording(self.myvlc.stdin, format='h264')
         self.state["status"] = "stream"
-        self.wait_recording(6000.)
+        # self.wait_recording(6000.)
         self.state["status"] = "ready"
 
     def stop_stream(self):
         if self.recording is not None:
             try:
                 self.recording.stop()
+                self.stop_recording()
+                self.myvlc.stdin.close()
+                self.myvlc.wait()
                 self.resolution = (2028, 1520)
                 # start warming up again
                 self.start_preview()

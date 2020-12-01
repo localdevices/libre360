@@ -217,8 +217,8 @@ def status():
             cur, project_id=cur_project_id, as_dict=True, flatten=True
         )
         devices_expected = project["n_cams"]
-        if service_active != states["capture"]:
-            # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
+        if (service_active != states["capture"]) or (service_active != states["stream"]):
+            # apparently there is a project, but not activated to capture or stream yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states["ready"])
 
     # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
