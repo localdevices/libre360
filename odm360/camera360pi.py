@@ -154,15 +154,6 @@ class Camera360Pi(PiCamera):
         self.post(
             post_capture
         )  # this just logs on parent side what happened on child side
-        # TODO, once we are sure that parent inherits photos through a combined VIEW, remove commented lines below
-        # # now add a photo on the parent side's database as well, making sure the uuid is fixed!
-        # kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
-        # store_capture = {'kwargs': kwargs,
-        #                 'req': 'STORE',
-        #                 'state': self.state
-        #                 }
-        #
-        # self.post(store_capture)  # store info on photo on parent side
 
     def capture_continuous(self, start_time=None, survey_run=None, project=None):
         self._project_id = int(project["project_id"])
@@ -198,15 +189,12 @@ class Camera360Pi(PiCamera):
         # self.recording = Thread(target=self._video, args=()).start()
         vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #rtp{sdp=rtsp://:8554/stream} :demux=h264"
         cmdline = vlc_cmd.split()
-        # cmdline = ["cvlc",
-        #            "-vvv",
-        #            "stream:///dev/stdin",
-        #            "--sout",
-        #            "#rtp{sdp=rtsp://:8554/stream}",
-        #            " :demux=h264" ]
+
         # open pipe to vlc
         self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
         self.start_recording(self.myvlc.stdin, format="h264")
+        # give camera 2 seconds to start up
+        time.sleep(2)
         self.state["status"] = "stream"
         self.logger.info("Camera is streaming")
         msg = "Camera streaming started"

@@ -76,16 +76,13 @@
 </div>
 <br>
 <div class="container">
-<!--    <div style="overflow:auto; height:auto; width:auto">-->
-<!--    <video id="test_video" class="video-js" width="640" muted controls>&lt;!&ndash; loop muted inline controls  autoplay >&ndash;&gt;-->
-<!--    </video>-->
     <div class="contents">
         <form action="" method="POST">
-            <button type="submit", id="play-btn" name="play-btn" class="btn btn-primary">
+            <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">
                 Play</button>
         </form>
         <form action="" method="POST">
-            <button id="stop-=btn" name="stop-btn" class="btn btn-danger">
+            <button type="submit" id="stop-btn" name="stop-btn" class="btn btn-danger">
                 Stop</button>
         </form>
     </div>
@@ -96,41 +93,6 @@
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
-<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/socket.io.min.js') }}" charset="utf-8"></script>-->
-<!--<script src="https://vjs.zencdn.net/7.10.2/video.js"></script>-->
-<!--<script type="text/javascript" src="{{ url_for('static', filename='video_stream2.js') }}" charset="utf-8"></script>-->
-
-<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/free.player.1.8.js') }}"></script>-->
-<!--<script type="text/javascript" src="{{ url_for('static', filename='lib/streamedian.min.js') }}"></script>-->
-
-
-<script>
-    function loadTable()
-    {
-        $(function () {
-          $('#table').bootstrapTable({
-          });
-        });
-    }
-    function fetchdevices(){
-        $.getJSON(
-            "_cameras",
-            function(data){
-                $('#table').bootstrapTable("load",
-                data
-                );
-            }
-        );
-    }
-    loadTable();
-    setInterval(fetchdevices, 2000);
-</script>
-<script type="text/javascript">
-  jQuery(function() {
-    jQuery('#service').change(function() {
-        this.form.submit();
-    });
-});
-</script>
+<script type="text/javascript" src="{{ url_for('static', filename='status.js') }}" charset="utf-8"></script>
 
 {% endblock %}

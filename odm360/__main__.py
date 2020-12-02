@@ -132,21 +132,5 @@ def create_parser():
     )
     return parser
 
-
-# def start_logger(verbose, quiet, name="odm360"):
-#     if verbose:
-#         verbose = 2
-#     else:
-#         verbose = 1
-#     if quiet:
-#         quiet = 1
-#     else:
-#         quiet = 0
-#     log_level = max(10, 30 - 10 * (verbose - quiet))
-#     logger = setuplog(name, f"{name}.log", log_level=log_level)
-#     logger.info("starting...")
-#     return logger
-
-
 if __name__ == "__main__":
     main()

@@ -1,3 +1,54 @@
+function loadTable()
+{
+    $(function () {
+      $('#table').bootstrapTable({
+      });
+    });
+}
+function fetchdevices(){
+    $.getJSON(
+        "_cameras",
+        function(data){
+            $('#table').bootstrapTable("load",
+            data
+            );
+        }
+    );
+    if(cam_summary.ready == cam_summary.required) {
+        console.log("Enough cameras online, enabling Play button")
+        document.getElementById("play-btn").disabled = false
+    }
+    else {
+        console.log("Not enough cameras online, disabling Play button")
+        document.getElementById("play-btn").disabled = true
+    }
+
+}
+
+loadTable();
+setInterval(fetchdevices, 2000);
+jQuery(function() {
+    jQuery('#service').change(function() {
+        this.form.submit();
+    });
+});
+//jQuery(function() {
+//    jQuery('#play-btn').click(function() {
+//        console.log("Starting preview stream")
+////        this.form.submit();
+//        document.getElementById("play-btn").disabled = true
+//        document.getElementById("stop-btn").disabled = false
+//    });
+//});
+//jQuery(function() {
+//    jQuery('#stop-btn').click(function() {
+//        console.log("Stopping preview stream")
+//        this.form.submit();
+//    });
+//});
+
+
+/*
 lastBaseMsg = new Object();
 numOfRepetition = 0;
 
@@ -52,7 +103,7 @@ $(document).ready(function () {
         attribution: '&copy; <a href="https://openstreetmap.org/copyright" target="_blank">OpenStreetMap contributors</a> ' +
             '| <a href="https://cloud.empreintedigitale.fr" target="_blank">Empreinte digitale</a>',
         tileSize: 256,
-        
+
     });
 
     if (maptiler_key.length > 0) {
@@ -65,7 +116,7 @@ $(document).ready(function () {
         crossOrigin: true
       });
     };
-    
+
     var baseMaps = {
         "OpenStreetMap": osmLayer
     };
@@ -77,15 +128,15 @@ $(document).ready(function () {
     console.log
     L.control.layers(baseMaps).addTo(map);
     osmLayer.addTo(map);
-    
+
     // Add Base station crosshair
     var crossIcon = L.icon({
         iconUrl: '/static/images/iconmonstr-crosshair-6-64.png',
         iconSize: [24, 24],
         iconAnchor: [12, 12],
             });
-    
-    
+
+
     //the baseCoordinates variable comes from status.html
     var baseMark = L.marker(baseCoordinates, {icon: crossIcon, zIndexOffset: 0}).addTo(map);
 
@@ -106,7 +157,7 @@ $(document).ready(function () {
     socket.on("satellite broadcast rover", function(msg) {
             //Tell the server we are still here
             socket.emit("on graph");
-            
+
             console.groupCollapsed('Rover satellite msg received:');
                 for (var k in msg)
                     console.log(k + ':' + msg[k]);
@@ -117,7 +168,7 @@ $(document).ready(function () {
 
     socket.on("satellite broadcast base", function(msg) {
         // check if the browser tab and app tab are active
-        
+
         console.groupCollapsed('Base satellite msg received:');
             for (var k in msg)
                 console.log(k + ':' + msg[k]);
@@ -130,7 +181,7 @@ $(document).ready(function () {
 
     socket.on("coordinate broadcast", function(msg) {
         // check if the browser tab and app tab
-        
+
         console.groupCollapsed('Coordinate msg received:');
             for (var k in msg)
                 console.log(k + ':' + msg[k]);
@@ -156,3 +207,4 @@ $(document).ready(function () {
         showBase(msg);
     });
 });
+*/

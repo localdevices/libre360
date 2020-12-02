@@ -13,8 +13,6 @@ from odm360.timer import RepeatedTimer
 from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
-from odm360.socket import sio
-
 
 def parent_gphoto2(dt, root=".", timeout=1, logger=logger, debug=False):
     """
@@ -152,10 +150,8 @@ def child_tcp_ip(
                         all_ips = [(host, status)]
                         # state becomes idle!
                         state["status"] = "idle"
-                        # setup a websocket
                         # setup camera object
                         if not ("camera" in locals()):
-                            #import pdb;pdb.set_trace()
                             try:
                                 camera = Camera360Pi(
                                     state,
@@ -174,8 +170,6 @@ def child_tcp_ip(
                             camera.state["success_time"] = time.time()
                         # state['status'] = camera.state
                         logger.info(f"Found host on {host}:{port}")
-
-                        # host_found = True
                         break
                     else:
                         logger.debug(f"No suitable answer so skipping going online")
@@ -186,7 +180,6 @@ def child_tcp_ip(
         else:
             # we have contact, now continuously ask for information and report back
             try:
-                #     while True:
                 # update req_time
                 camera.state["req_time"] = time.time()
                 # ask for a task

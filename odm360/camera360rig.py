@@ -140,17 +140,6 @@ def post_log(cur, state, msg, level="info"):
     except:
         return {"success": False}
 
-
-# def post_store(cur, state, **kwargs):
-#     """
-#     Passes arguments to database storage func.
-#     :param kwargs: dict of key-word arguments passed to dbase.insert_photo
-#     :return:
-#     """
-#     logger.info(f'Adding photo from {state["device_uuid"]} to parent database')
-#     dbase.insert_photo(cur, **kwargs)
-
-
 def task_idle_to_ready(cur, state):
     logger.info("Sending camera initialization ")
     return {"task": "init", "kwargs": {}}
