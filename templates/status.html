@@ -43,7 +43,7 @@
     <div id="bar-chart"></div>
         <div class="row">
             <div class="col py-3 border bg-light">
-                <b>Select project</b>
+                <b>Select project:</b>
                 <form action="" method="POST">
                     <select class="btn btn-primary dropdown-toggle" name="project" id="project">
                         {% if projects %}
@@ -72,21 +72,38 @@
                 </form>
             </div>
         </div>
+        <div class="row">
+        <div class="col py-3 border bg-light">
+            <b>Video preview:</b>
+            <form action="" method="POST">
+                <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">
+                    Play</button>
+            </form>
+            <br>
+            <form action="" method="POST">
+                <button type="submit" id="stop-btn" name="stop-btn" class="btn btn-danger">
+                    Stop</button>
+            </form>
+        </div>
     </div>
 </div>
 <br>
-<div class="container">
-    <div class="contents">
-        <form action="" method="POST">
-            <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">
-                Play</button>
-        </form>
-        <form action="" method="POST">
-            <button type="submit" id="stop-btn" name="stop-btn" class="btn btn-danger">
-                Stop</button>
-        </form>
-    </div>
-</div>
+
+<!--<div class="container">-->
+<!--        <b>Video preview:</b>-->
+<!--        <div class="col py-3 border bg-light">-->
+
+<!--&lt;!&ndash;    <div class="contents">&ndash;&gt;-->
+<!--        <form action="" method="POST">-->
+<!--            <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">-->
+<!--                Play</button>-->
+<!--        </form>-->
+<!--        <form action="" method="POST">-->
+<!--            <button type="submit" id="stop-btn" name="stop-btn" class="btn btn-danger">-->
+<!--                Stop</button>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--</div>-->
 
 {% endblock %}
 

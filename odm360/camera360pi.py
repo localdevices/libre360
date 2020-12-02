@@ -187,7 +187,8 @@ class Camera360Pi(PiCamera):
         self.resolution = (1920, 1080)
 
         # self.recording = Thread(target=self._video, args=()).start()
-        vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #rtp{sdp=rtsp://:8554/stream} :demux=h264"
+        # vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #rtp{sdp=rtsp://:8554/stream} :demux=h264"
+        vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #standard{access=http,mux=ts,dst=:8554/stream} :demux=h264"
         cmdline = vlc_cmd.split()
 
         # open pipe to vlc
