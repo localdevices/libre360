@@ -21,6 +21,10 @@ fi
 echo Installing postgresql
 sudo apt install -y postgresql postgresql-contrib libpq-dev
 
+echo Installing VLC
+sudo apt install -y vlc
+
+
 # Set up pi camera
 if [[ "$onpi" ]]; then
     echo "" | sudo tee --append /boot/config.txt # Add blank line before camera setup in config
