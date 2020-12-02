@@ -191,23 +191,21 @@ class Camera360Pi(PiCamera):
         Done with a raspivid command so the camera has to be stopped first, and then a cvlc command has to be opened and streamed
         :return:
         """
-        
-        # self.recording = Thread(target=self._video, args=()).start()
-        cmdline = ["cvlc",
-                   "-vvv",
-                   "stream:///dev/stdin",
-                   "--sout",
-                   "#rtp{sdp=rtsp://:8554/stream}",
-                   " :demux=h264" ]
-        # open pipe to vlc
-        self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
-        try:
-            # stop capturing in case video is still going
-            self.stop()
-        except:
-            pass
+        # stop any preview and change resolution to HD
         self.stop_preview()
         self.resolution = (1920, 1080)
+
+        # self.recording = Thread(target=self._video, args=()).start()
+        vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #rtp{sdp=rtsp://:8554/stream} :demux=h264"
+        cmdline = vlc_cmd.split()
+        # cmdline = ["cvlc",
+        #            "-vvv",
+        #            "stream:///dev/stdin",
+        #            "--sout",
+        #            "#rtp{sdp=rtsp://:8554/stream}",
+        #            " :demux=h264" ]
+        # open pipe to vlc
+        self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
         self.start_recording(self.myvlc.stdin, format="h264")
         self.state["status"] = "stream"
         self.logger.info("Camera is streaming")
