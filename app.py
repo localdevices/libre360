@@ -304,9 +304,14 @@ def files():
 
 @app.route("/_cam_summary")
 def cam_summary():
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(
+        cur, project_id=cur_project[0][0], as_dict=True, flatten=True
+    )
+
     devices_ready = dbase.query_devices(cur, status=states["ready"])
     devices = dbase.query_devices(cur)
-    cams = {"ready": len(devices_ready), "total": len(devices)}
+    cams = {"ready": len(devices_ready), "total": len(devices), "required": project["n_cams"]}
     return jsonify(cams)
 
 
