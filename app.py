@@ -281,9 +281,9 @@ def cameras():
             devices.append(
                 {
                     "device_no": f"camera{n + n_online}",
-                    "device_uuid": "uknown",
-                    "device_name": "unknown",
-                    "device_ip": "unknown",
+                    "device_uuid": "-",
+                    "device_name": "-",
+                    "device_ip": "-",
                     "status": "offline",
                     "last_photo": None,
                 }
