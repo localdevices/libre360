@@ -108,6 +108,7 @@ def delete_servers(cur):
 
 def delete_photos(cur, table, survey_run):
     sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
+    print(sql_command)
     cur.execute(sql_command)
     cur.connection.commit()
 
@@ -251,6 +252,7 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
+            "device_stream": f'<a href="http://{d[0]}.local:8554/stream">http://{d[0]}.local:8554/stream</a>' if utils.get_key_state(int(d[2])) == "stream" else "",
             "last_photo": d[
                 3
             ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.

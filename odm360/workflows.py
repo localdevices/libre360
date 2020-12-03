@@ -14,10 +14,6 @@ from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
-
-# TODO: clean up CameraRig after camera_rig is fully integrated in Flask
-
-
 def parent_gphoto2(dt, root=".", timeout=1, logger=logger, debug=False):
     """
 
@@ -163,7 +159,7 @@ def child_tcp_ip(
                                     debug=debug,
                                     host=host,
                                     port=port,
-                                )  # start without any project info, **msg['project'])
+                                    )  # start without any project info, **msg['project'])
                             except:
                                 raise IOError(
                                     "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."
@@ -174,8 +170,6 @@ def child_tcp_ip(
                             camera.state["success_time"] = time.time()
                         # state['status'] = camera.state
                         logger.info(f"Found host on {host}:{port}")
-
-                        # host_found = True
                         break
                     else:
                         logger.debug(f"No suitable answer so skipping going online")
@@ -186,7 +180,6 @@ def child_tcp_ip(
         else:
             # we have contact, now continuously ask for information and report back
             try:
-                #     while True:
                 # update req_time
                 camera.state["req_time"] = time.time()
                 # ask for a task

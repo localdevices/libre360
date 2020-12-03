@@ -11,6 +11,7 @@ from flask import (
 )
 from flask_bootstrap import Bootstrap
 
+import base64
 import psycopg2
 import json
 import logging
@@ -87,9 +88,8 @@ log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
 
-
 @app.route("/", methods=["GET", "POST"])
-def gps_page():
+def status():
     # check devices that are online and ready for capturing
     devices_ready = dbase.query_devices(cur, status=states["ready"])
     devices_total = dbase.query_devices(cur)
@@ -109,20 +109,33 @@ def gps_page():
             logger.info(
                 f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'"
             )
-        elif "service" in form:
-            if form["service"] == "on":
-                cur_project = dbase.query_project_active(cur)
-                project = dbase.query_projects(
-                    cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-                )
-                if project["n_cams"] == len(devices_ready):
-                    # get details of current project
+        elif ("service" in form) or ("play-btn" in form):
+            # rig has to start capturing OR streaming
+            # if form["service"] == "on":
+            cur_project = dbase.query_project_active(cur)
+            project = dbase.query_projects(
+                cur, project_id=cur_project[0][0], as_dict=True, flatten=True
+            )
+            if project["n_cams"] == len(devices_ready):
+                # get details of current project
+                if "service" in form:
+                    # start the capturing service
                     logger.info("Starting service")
                     dbase.update_project_active(cur, states["capture"])
                 else:
-                    logger.info(
-                        f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
-                    )
+                    # start preview streaming
+                    logger.info("Starting camera preview")
+                    dbase.update_project_active(cur, states["stream"])
+            else:
+                logger.info(
+                    f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
+                )
+        elif "stop-btn" in form:
+            logger.info("Stopping streaming")
+            dbase.update_project_active(
+                cur, states["ready"]
+            )
+
         elif len(form) == 0:
             logger.info("Stopping service")
             dbase.update_project_active(
@@ -147,17 +160,15 @@ def gps_page():
             cur, project_id=cur_project_id, as_dict=True, flatten=True
         )
         devices_expected = project["n_cams"]
-        if service_active != states["capture"]:
-            # apparently there is a project, but not activated to capture yet. So set on 'ready' instead
+        if (service_active != states["capture"]) and (service_active != states["stream"]):
+            # apparently there is a project, but not activated to capture or stream yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states["ready"])
 
-    return render_template(
-        "status.html",
-        projects=projects,
+    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+    return render_template("status.html", projects=projects,
         cur_project_id=cur_project_id,
         service_active=service_active,
-    )
-
+        )
 
 @app.route("/project", methods=["GET", "POST"])
 def project_page():
@@ -166,10 +177,8 @@ def project_page():
     """
     if request.method == "POST":
         # config = current_app.config['config']
-        # FIXME: put inputs into the database and remove config stuff below
         form = cleanopts(request.form)
         # set the config options as provided
-
         dbase.insert_project(
             cur, form["project_name"], n_cams=int(form["n_cams"]), dt=int(form["dt"])
         )
@@ -237,13 +246,6 @@ def settings_page():
 
     return render_template("settings.html")
 
-
-@app.route("/cams")
-def cam_page():
-    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
-    return render_template("cam_status.html")
-
-
 @app.route("/file_page")  # , methods=["GET", "POST"])
 def file_page():
     projects = dbase.query_projects(cur)
@@ -265,27 +267,29 @@ def stream():
 
 @app.route("/_cameras")
 def cameras():
-    cur_project = dbase.query_project_active(cur)
-    project = dbase.query_projects(
-        cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-    )
-    devices = dbase.make_dict_devices(cur)
-    n_online = len(devices)
-    # add offline devices
-    n_offline = int(project["n_cams"]) - n_online
-    for n in range(n_offline):
-        devices.append(
-            {
-                "device_no": f"camera{n + n_online}",
-                "device_uuid": "uknown",
-                "device_name": "unknown",
-                "status": "offline",
-                "last_photo": None,
-            }
+    with conn.cursor() as cur_camera:
+        cur_project = dbase.query_project_active(cur_camera)
+        project = dbase.query_projects(
+            cur_camera, project_id=cur_project[0][0], as_dict=True, flatten=True
         )
+        devices = dbase.make_dict_devices(cur_camera)
+        n_online = len(devices)
+        # when streaming, add stream link
+        # add offline devices
+        n_offline = int(project["n_cams"]) - n_online
+        for n in range(n_offline):
+            devices.append(
+                {
+                    "device_no": f"camera{n + n_online}",
+                    "device_uuid": "-",
+                    "device_name": "-",
+                    "device_ip": "-",
+                    "status": "offline",
+                    "last_photo": None,
+                }
+            )
 
-    return jsonify(devices)
-
+        return jsonify(devices)
 
 @app.route("/_files", methods=["GET", "POST"])
 def files():
@@ -300,9 +304,14 @@ def files():
 
 @app.route("/_cam_summary")
 def cam_summary():
+    cur_project = dbase.query_project_active(cur)
+    project = dbase.query_projects(
+        cur, project_id=cur_project[0][0], as_dict=True, flatten=True
+    )
+
     devices_ready = dbase.query_devices(cur, status=states["ready"])
     devices = dbase.query_devices(cur)
-    cams = {"ready": len(devices_ready), "total": len(devices)}
+    cams = {"ready": len(devices_ready), "total": len(devices), "required": project["n_cams"]}
     return jsonify(cams)
 
 
@@ -365,7 +374,6 @@ def _delete():
     #     "odm360.zip"
     # )
     return make_response(jsonify('Files successfully deleted', 200))
-
 
 
 @app.route("/picam", methods=["GET", "POST"])

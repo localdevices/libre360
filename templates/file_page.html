@@ -46,10 +46,8 @@
         </div>
     </div>
     <br>
-<!--    <button onclick="fetchFiles()" id="query" name="query" class="btn btn-primary">-->
     <button id="query" name="query" class="btn btn-primary">
         Load</button>
-
     <button id="download" name="download" class="btn btn-primary" type="button" disabled>
         Download</button>
     <button id="delete" name="delete" class="btn btn-danger" type="button" disabled>
@@ -76,6 +74,7 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
+
 <script>
 var photos;
 function loadTable()

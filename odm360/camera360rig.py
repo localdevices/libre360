@@ -54,9 +54,10 @@ def do_request(cur, method="GET"):
         kwargs = msg["kwargs"]
     else:
         kwargs = {}
-    task = getattr(camrig, func)
+    req = getattr(camrig, func)
     # execute with key-word arguments provided
-    r = task(cur, state, **kwargs)
+    r = req(cur, state, **kwargs)
+
     return r, 200
     # except:
     #     return 'method failed', 500
@@ -102,15 +103,25 @@ def get_task(cur, state):
         rig_status = utils.get_key_state(rig["status"])
         if device_status != rig_status:
             # something needs to be done to get the states the same
-            if (device_status == "idle") and (rig_status == "ready"):
-                # initialize the camera
-                logger.info("Sending camera initialization ")
-                return {"task": "init", "kwargs": {}}
-            elif (device_status == "ready") and (rig_status == "capture"):
-                return activate_camera(cur, state)
+            task_name = f"task_{device_status}_to_{rig_status}"
+            if not (hasattr(camrig, task_name)):
+                return f"task {task_name} not available"
+            task = getattr(camrig, task_name)
+            # execute task
+            return task(cur, state)
+            # if (device_status == "idle") and (rig_status == "ready"):
+            #     # initialize the camera
+            #     logger.info("Sending camera initialization ")
+            #     return {"task": "init", "kwargs": {}}
+            # elif (device_status == "ready") and (rig_status == "capture"):
+            #     return activate_camera(cur, state)
+            #
+            # elif (device_status == "capture") and (rig_status == "ready"):
+            #     return {"task": "stop", "kwargs": {}}
+            #
+            # elif (device_status == "ready") and (rig_status == "stream"):
+            #     return activate_camera(cur, state)
 
-            elif (device_status == "capture") and (rig_status == "ready"):
-                return {"task": "stop", "kwargs": {}}
             # camera is already capturing, so just wait for further instructions (stop)
     return {"task": "wait", "kwargs": {}}
 
@@ -129,18 +140,15 @@ def post_log(cur, state, msg, level="info"):
     except:
         return {"success": False}
 
+def task_idle_to_ready(cur, state):
+    logger.info("Sending camera initialization ")
+    return {"task": "init", "kwargs": {}}
 
-def post_store(cur, state, **kwargs):
-    """
-    Passes arguments to database storage func.
-    :param kwargs: dict of key-word arguments passed to dbase.insert_photo
-    :return:
-    """
-    logger.info(f'Adding photo from {state["device_uuid"]} to parent database')
-    dbase.insert_photo(cur, **kwargs)
+def task_capture_to_ready(cur, state):
+    return {"task": "stop", "kwargs": {}}
 
 
-def activate_camera(cur, state):
+def task_ready_to_capture(cur, state):
     # retrieve settings of current project
     cur_project = dbase.query_project_active(cur, as_dict=True)
     project = dbase.query_projects(
@@ -190,3 +198,40 @@ def activate_camera(cur, state):
         return {"task": "wait", "kwargs": {}}
         # roll back to state "ready"
         dbase.update_project_active(cur, status=states["ready"])
+
+def task_ready_to_stream(cur, state):
+    # retrieve settings of current project
+    cur_project = dbase.query_project_active(cur, as_dict=True)
+    project = dbase.query_projects(
+        cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
+    )
+
+    cur_address = request.remote_addr  # TODO: also add uuid of device
+    # check how many cams have the state 'ready', only start when the full rig is ready
+    n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
+
+    # compute cams ready from a PostGreSQL query
+    if n_cams_ready == project["n_cams"]:
+        logger.info(
+            f'All cameras ready. Start streaming on device {state["device_uuid"]} on ip {state["ip"]}'
+        )
+        # set state to stream
+        dbase.update_project_active(
+            cur, status=states["stream"]
+        )
+        logger.info(f"Sending stream command to {cur_address}")
+        return {
+            "task": "capture_stream",
+            "kwargs": {},
+        }
+    else:
+        # this should not happen as the front end part already checks if enough cams are online.
+        logger.info(
+            f'Only {n_cams_ready} out of {project["n_cams"]} ready for capture, switching state back'
+        )
+        return {"task": "wait", "kwargs": {}}
+        # roll back to state "ready"
+        dbase.update_project_active(cur, status=states["ready"])
+
+def task_stream_to_ready(cur, state):
+    return {"task": "stop_stream", "kwargs": {}}
