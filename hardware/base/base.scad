@@ -9,6 +9,7 @@ hole_diameter = 6;
 radius_to_hole = 55; // Distance from center to the center of the mounting holes
 //mid_area_width = 0; // Width of the inner raised area
 radius_central_gap = 15  ; // Radius of the empty central area
+downangle = 25; // Angle in degrees cameras face downward
 
 // Alignment indent in edge
 // picam base width is 13.5
@@ -29,11 +30,11 @@ plate_length = radius_to_hole + overhang;
 poly_side = tan(360/(num_cams * 2)) * 2 * (plate_length);
 radius_to_cam_base = radius_to_hole - picam_base_thickness / 2 - offset_of_hole;
 
-// Main loop            
-union(){
-for (cam = [1 : num_cams]){
-    rotate([0, 0, cam * rotate_angle]){
-        difference(){
+// Part
+difference(){
+    // Body loop
+    for (cam = [1 : num_cams]){
+        rotate([0, 0, cam * rotate_angle]){
             union(){
                 translate([radius_central_gap, -poly_side / 2, 0]){
                     cube([plate_length - radius_central_gap, poly_side, plate_thickness]);
@@ -41,24 +42,24 @@ for (cam = [1 : num_cams]){
                 translate([radius_to_hole - overhang,-poly_side / 2,0]){
                     cube([overhang * 2, poly_side, edge_thickness]);
                 }
-//                translate([radius_to_hole - overhang - //mid_area_width, -poly_side / 2, 0]){
-    //                cube([mid_area_width, poly_side, mid_thickness]);
-      //          }
             }
-
+        }
+    }
+    // Camera mount holes loop
+    for (cam = [1 : num_cams]){
+        rotate([0,0,cam * rotate_angle + (360/num_cams/2)]){
             translate([radius_to_cam_base, -picam_base_width/2, edge_thickness - indent_depth]){
-                rotate([0, 0, -rotate_angle]){
+                rotate([-downangle, 0, -rotate_angle]){
                     union(){
                         translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                            cube([picam_base_thickness, picam_base_width, indent_depth + 1]);
+                            cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
                         }
-                        translate([0, 0, -picam_base_thickness/2]){
-                            cylinder(r = hole_diameter / 2, h = edge_thickness + 2, $fn = 64);
+                        translate([0, 0, -picam_base_thickness]){
+                            cylinder(r = hole_diameter / 2, h = edge_thickness * 3, $fn = 64);
                         }
                     }
                 }
             }
         }
     }
-}
 }
