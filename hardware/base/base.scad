@@ -50,9 +50,11 @@ difference(){
     }
     // Camera mount holes loop
     for (cam = [1 : num_cams]){
-        rotate([0,0,cam * rotate_angle + (360/num_cams/1.6)]){
+
+	 
+        rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
             translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                rotate([-downangle, 0, -rotate_angle]){
+                rotate([0, downangle, -rotate_angle]){
                     union(){
                         translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
                             cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
