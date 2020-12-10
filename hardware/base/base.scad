@@ -4,12 +4,15 @@ num_cams = 7;
 
 //mid_thickness = 7; // Thickness of inner raised area (first "step")
 edge_thickness = 7; // Thickness of the raised edge where the holes are
-edge_width_from_hole = 5; // Width of the edge, material on each side of the hole
-hole_diameter = 6; 
-radius_to_hole = 55; // Distance from center to the center of the mounting holes
+edge_width_from_hole = 7; // Width of the edge, material on each side of the hole
+hole_diameter = 6; // bolt hole diameter
+bolthead_d = 8; // bolt head countersink diameter
+bolthead_h = 3; // bolt head height (for countersink depth)
+radius_to_hole = 50; // Distance from center to the center of the mounting holes
 //mid_area_width = 0; // Width of the inner raised area
 radius_central_gap = 15  ; // Radius of the empty central area
 downangle = 25; // Angle in degrees cameras face downward
+
 
 // Alignment indent in edge
 // picam base width is 13.5
@@ -47,15 +50,17 @@ difference(){
     }
     // Camera mount holes loop
     for (cam = [1 : num_cams]){
-        rotate([0,0,cam * rotate_angle + (360/num_cams/2)]){
-            translate([radius_to_cam_base, -picam_base_width/2, edge_thickness - indent_depth]){
+        rotate([0,0,cam * rotate_angle + (360/num_cams/1.6)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
                 rotate([-downangle, 0, -rotate_angle]){
                     union(){
                         translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
                             cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
                         }
-                        translate([0, 0, -picam_base_thickness]){
-                            cylinder(r = hole_diameter / 2, h = edge_thickness * 3, $fn = 64);
+                        translate([0, 0, -(bolthead_h * 2 + 10)]){
+                            cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
+                            cylinder(r = bolthead_d / 2 + 0.1, h = bolthead_h + 10, $fn = 64);
+
                         }
                     }
                 }
