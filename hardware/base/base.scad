@@ -6,11 +6,12 @@ num_cams = 7;
 edge_thickness = 7; // Thickness of the raised edge where the holes are
 edge_width_from_hole = 7; // Width of the edge, material on each side of the hole
 hole_diameter = 6; // bolt hole diameter
-bolthead_d = 10.1; // bolt head countersink diameter
-bolthead_h = 3; // bolt head height (for countersink depth)
+bolthead_d = 10; // bolt head countersink diameter
+bolthead_h = 2; // bolt head height (for countersink depth)
 radius_to_hole = 50; // Distance from center to the center of the mounting holes
 //mid_area_width = 0; // Width of the inner raised area
-radius_central_gap = 15  ; // Radius of the empty central area
+radius_central_gap = 8.75  ; // Radius of the empty central area
+central_gap_thickness = 12.7;
 downangle = 25; // Angle in degrees cameras face downward
 
 
@@ -22,7 +23,7 @@ picam_base_width = 14.1375 ;
 // bad drilling and it's better to index against
 // the side
 picam_base_thickness = 12.2;
-indent_depth = 3;
+indent_depth = 4;
 offset_of_hole = 0; // If the mounting bolt hole isn't centered you can adjust it
 plate_thickness = edge_thickness - indent_depth; // thickness of base plate
 
@@ -31,6 +32,8 @@ rotate_angle = 360/num_cams;
 overhang = edge_width_from_hole + hole_diameter/2;
 plate_length = radius_to_hole + overhang;
 poly_side = tan(360/(num_cams * 2)) * 2 * (plate_length);
+plate_length_hole = radius_central_gap;
+poly_side_hole = tan(360/(num_cams * 2)) * 2 * (plate_length_hole);
 radius_to_cam_base = radius_to_hole - picam_base_thickness / 2 - offset_of_hole;
 
 // Part
@@ -42,6 +45,11 @@ difference(){
                 translate([radius_central_gap, -poly_side / 2, 0]){
                     cube([plate_length - radius_central_gap, poly_side, plate_thickness]);
                 }
+                // Spokes
+                translate([radius_central_gap,-poly_side_hole / 2,0]){
+                    cube([overhang, poly_side, edge_thickness]);
+                }
+                // Wheel
                 translate([radius_to_hole - overhang,-poly_side / 2,0]){
                     cube([overhang * 2, poly_side, edge_thickness]);
                 }
