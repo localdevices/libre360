@@ -45,11 +45,11 @@ render = 1; // Set render at 1 to preview types, set to 0 otherwise.
 
 if ( render == 1 ) 
 
-//    translate ([0, 0, 0]) hex_bolt (1, 5/8, 0, 3/8, 1/128, 64, 1, "imperial", 11);
-
-    translate ([0, 0, 85]) hex_nut (3/4, 5/8, 29/32, 1/128, 64, 1, "imperial", 11);
-    translate ([0, 0, 0]) cylinder(r = 12.5, h = 85, $fn = 64);
-
+union () {
+    translate ([0, 0, 100]) hex_bolt (3/8, 5/8, 0, 3/8, 1/128, 64, 1, "imperial", 11);
+    translate ([0, 0, 0]) hex_nut (3/4, 5/8, 29/32, 1/128, 64, 1, "imperial", 11);
+    translate ([0, 0, 15]) cylinder(r = 12.5, h = 85, $fn = 64);
+}
 
 
 module conical_allen_bolt (height = 30, width = 6, head_size = 14, head_height = 8, tolerance = 0.2, quality = 32, thread, bool_round, allen_o, thread_len, pitch) {
