@@ -8,6 +8,8 @@ echo 'Removing existing device name from database and generating new name...'
 # Remove existing device records and generate a new ID
 sudo -u postgres psql -d odm360 -t -c "TRUNCATE TABLE device;"
 sudo -u postgres psql -d odm360 -t -c "INSERT INTO device (name) VALUES ('picam');"
+
+# Pull in new ID
 hostname_prefix=`sudo -u postgres psql -d odm360 -t -c "SELECT (device_uuid) FROM device;"`
 
 echo 'Assigning new hostname to device'
