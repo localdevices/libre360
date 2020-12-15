@@ -16,4 +16,4 @@ echo 'Assigning new hostname to device'
 # Apply new ID to hosts
 echo $hostname_prefix | sudo tee /etc/hostname
 sudo sed -i "s/$old_hostname_prefix/$hostname_prefix/g" /etc/hosts
-hostname $hostname_prefix
+sudo hostname $hostname_prefix
