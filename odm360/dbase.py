@@ -69,13 +69,12 @@ def delete_project(cur, project_name=None, project_id=None):
     if (project_name is None) and (project_id is None):
         raise ValueError("provide either a project_name or project_id")
     if not (project_name is None):
-        sql_command = f"DELETE FROM projects WHERE project_name='{project_name}'"
+        sql_command = f"DELETE FROM projects WHERE project_name='{project_name}';"
     else:
-        sql_command = f"DELETE FROM projects WHERE project_id={project_id}"
+        sql_command = f"DELETE FROM projects WHERE project_id={project_id};"
 
     cur.execute(sql_command)
     cur.connection.commit()
-
 
 def delete_server(cur, device_uuid):
     srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
@@ -106,9 +105,23 @@ def delete_servers(cur):
         cur.connection.commit()
 
 
+def delete_survey(cur, survey_run=None):
+    """
+    Deletes a indicated survey_run
+
+    :param cur: cursor
+    :param survey_run: str - default None - if set then survey_run is deleted
+    :return:
+    """
+    if survey_run is None:
+        raise ValueError("provide a survey_run to delete")
+    sql_command = f"DELETE FROM surveys WHERE survey_run='{survey_run}';"
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+
 def delete_photos(cur, table, survey_run):
-    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
-    print(sql_command)
+    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}';"
     cur.execute(sql_command)
     cur.connection.commit()
 
@@ -305,25 +318,32 @@ def query_photo(cur, uuid):
     )
 
 
-def query_photo_names(cur, project_id=None):
+def query_photo_names(cur, project_id=None, survey_run=None):
     """
     queries all photos for a given project name
     :param cur: cursor
     :param project_id: int - project id
+    :param survey_run: str - name of survey_run
     :return: list of results
     """
     # query all available foreign table names
     cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ["photo_filename", "photo_uuid", "survey_run"]
+    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id"]
+    # start with an empty list of files
     fns = []
     for n, table in enumerate(tables):
         # get further information about the server (table names and server names are the same)
         cur.execute(
             f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';"
         )
+        # strip the host name from the info
         host = cur.fetchone()[0][0].split("=")[-1]
-        sql_command = f"SELECT photo_filename, photo_uuid, survey_run from {table[0]} WHERE project_id={project_id};"
+        if survey_run is None:
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE project_id={project_id};"
+        else:
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE survey_run='{survey_run}';"
+
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
         # add the device id

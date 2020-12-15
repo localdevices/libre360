@@ -58,7 +58,6 @@ function fetchFiles(onDone){
                 document.getElementById("download").disabled = true
                 document.getElementById("delete").disabled = true
             }
-
             onDone();
         }
     );
@@ -117,9 +116,13 @@ $('#delete').click(function() {
         $('#delete').removeClass("disabled");
         $('#delete').html('Delete');
         document.getElementById("query").disabled = false
-
+        // refresh view on surveys
+        $('#survey').empty();
+        $('#survey').prop('disabled', true)
+        fetchSurveys();
     });
     console.log('Delete is done')
+
 });
 
 $('#project').change(function() {

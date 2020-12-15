@@ -292,14 +292,19 @@ def cameras():
         return jsonify(devices)
 
 @app.route("/_files", methods=["GET", "POST"])
-def files():
+def _files():
     args = cleanopts(request.args)
     with conn.cursor() as cur_files:
         # first query the relevant project
         project = dbase.query_projects(
             cur_files, project_id=args["project_id"], as_dict=True, flatten=True
         )
-        fns = dbase.query_photo_names(cur_files, project_id=project["project_id"])
+        # check what the survey_run id is
+        if args["survey_run"] == "all":
+            survey_run = None
+        else:
+            survey_run = args["survey_run"].upper()
+        fns = dbase.query_photo_names(cur_files, project_id=project["project_id"], survey_run=survey_run)
     return jsonify(fns)
 
 @app.route("/_surveys", methods=["GET", "POST"])
@@ -312,10 +317,6 @@ def _surveys():
         )
         surveys = dbase.query_surveys(cur_surveys, project_id=project["project_id"], as_dict=True)
     return jsonify(surveys)
-
-
-
-
 
 @app.route("/_cam_summary")
 def cam_summary():
@@ -371,17 +372,35 @@ def _delete():
     logger.info('Deleting file selection')
     args = cleanopts(request.args)
     fns = json.loads(args["photos"])
+    # find unique projects
+    project_ids = set([int(fn["project_id"]) for fn in fns])
     # find unique survey runs
-    survey_runs = set([fn["survey_run"] for fn in fns])
+    survey_runs = set([fn["survey_run"].upper() for fn in fns])
     # find unique servers
     srvnames = set([fn["srvname"] for fn in fns])
 
     # open a dedicated connection for the download
     cur_delete = conn.cursor()
-    for srvname in srvnames:
-        for survey_run in survey_runs:
-            dbase.delete_photos(cur_delete, srvname, survey_run.upper())  # conversion to upper case needed after json-text conversion
+    for survey_run in survey_runs:
+        # check if there are still photos, if not delete the survey_run
+        fns = dbase.query_photo_names(cur_delete, survey_run=survey_run)
+        # deletion sometimes doesn't fully work with remote tables, so we repeat this until no files are found
+        while len(fns) > 0:
+            for srvname in srvnames:
+                dbase.delete_photos(cur_delete, srvname, survey_run)  # conversion to upper case needed after json-text conversion
+                fns = dbase.query_photo_names(cur_delete, survey_run=survey_run)
     # TODO: delete selection return positive response.
+        fns = dbase.query_photo_names(cur_delete, survey_run=survey_run)
+        if len(fns) == 0:
+            # apparently all photos are successfully deleted, so remove the survey run from the table
+            dbase.delete_survey(cur_delete, survey_run=survey_run)
+    # finally check over the entire project if there are files left. If not, delete the project!
+    for project_id in project_ids:
+        fns = dbase.query_photo_names(cur_delete, project_id=project_id)
+        if len(fns) == 0:
+            dbase.delete_project(cur_delete, project_id=project_id)
+
+
     logger.info('Delete is done')
 
     # response = Response(generator(cur_download), mimetype="application/zip")
