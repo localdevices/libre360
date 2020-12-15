@@ -141,6 +141,18 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     insert(cur, sql_command)
 
 
+def insert_survey(cur, project_id, survey_run):
+    """
+    insert a new device in table (leave out last_photo since it is not available yet).
+    :param cur: cursor
+    :param device_uuid: uuid - id of device (auto-generated on child side)
+    :param status: int - status of device, each int has a specific meaning
+    :return:
+    """
+    sql_command = f"INSERT INTO surveys(project_id, survey_run) VALUES ('{project_id}', '{survey_run}');"
+    insert(cur, sql_command)
+
+
 def insert_photo(
     cur,
     photo_uuid,
