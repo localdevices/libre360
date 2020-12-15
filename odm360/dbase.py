@@ -332,17 +332,6 @@ def query_photo_names(cur, project_id=None):
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
     return fns
-    # # For each foreign table, query its content for filenames
-    # # accumulate these into one list
-    #
-    # table_name = "photos"
-    # if project_id is None:
-    #     raise ValueError("provide a project_id")
-    # sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
-    #
-    # return query_table(
-    #     cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
-    # )
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -369,6 +358,12 @@ def query_projects(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
 
+def query_surveys(cur, project_id, as_dict=False, flatten=False):
+    table_name = "surveys"
+    sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    )
 
 def query_project_active(cur, as_dict=False):
     """

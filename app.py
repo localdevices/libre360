@@ -295,11 +295,26 @@ def cameras():
 def files():
     args = cleanopts(request.args)
     with conn.cursor() as cur_files:
+        # first query the relevant project
         project = dbase.query_projects(
             cur_files, project_id=args["project_id"], as_dict=True, flatten=True
         )
         fns = dbase.query_photo_names(cur_files, project_id=project["project_id"])
     return jsonify(fns)
+
+@app.route("/_surveys", methods=["GET", "POST"])
+def _surveys():
+    args = cleanopts(request.args)
+    with conn.cursor() as cur_surveys:
+        # first query the relevant project
+        project = dbase.query_projects(
+            cur_surveys, project_id=args["project_id"], as_dict=True, flatten=True
+        )
+        surveys = dbase.query_surveys(cur_surveys, project_id=project["project_id"], as_dict=True)
+    return jsonify(surveys)
+
+
+
 
 
 @app.route("/_cam_summary")
