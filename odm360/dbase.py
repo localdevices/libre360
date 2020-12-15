@@ -69,13 +69,12 @@ def delete_project(cur, project_name=None, project_id=None):
     if (project_name is None) and (project_id is None):
         raise ValueError("provide either a project_name or project_id")
     if not (project_name is None):
-        sql_command = f"DELETE FROM projects WHERE project_name='{project_name}'"
+        sql_command = f"DELETE FROM projects WHERE project_name='{project_name}';"
     else:
-        sql_command = f"DELETE FROM projects WHERE project_id={project_id}"
+        sql_command = f"DELETE FROM projects WHERE project_id={project_id};"
 
     cur.execute(sql_command)
     cur.connection.commit()
-
 
 def delete_server(cur, device_uuid):
     srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
@@ -106,9 +105,23 @@ def delete_servers(cur):
         cur.connection.commit()
 
 
+def delete_survey(cur, survey_run=None):
+    """
+    Deletes a indicated survey_run
+
+    :param cur: cursor
+    :param survey_run: str - default None - if set then survey_run is deleted
+    :return:
+    """
+    if survey_run is None:
+        raise ValueError("provide a survey_run to delete")
+    sql_command = f"DELETE FROM surveys WHERE survey_run='{survey_run}';"
+    cur.execute(sql_command)
+    cur.connection.commit()
+
+
 def delete_photos(cur, table, survey_run):
-    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}'"
-    print(sql_command)
+    sql_command = f"DELETE FROM {table} WHERE survey_run='{survey_run}';"
     cur.execute(sql_command)
     cur.connection.commit()
 
@@ -138,6 +151,18 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     :return:
     """
     sql_command = f"INSERT INTO devices(device_uuid, device_name, status, req_time) VALUES ('{device_uuid}', '{device_name}', {status}, {req_time});"
+    insert(cur, sql_command)
+
+
+def insert_survey(cur, project_id, survey_run):
+    """
+    insert a new device in table (leave out last_photo since it is not available yet).
+    :param cur: cursor
+    :param device_uuid: uuid - id of device (auto-generated on child side)
+    :param status: int - status of device, each int has a specific meaning
+    :return:
+    """
+    sql_command = f"INSERT INTO surveys(project_id, survey_run) VALUES ('{project_id}', '{survey_run}');"
     insert(cur, sql_command)
 
 
@@ -293,25 +318,32 @@ def query_photo(cur, uuid):
     )
 
 
-def query_photo_names(cur, project_id=None):
+def query_photo_names(cur, project_id=None, survey_run=None):
     """
     queries all photos for a given project name
     :param cur: cursor
     :param project_id: int - project id
+    :param survey_run: str - name of survey_run
     :return: list of results
     """
     # query all available foreign table names
     cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ["photo_filename", "photo_uuid", "survey_run"]
+    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id"]
+    # start with an empty list of files
     fns = []
     for n, table in enumerate(tables):
         # get further information about the server (table names and server names are the same)
         cur.execute(
             f"SELECT srvoptions from pg_foreign_server where srvname='{table[0]}';"
         )
+        # strip the host name from the info
         host = cur.fetchone()[0][0].split("=")[-1]
-        sql_command = f"SELECT photo_filename, photo_uuid, survey_run from {table[0]} WHERE project_id={project_id};"
+        if survey_run is None:
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE project_id={project_id};"
+        else:
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE survey_run='{survey_run}';"
+
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
         # add the device id
@@ -320,17 +352,6 @@ def query_photo_names(cur, project_id=None):
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
     return fns
-    # # For each foreign table, query its content for filenames
-    # # accumulate these into one list
-    #
-    # table_name = "photos"
-    # if project_id is None:
-    #     raise ValueError("provide a project_id")
-    # sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
-    #
-    # return query_table(
-    #     cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
-    # )
 
 
 def query_photos_survey(cur, project_id, survey_run):
@@ -357,6 +378,12 @@ def query_projects(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
 
+def query_surveys(cur, project_id, as_dict=False, flatten=False):
+    table_name = "surveys"
+    sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
+    return query_table(
+        cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
+    )
 
 def query_project_active(cur, as_dict=False):
     """

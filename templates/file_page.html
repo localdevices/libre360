@@ -16,32 +16,32 @@
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select project</b>
-                <select class="btn btn-primary dropdown-toggle" name="project" id="project">
-                    {% if projects %}
-                      {% for project_id, project_name in projects %}
-                        {% if project_id == cur_project_id %}
-                          <option selected value="{{ project_id }}">{{ project_name }}</option>
-                        {% else %}
-                          <option value="{{ project_id }}">{{ project_name }}</option>
-                        {% endif %}
-                      {% endfor %}
-                  {% endif %}
-                </select>
+            <select class="btn btn-primary dropdown-toggle" name="project" id="project">
+                {% if projects %}
+                  {% for project_id, project_name in projects %}
+                    {% if project_id == cur_project_id %}
+                      <option selected value="{{ project_id }}">{{ project_name }}</option>
+                    {% else %}
+                      <option value="{{ project_id }}">{{ project_name }}</option>
+                    {% endif %}
+                  {% endfor %}
+              {% endif %}
+            </select>
         </div>
     </div>
     <div class="row">
         <div class="col py-3 border bg-light">
             <b>Select survey</b>
-                <select name="survey" id="survey">
-                    {% if surveys %}
-                      {% for survey_run in surveys %}
-                        {% if survey_run == cur_project_id %}
-                          <option selected value="{{ survey_run }}">{{ survey_run }}</option>
-                        {% else %}
-                          <option value="{{ survey_run }}">{{ survey_run }}</option>
-                        {% endif %}
-                      {% endfor %}
-                  {% endif %}
+                <select class="btn btn-primary dropdown-toggle" name="survey" id="survey">
+<!--                    {% if surveys %}-->
+<!--                      {% for survey_run in surveys %}-->
+<!--                        {% if survey_run == cur_project_id %}-->
+<!--                          <option selected value="{{ survey_run }}">{{ survey_run }}</option>-->
+<!--                        {% else %}-->
+<!--                          <option value="{{ survey_run }}">{{ survey_run }}</option>-->
+<!--                        {% endif %}-->
+<!--                      {% endfor %}-->
+<!--                  {% endif %}-->
                 </select>
         </div>
     </div>
@@ -74,104 +74,5 @@
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap4-toggle.min.js') }}" charset="utf-8"></script>
-
-<script>
-var photos;
-function loadTable()
-{
-    $(function () {
-          $('#logtable').bootstrapTable({
-              pagination: true,
-              pageList: [10, 15, 20, 50, 100],
-              pageSize: 10,
-              pageNumber: 1
-          });
-    });
-}
-
-function fetchFiles(onDone){
-    $.getJSON(
-        "_files",
-        {
-            project_id: $('#project').val()
-        },
-        function(data){
-            console.log('data loaded');
-            $('#logtable').bootstrapTable("load", data);
-            if(data.length > 0)
-            {
-                photos = JSON.stringify(data);
-                // make download button active if data is received
-                document.getElementById("download").disabled = false
-                document.getElementById("delete").disabled = false
-            }
-            else
-            {
-                document.getElementById("download").disabled = true
-                document.getElementById("delete").disabled = true
-            }
-
-            onDone();
-        }
-    );
-}
-
-function downloadFiles(onDone){
-    // redirect to download page
-    var url = '/odm360.zip?photos=' + photos
-    window.location.replace(url)
-    onDone();
-}
-
-function deleteFiles(onDone){
-    $.getJSON(
-        "_delete",
-        {
-            photos: photos
-        },
-        function(data){
-            console.log('deleting data');
-            $('#logtable').bootstrapTable(
-                "load", []
-            );
-            onDone();
-        }
-    );
-}
-loadTable();
-$('#query').click(function() {
-    $('#query').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Loading...').addClass('disabled');
-    fetchFiles(function(){
-        $('#query').removeClass("disabled");
-        $('#query').html('Load');
-    });
-
-    console.log('Query is done.')
-});
-
-$('#download').click(function() {
-    $('#download').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Downloading...').addClass('disabled');
-    downloadFiles(function(){
-        $('#download').removeClass("disabled");
-        $('#download').html('Download');
-    });
-    console.log('Download is done')
-});
-
-$('#delete').click(function() {
-    $('#delete').html('<span class="spinner-border spinner-border-sm mr-2" id="spinnerFetch" role="status" aria-hidden="true"></span>Deleting...').addClass('disabled');
-    document.getElementById("download").disabled = true
-    document.getElementById("query").disabled = true
-    document.getElementById("delete").disabled = true
-
-    deleteFiles(function(){
-        $('#delete').removeClass("disabled");
-        $('#delete').html('Delete');
-        document.getElementById("query").disabled = false
-
-    });
-    console.log('Delete is done')
-});
-
-</script>
+<script type="text/javascript" src="{{ url_for('static', filename='files.js') }}" charset="utf-8"></script>
 {% endblock %}
