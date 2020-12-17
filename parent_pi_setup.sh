@@ -54,7 +54,7 @@ echo Naming the parent
 echo parent.local | sudo tee /etc/hostname
 
 echo Establishing as systemd service to run on startup.
-sudo cp provisioning /etc/systemd/system/.
+sudo cp provisioning/odm_rent.service /etc/systemd/system/.
 sudo systemctl start odm_rent.service 
 sudo systemctl enable odm_rent.service 
 

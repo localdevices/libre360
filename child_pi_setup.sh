@@ -49,6 +49,11 @@ provisioning/database_setup_child.sh
 echo Setting up ssh
 sudo systemctl enable ssh
 
+echo Establishing as systemd service to run on startup.
+sudo cp provisioning/odm_kiddo.service /etc/systemd/system/.
+sudo systemctl start odm_kiddo.service
+sudo systemctl enable odm_kiddo.service
+
 echo "************************************"
 echo Now you should have a $model set up as Child for an ODM360 rig.
 echo 'About to reboot to enable camera... (15s)'
