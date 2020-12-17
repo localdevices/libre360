@@ -5,6 +5,8 @@ import json
 import requests
 import psycopg2
 import uuid
+import subprocess
+from threading import Thread
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -12,7 +14,7 @@ from datetime import datetime
 # import odm360 methods and functions
 from odm360.timer import RepeatedTimer
 from odm360 import dbase
-
+# connect to child database
 # connect to child database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
@@ -116,11 +118,11 @@ class Camera360Pi(PiCamera):
         return {"msg": msg, "level": "info"}
 
     def capture(self, timeout=1.0, cur=cur):
-        root_dir = '/home/pi/piimages'
+        root_dir = "/home/pi/piimages"
         photo_uuid = uuid.uuid4()
         photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
-        photo_filename = f'{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg'
-        target = os.path.join(root_dir, 'tmp.jpg')
+        photo_filename = f"{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg"
+        target = os.path.join(root_dir, "tmp.jpg")
         # capture to local file
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
@@ -140,7 +142,7 @@ class Camera360Pi(PiCamera):
         dbase.insert_photo(cur, **kwargs)
 
         # Update the last time of request
-        self.state['req_time'] = time.time()
+        self.state["req_time"] = time.time()
         toc = time.time()
         # self.state['last_photo'] = target
         self.logger.debug(f"Photo took {toc-tic} seconds to take")
@@ -152,15 +154,6 @@ class Camera360Pi(PiCamera):
         self.post(
             post_capture
         )  # this just logs on parent side what happened on child side
-        # TODO, once we are sure that parent inherits photos through a combined VIEW, remove commented lines below
-        # # now add a photo on the parent side's database as well, making sure the uuid is fixed!
-        # kwargs['photo_uuid'] = dbase.query_photo(cur, fn)['photo_uuid']
-        # store_capture = {'kwargs': kwargs,
-        #                 'req': 'STORE',
-        #                 'state': self.state
-        #                 }
-        #
-        # self.post(store_capture)  # store info on photo on parent side
 
     def capture_continuous(self, start_time=None, survey_run=None, project=None):
         self._project_id = int(project["project_id"])
@@ -182,6 +175,50 @@ class Camera360Pi(PiCamera):
             logger.error(msg)
         msg = f"Camera is now capturing every {self._dt} seconds"
         logger.info(msg)
+        return {"msg": msg, "level": "info"}
+
+    def capture_stream(self):
+        """
+        Done with a raspivid command so the camera has to be stopped first, and then a cvlc command has to be opened and streamed
+        :return:
+        """
+        # stop any preview and change resolution to HD
+        self.stop_preview()
+        self.resolution = (1920, 1080)
+
+        # self.recording = Thread(target=self._video, args=()).start()
+        vlc_cmd = "cvlc -vvv stream:///dev/stdin --sout #standard{access=http,mux=ts,dst=:8554/stream} :demux=h264"
+        cmdline = vlc_cmd.split()
+
+        # open pipe to vlc
+        self.myvlc = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
+        self.start_recording(self.myvlc.stdin, format="h264", bitrate=3000000)
+        # give camera 2 seconds to start up
+        time.sleep(2)
+        self.state["status"] = "stream"
+        self.logger.info("Camera is streaming")
+        msg = "Camera streaming started"
+        self.logger.info(msg)
+        return {"msg": msg, "level": "info"}
+
+    def stop_stream(self):
+        try:
+            # first stop the camera
+            self.stop_recording()
+            # then stop the stream
+            self.myvlc.stdin.close()
+            # finally kill the vlc process
+            self.myvlc.terminate()
+            # get ready for capturing
+            self.resolution = (2028, 1520)
+            # start warming up again
+            self.start_preview()
+            time.sleep(2)
+        except:
+            pass
+        self.state["status"] = "ready"
+        msg = "Camera streaming stopped"
+        self.logger.info(msg)
         return {"msg": msg, "level": "info"}
 
     def post(self, msg):
