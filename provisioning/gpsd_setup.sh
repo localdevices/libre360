@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo Installing GPSD
-sudo apt install -y gpsd gpsd-clients python-gps pps-tools
+sudo apt install -y gpsd gpsd-clients python-gpsd pps-tools
 
 # echo Setting GPSD to listen to the GNSS on the serial port instead of USB
 # sudo sed -i 's/USBAUTO="true"/USBAUTO="false"/g' /etc/default/gpsd

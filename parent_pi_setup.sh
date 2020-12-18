@@ -15,12 +15,10 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-# Commenting out hostapd/dnsmasq install until we decide how to
-# manage this---last discussion we agreed to use an external ap
-echo Install dnsmasq and hostapd only if on a raspi
-#if [[ $onpi == "yes" ]]; then
-#  provisioning/wifi_setup.sh >> provisioning/setup.log 2>> provisi#oning/error.log
-#fi
+# Install dnsmasq and hostapd only if on a raspi
+if [[ $onpi == "yes" ]]; then
+  provisioning/wifi_setup.sh >> provisioning/setup.log 2>> provisioning/error.log
+fi
 
 echo Running base pi setup
 provisioning/base_pi_setup.sh

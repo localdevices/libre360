@@ -65,11 +65,11 @@ echo Our sincere apologies about the emacs guy on the team. He\'s a good and
 echo useful person, in spite of this flaw.
 echo *******************************************************************************
 echo If you are the person who put this apology in the code,
-echo please take 30 seconds to think about what you have done.
+echo please take 10 seconds to think about what you have done.
 echo *******************************************************************************
-sleep 30
-echo There. Now do you understand why what you did was wrong?
 sleep 10
+echo There. Now do you understand why what you did was wrong?
+sleep 5
 sudo apt install -y vim >> provisioning/setup.log 2>> provisioning/error.log
 
 echo Installing requirements from setup.py using pip
