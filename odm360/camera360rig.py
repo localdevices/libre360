@@ -112,6 +112,7 @@ def get_task(cur, state):
             # camera is already capturing, so just wait for further instructions (stop)
     return {"task": "wait", "kwargs": {}}
 
+
 def post_log(cur, state, msg, level="info"):
     """
     Log message from current camera on logger
@@ -126,9 +127,11 @@ def post_log(cur, state, msg, level="info"):
     except:
         return {"success": False}
 
+
 def task_idle_to_ready(cur, state):
     logger.info("Sending camera initialization ")
     return {"task": "init", "kwargs": {}}
+
 
 def task_capture_to_ready(cur, state):
     return {"task": "stop", "kwargs": {}}
@@ -165,7 +168,9 @@ def task_ready_to_capture(cur, state):
             cur, status=states["capture"], start_time=start_datetime_utc
         )
         # add survey_run to surveys table
-        dbase.insert_survey(cur, project_id=cur_project["project_id"], survey_run=survey_run)
+        dbase.insert_survey(
+            cur, project_id=cur_project["project_id"], survey_run=survey_run
+        )
         logger.debug(
             f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}'
         )
@@ -187,6 +192,7 @@ def task_ready_to_capture(cur, state):
         # roll back to state "ready"
         dbase.update_project_active(cur, status=states["ready"])
 
+
 def task_ready_to_stream(cur, state):
     # retrieve settings of current project
     cur_project = dbase.query_project_active(cur, as_dict=True)
@@ -204,9 +210,7 @@ def task_ready_to_stream(cur, state):
             f'All cameras ready. Start streaming on device {state["device_uuid"]} on ip {state["ip"]}'
         )
         # set state to stream
-        dbase.update_project_active(
-            cur, status=states["stream"]
-        )
+        dbase.update_project_active(cur, status=states["stream"])
         logger.info(f"Sending stream command to {cur_address}")
         return {
             "task": "capture_stream",
@@ -220,6 +224,7 @@ def task_ready_to_stream(cur, state):
         return {"task": "wait", "kwargs": {}}
         # roll back to state "ready"
         dbase.update_project_active(cur, status=states["ready"])
+
 
 def task_stream_to_ready(cur, state):
     return {"task": "stop_stream", "kwargs": {}}

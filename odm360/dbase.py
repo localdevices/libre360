@@ -4,6 +4,7 @@ import psycopg2
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 
+
 def _generator(cur, table, uuid, chunksize=1024):
     """
     Generator for streaming photos to zip files
@@ -75,6 +76,7 @@ def delete_project(cur, project_name=None, project_id=None):
 
     cur.execute(sql_command)
     cur.connection.commit()
+
 
 def delete_server(cur, device_uuid):
     srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
@@ -277,7 +279,9 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
-            "device_stream": f'<a href="http://{d[0]}.local:8554/stream">http://{d[0]}.local:8554/stream</a>' if utils.get_key_state(int(d[2])) == "stream" else "",
+            "device_stream": f'<a href="http://{d[0]}.local:8554/stream">http://{d[0]}.local:8554/stream</a>'
+            if utils.get_key_state(int(d[2])) == "stream"
+            else "",
             "last_photo": d[
                 3
             ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
@@ -378,12 +382,14 @@ def query_projects(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
 
+
 def query_surveys(cur, project_id, as_dict=False, flatten=False):
     table_name = "surveys"
     sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
     return query_table(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
+
 
 def query_project_active(cur, as_dict=False):
     """
