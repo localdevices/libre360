@@ -26,6 +26,9 @@ provisioning/base_pi_setup.sh
 echo Running database setup script
 provisioning/database_setup.sh
 
+echo Running gpsd setup script
+provisioning/gpsd_setup.sh >> provisioning/setup.log 2>> provisioning/error.log
+
 echo Running NTP setup script
 provisioning/ntp_setup.sh >> provisioning/setup.log 2>> provisioning/error.log
 
