@@ -17,6 +17,7 @@ import json
 import logging
 import time
 import zipstream
+import gpsd
 
 from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
@@ -24,7 +25,6 @@ from odm360 import dbase
 from odm360.states import states
 from odm360.utils import cleanopts, get_key_state
 from odm360.timer import RepeatedTimer
-
 
 def _check_offline(conn, max_idle=60):
     """
@@ -87,6 +87,10 @@ log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.logger.disabled = True
 bootstrap = Bootstrap(app)
+try:
+    gpsd.connect()
+except:
+    logger.warning("GPS unit not found or no connection possible")
 
 @app.route("/", methods=["GET", "POST"])
 def status():
@@ -324,10 +328,27 @@ def cam_summary():
     project = dbase.query_projects(
         cur, project_id=cur_project[0][0], as_dict=True, flatten=True
     )
-
     devices_ready = dbase.query_devices(cur, status=states["ready"])
+
     devices = dbase.query_devices(cur)
-    cams = {"ready": len(devices_ready), "total": len(devices), "required": project["n_cams"]}
+    # request gps location
+    try:
+        msg = gpsd.get_current()
+        logger.info(f"GPS msg: {msg}")
+    except:
+        logger.warning("No msg received from GPS unit")
+        msg = None
+    cams = {
+        "ready": len(devices_ready),
+        "total": len(devices),
+        "required": project["n_cams"],
+        "lat": msg.lat if msg is not None else 0.,
+        "lon": msg.lon if msg is not None else 0.,
+        "alt": msg.alt if msg is not None else 0.,
+        "sats": msg.sats if msg is not None else 0,
+        "error": msg.error if msg is not None else "-",
+        "mode": msg.mode if msg is not None else "OFF",
+    }
     return jsonify(cams)
 
 
