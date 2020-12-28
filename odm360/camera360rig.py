@@ -5,6 +5,14 @@ import datetime
 from odm360 import dbase, utils
 from odm360.states import states
 import odm360.camera360rig as camrig
+from odm360.timer import RepeatedTimer
+import threading
+
+import gpsd
+try:
+    gpsd.connect()
+except:
+    gpsd = None
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +121,17 @@ def get_task(cur, state):
     return {"task": "wait", "kwargs": {}}
 
 
+def gps_log(cur, gpsd_stream):
+    gpsd_stream.write("?POLL;\n")
+    gpsd_stream.flush()
+    raw = gpsd_stream.readline()
+    # TODO: write to cursor object
+    dbase.insert_gps(
+        cur, project_id=project_id, survey_run=survey_run, msg=raw
+    )
+
+    print(raw)
+
 def post_log(cur, state, msg, level="info"):
     """
     Log message from current camera on logger
@@ -134,6 +153,8 @@ def task_idle_to_ready(cur, state):
 
 
 def task_capture_to_ready(cur, state):
+    gps_threat = threading.current_thread()
+    gps_threat.stop()
     return {"task": "stop", "kwargs": {}}
 
 
@@ -144,7 +165,6 @@ def task_ready_to_capture(cur, state):
         cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
     )
     dt = int(project["dt"])
-
     cur_address = request.remote_addr  # TODO: also add uuid of device
     # check how many cams have the state 'ready', only start when the full rig is ready
     n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
@@ -175,6 +195,23 @@ def task_ready_to_capture(cur, state):
             f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}'
         )
         logger.info(f"Sending capture command to {cur_address}")
+        # starting gps
+        if gpsd is not None:
+            # log gpsd messages
+            try:
+                gps_logger = RepeatedTimer(
+                    int(1),
+                    gps_log,
+                    start_time=time.time(),
+                    name="gps",
+                    cur=cur,
+                    gpsd_stream=gpsd.gpsd_stream,
+                    project_id=cur_project["project_id"],
+                    survey_run=survey_run,
+                )
+            except:
+                msg = "GPS connected but not responding"
+                logger.error(msg)
         return {
             "task": "capture_continuous",
             "kwargs": {

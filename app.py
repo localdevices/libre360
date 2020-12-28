@@ -20,11 +20,11 @@ import zipstream
 import gpsd
 
 from odm360.log import start_logger, stream_logger
-from odm360.camera360rig import do_request
+from odm360.camera360rig import do_request, gps_log
 from odm360 import dbase
 from odm360.states import states
 from odm360.utils import cleanopts, get_key_state
-from odm360.timer import RepeatedTimer
+
 
 def _check_offline(conn, max_idle=60):
     """
@@ -51,7 +51,10 @@ def _check_offline(conn, max_idle=60):
                         dbase.update_project_active(cur_check, states["ready"])
                     logger.warning(f"Setting connection to offline")
                     dbase.update_device(
-                        cur_check, device_uuid=dev[0], req_time=dev[3], status=states["offline"]
+                        cur_check,
+                        device_uuid=dev[0],
+                        req_time=dev[3],
+                        status=states["offline"],
                     )
                     # remove foreign server belonging to offline device
                     dbase.delete_server(cur_check, dev[0])
@@ -90,7 +93,10 @@ bootstrap = Bootstrap(app)
 try:
     gpsd.connect()
 except:
+    # simply set gps unit to None to indicate that there is no GPS device available
+    gpsd = None
     logger.warning("GPS unit not found or no connection possible")
+
 
 @app.route("/", methods=["GET", "POST"])
 def status():
@@ -136,15 +142,14 @@ def status():
                 )
         elif "stop-btn" in form:
             logger.info("Stopping streaming")
-            dbase.update_project_active(
-                cur, states["ready"]
-            )
+            dbase.update_project_active(cur, states["ready"])
 
         elif len(form) == 0:
             logger.info("Stopping service")
             dbase.update_project_active(
                 cur, states["ready"]
             )  # status 1 means auto_start cameras once they are all online
+
 
     # first check what projects already exist and list those in the status page as selectors
     projects = dbase.query_projects(cur)
@@ -164,15 +169,20 @@ def status():
             cur, project_id=cur_project_id, as_dict=True, flatten=True
         )
         devices_expected = project["n_cams"]
-        if (service_active != states["capture"]) and (service_active != states["stream"]):
+        if (service_active != states["capture"]) and (
+            service_active != states["stream"]
+        ):
             # apparently there is a project, but not activated to capture or stream yet. So set on 'ready' instead
             dbase.update_project_active(cur, status=states["ready"])
 
     # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
-    return render_template("status.html", projects=projects,
+    return render_template(
+        "status.html",
+        projects=projects,
         cur_project_id=cur_project_id,
         service_active=service_active,
-        )
+    )
+
 
 @app.route("/project", methods=["GET", "POST"])
 def project_page():
@@ -250,6 +260,7 @@ def settings_page():
 
     return render_template("settings.html")
 
+
 @app.route("/file_page")  # , methods=["GET", "POST"])
 def file_page():
     projects = dbase.query_projects(cur)
@@ -295,6 +306,7 @@ def cameras():
 
         return jsonify(devices)
 
+
 @app.route("/_files", methods=["GET", "POST"])
 def _files():
     args = cleanopts(request.args)
@@ -308,8 +320,11 @@ def _files():
             survey_run = None
         else:
             survey_run = args["survey_run"].upper()
-        fns = dbase.query_photo_names(cur_files, project_id=project["project_id"], survey_run=survey_run)
+        fns = dbase.query_photo_names(
+            cur_files, project_id=project["project_id"], survey_run=survey_run
+        )
     return jsonify(fns)
+
 
 @app.route("/_surveys", methods=["GET", "POST"])
 def _surveys():
@@ -319,8 +334,11 @@ def _surveys():
         project = dbase.query_projects(
             cur_surveys, project_id=args["project_id"], as_dict=True, flatten=True
         )
-        surveys = dbase.query_surveys(cur_surveys, project_id=project["project_id"], as_dict=True)
+        surveys = dbase.query_surveys(
+            cur_surveys, project_id=project["project_id"], as_dict=True
+        )
     return jsonify(surveys)
+
 
 @app.route("/_cam_summary")
 def cam_summary():
@@ -334,17 +352,17 @@ def cam_summary():
     # request gps location
     try:
         msg = gpsd.get_current()
-        logger.info(f"GPS msg: {msg}")
+        logger.debug(f"GPS msg: {msg}")
     except:
-        logger.warning("No msg received from GPS unit")
+        logger.debug("No msg received from GPS unit or unit not available")
         msg = None
     cams = {
         "ready": len(devices_ready),
         "total": len(devices),
         "required": project["n_cams"],
-        "lat": msg.lat if msg is not None else 0.,
-        "lon": msg.lon if msg is not None else 0.,
-        "alt": msg.alt if msg is not None else 0.,
+        "lat": msg.lat if msg is not None else 0.0,
+        "lon": msg.lon if msg is not None else 0.0,
+        "alt": msg.alt if msg is not None else 0.0,
         "sats": msg.sats if msg is not None else 0,
         "error": msg.error if msg is not None else "-",
         "mode": msg.mode if msg is not None else "OFF",
@@ -358,13 +376,16 @@ def _download():
     # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
     # zip file
     """
+
     def generator(cur, fns):
         """
         generator for zip archive
         :param cur: cursor for retrieval of individual files
         :return: chunk (i.e. one photo) for zip stream
         """
-        z = zipstream.ZipFile(mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True)
+        z = zipstream.ZipFile(
+            mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
+        )
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],
@@ -384,13 +405,14 @@ def _download():
     )
     return response
 
+
 @app.route("/_delete", methods=["GET"])
 def _delete():
     """
     delete selection
     """
     # retrieve arguments (stringified json)
-    logger.info('Deleting file selection')
+    logger.info("Deleting file selection")
     args = cleanopts(request.args)
     fns = json.loads(args["photos"])
     # find unique projects
@@ -408,9 +430,11 @@ def _delete():
         # deletion sometimes doesn't fully work with remote tables, so we repeat this until no files are found
         while len(fns) > 0:
             for srvname in srvnames:
-                dbase.delete_photos(cur_delete, srvname, survey_run)  # conversion to upper case needed after json-text conversion
+                dbase.delete_photos(
+                    cur_delete, srvname, survey_run
+                )  # conversion to upper case needed after json-text conversion
                 fns = dbase.query_photo_names(cur_delete, survey_run=survey_run)
-    # TODO: delete selection return positive response.
+        # TODO: delete selection return positive response.
         fns = dbase.query_photo_names(cur_delete, survey_run=survey_run)
         if len(fns) == 0:
             # apparently all photos are successfully deleted, so remove the survey run from the table
@@ -421,14 +445,13 @@ def _delete():
         if len(fns) == 0:
             dbase.delete_project(cur_delete, project_id=project_id)
 
-
-    logger.info('Delete is done')
+    logger.info("Delete is done")
 
     # response = Response(generator(cur_download), mimetype="application/zip")
     # response.headers["Content-Disposition"] = "attachment; filename={}".format(
     #     "odm360.zip"
     # )
-    return make_response(jsonify('Files successfully deleted', 200))
+    return make_response(jsonify("Files successfully deleted", 200))
 
 
 @app.route("/picam", methods=["GET", "POST"])

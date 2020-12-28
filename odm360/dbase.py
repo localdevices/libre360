@@ -156,6 +156,10 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     insert(cur, sql_command)
 
 
+def insert_gps(cur, project_id, survey_run, msg)
+    sql_command = f"INSERT INTO gps(project_id, survey_run, msg) VALUES ({project_id}, '{survey_run}', '{msg}');"
+    insert(cur, sql_command)
+
 def insert_survey(cur, project_id, survey_run):
     """
     insert a new device in table (leave out last_photo since it is not available yet).
