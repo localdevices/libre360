@@ -119,7 +119,7 @@ class Camera360Pi(PiCamera):
     def capture(self, timeout=1.0, cur=cur):
         root_dir = "/home/pi/piimages"
         photo_uuid = uuid.uuid4()
-        photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        photo_prefix = f'{datetime.now().strftime("%Y%m%d_%H%M%S")}'
         photo_filename = f"{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg"
         target = os.path.join(root_dir, "tmp.jpg")
         # capture to local file
