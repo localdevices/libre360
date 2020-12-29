@@ -1,6 +1,5 @@
 import time
 from threading import Event, Thread
-from multiprocessing.dummy import Pool as ThreadPool
 
 
 class RepeatedTimer:

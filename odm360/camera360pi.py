@@ -6,7 +6,6 @@ import requests
 import psycopg2
 import uuid
 import subprocess
-from threading import Thread
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -15,7 +14,6 @@ from datetime import datetime
 from odm360.timer import RepeatedTimer
 from odm360 import dbase
 
-# connect to child database
 # connect to child database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)

@@ -11,7 +11,6 @@ from flask import (
 )
 from flask_bootstrap import Bootstrap
 
-import base64
 import psycopg2
 import json
 import logging
@@ -20,7 +19,7 @@ import zipstream
 import gpsd
 
 from odm360.log import start_logger, stream_logger
-from odm360.camera360rig import do_request, gps_log
+from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
 from odm360.utils import cleanopts, get_key_state

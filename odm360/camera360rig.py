@@ -5,8 +5,7 @@ import datetime
 from odm360 import dbase, utils
 from odm360.states import states
 import odm360.camera360rig as camrig
-from odm360.timer import RepeatedTimer
-import threading
+from threading import Thread
 
 import gpsd
 try:
@@ -121,16 +120,35 @@ def get_task(cur, state):
     return {"task": "wait", "kwargs": {}}
 
 
-def gps_log(cur, gpsd_stream):
-    gpsd_stream.write("?POLL;\n")
-    gpsd_stream.flush()
-    raw = gpsd_stream.readline()
-    # TODO: write to cursor object
-    dbase.insert_gps(
-        cur, project_id=project_id, survey_run=survey_run, msg=raw
-    )
+def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.):
+    """
+    Dedicated gps log function, logging to database. The function stops as soon as the rig stops capturing
+    :param conn: psycopg2.connect, connection to database
+    :param gpsd_stream: gpsd.gpsd_stream, gps object that can be polled
+    :param project_id: int, id of current project
+    :param survey_run: str, name of current survey
+    :param sleep: amount of time sleeping in between gps polls (default 1 second).
+    :return:
+    """
+    cur = conn.cursor()
+    while True:
+        rig = dbase.query_project_active(cur, as_dict=True)
+        rig_status = utils.get_key_state(rig["status"])
+        if rig_status != "capture":
+            # apparently rig stopped capturing, so close cursor and return from function
+            cur.close()
+            return
+        gpsd_stream.write("?POLL;\n")
+        gpsd_stream.flush()
+        raw = gpsd_stream.readline()
+        # TODO: write to cursor object
+        print(raw)
+        dbase.insert_gps(
+            cur, project_id=project_id, survey_run=survey_run, msg=raw
+        )
+        print(raw)
+        time.sleep(sleep)
 
-    print(raw)
 
 def post_log(cur, state, msg, level="info"):
     """
@@ -153,8 +171,6 @@ def task_idle_to_ready(cur, state):
 
 
 def task_capture_to_ready(cur, state):
-    gps_threat = threading.current_thread()
-    gps_threat.stop()
     return {"task": "stop", "kwargs": {}}
 
 
@@ -199,16 +215,23 @@ def task_ready_to_capture(cur, state):
         if gpsd is not None:
             # log gpsd messages
             try:
-                gps_logger = RepeatedTimer(
-                    int(1),
-                    gps_log,
-                    start_time=time.time(),
-                    name="gps",
-                    cur=cur,
-                    gpsd_stream=gpsd.gpsd_stream,
-                    project_id=cur_project["project_id"],
-                    survey_run=survey_run,
-                )
+                gps_kwargs = {
+                    "conn": cur.connection,
+                    "gpsd_stream": gpsd.gpsd_stream,
+                    "project_id": cur_project["project_id"],
+                    "survey_run": survey_run,
+                }
+                Thread(target=gps_log, kwargs=gps_kwargs).start()
+                # gps_logger = RepeatedTimer(
+                #     int(1),
+                #     gps_log,
+                #     start_time=time.time(),
+                #     name="gps",
+                #     cur=cur.connection.cursor(),
+                #     gpsd_stream=gpsd.gpsd_stream,
+                #     project_id=cur_project["project_id"],
+                #     survey_run=survey_run,
+                # )
             except:
                 msg = "GPS connected but not responding"
                 logger.error(msg)

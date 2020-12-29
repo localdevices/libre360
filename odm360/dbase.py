@@ -1,5 +1,3 @@
-import psycopg2
-
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
@@ -156,9 +154,10 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     insert(cur, sql_command)
 
 
-def insert_gps(cur, project_id, survey_run, msg)
+def insert_gps(cur, project_id, survey_run, msg):
     sql_command = f"INSERT INTO gps(project_id, survey_run, msg) VALUES ({project_id}, '{survey_run}', '{msg}');"
     insert(cur, sql_command)
+
 
 def insert_survey(cur, project_id, survey_run):
     """
