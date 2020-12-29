@@ -376,7 +376,12 @@ def _download():
     # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
     # zip file
     """
-
+    # select the last row of the 'tpv' property of a single record in database
+    # SELECT (msg -> 'tpv'->>-1) FROM gps WHERE msg ->> 'time' = '2020-12-29T09:10:53.232Z';
+    # select gps-time from all records
+    # SELECT (msg -> 'tpv'->-1->>'time') FROM gps;
+    # parse dates from gps positions
+    # dt = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.%f%z')
     def generator(cur, fns):
         """
         generator for zip archive
