@@ -99,82 +99,83 @@ except:
 
 @app.route("/", methods=["GET", "POST"])
 def status():
-    # check devices that are online and ready for capturing
-    devices_ready = dbase.query_devices(cur, status=states["ready"])
-    devices_total = dbase.query_devices(cur)
+    with conn.cursor() as cur_status:
+        # check devices that are online and ready for capturing
+        devices_ready = dbase.query_devices(cur_status, status=states["ready"])
+        devices_total = dbase.query_devices(cur_status)
 
-    if request.method == "POST":
-        raw_form = request.form
-        form = cleanopts(raw_form)
-        if "project" in form:
-            logger.info(f"Changing to project {form['project']}")
-            # first drop the current active project table and create a new one
-            dbase.truncate_table(cur, "project_active")
-            # insert new active project
-            dbase.insert_project_active(cur, int(form["project"]))
-            cur_project = dbase.query_projects(
-                cur, project_id=int(form["project"]), as_dict=True, flatten=True
-            )
-            logger.info(
-                f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'"
-            )
-        elif ("service" in form) or ("play-btn" in form):
-            # rig has to start capturing OR streaming
-            # if form["service"] == "on":
-            cur_project = dbase.query_project_active(cur)
-            project = dbase.query_projects(
-                cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-            )
-            if project["n_cams"] == len(devices_ready):
-                # get details of current project
-                if "service" in form:
-                    # start the capturing service
-                    logger.info("Starting service")
-                    dbase.update_project_active(cur, states["capture"])
-                else:
-                    # start preview streaming
-                    logger.info("Starting camera preview")
-                    dbase.update_project_active(cur, states["stream"])
-            else:
-                logger.info(
-                    f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
+        if request.method == "POST":
+            raw_form = request.form
+            form = cleanopts(raw_form)
+            if "project" in form:
+                logger.info(f"Changing to project {form['project']}")
+                # first drop the current active project table and create a new one
+                dbase.truncate_table(cur_status, "project_active")
+                # insert new active project
+                dbase.insert_project_active(cur_status, int(form["project"]))
+                cur_project = dbase.query_projects(
+                    cur_status, project_id=int(form["project"]), as_dict=True, flatten=True
                 )
-        elif "stop-btn" in form:
-            logger.info("Stopping streaming")
-            dbase.update_project_active(cur, states["ready"])
+                logger.info(
+                    f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'"
+                )
+            elif ("service" in form) or ("play-btn" in form):
+                # rig has to start capturing OR streaming
+                # if form["service"] == "on":
+                cur_project = dbase.query_project_active(cur_status)
+                project = dbase.query_projects(
+                    cur_status, project_id=cur_project[0][0], as_dict=True, flatten=True
+                )
+                if project["n_cams"] == len(devices_ready):
+                    # get details of current project
+                    if "service" in form:
+                        # start the capturing service
+                        logger.info("Starting service")
+                        dbase.update_project_active(cur_status, states["capture"])
+                    else:
+                        # start preview streaming
+                        logger.info("Starting camera preview")
+                        dbase.update_project_active(cur_status, states["stream"])
+                else:
+                    logger.info(
+                        f"Attempted service start but only {len(devices_ready)} out of {project['n_cams']} devices ready"
+                    )
+            elif "stop-btn" in form:
+                logger.info("Stopping streaming")
+                dbase.update_project_active(cur_status, states["ready"])
 
-        elif len(form) == 0:
-            logger.info("Stopping service")
-            dbase.update_project_active(
-                cur, states["ready"]
-            )  # status 1 means auto_start cameras once they are all online
+            elif len(form) == 0:
+                logger.info("Stopping service")
+                dbase.update_project_active(
+                    cur_status, states["ready"]
+                )  # status 1 means auto_start cameras once they are all online
 
 
-    # first check what projects already exist and list those in the status page as selectors
-    projects = dbase.query_projects(cur)
-    project_ids = [p[0] for p in projects]
-    project_names = [p[1] for p in projects]
-    projects = zip(project_ids, project_names)
-    cur_project = dbase.query_project_active(cur)
+        # first check what projects already exist and list those in the status page as selectors
+        projects = dbase.query_projects(cur_status)
+        project_ids = [p[0] for p in projects]
+        project_names = [p[1] for p in projects]
+        projects = zip(project_ids, project_names)
+        cur_project = dbase.query_project_active(cur_status)
 
-    if len(cur_project) == 0:
-        cur_project_id = None
-        service_active = 0
-        dbase.update_project_active(cur, status=states["idle"])
-    else:
-        cur_project_id = cur_project[0][0]
-        service_active = cur_project[0][1]
-        project = dbase.query_projects(
-            cur, project_id=cur_project_id, as_dict=True, flatten=True
-        )
-        devices_expected = project["n_cams"]
-        if (service_active != states["capture"]) and (
-            service_active != states["stream"]
-        ):
-            # apparently there is a project, but not activated to capture or stream yet. So set on 'ready' instead
-            dbase.update_project_active(cur, status=states["ready"])
+        if len(cur_project) == 0:
+            cur_project_id = None
+            service_active = 0
+            dbase.update_project_active(cur_status, status=states["idle"])
+        else:
+            cur_project_id = cur_project[0][0]
+            service_active = cur_project[0][1]
+            project = dbase.query_projects(
+                cur_status, project_id=cur_project_id, as_dict=True, flatten=True
+            )
+            devices_expected = project["n_cams"]
+            if (service_active != states["capture"]) and (
+                service_active != states["stream"]
+            ):
+                # apparently there is a project, but not activated to capture or stream yet. So set on 'ready' instead
+                dbase.update_project_active(cur_status, status=states["ready"])
 
-    # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
+        # from example https://stackoverflow.com/questions/24735810/python-flask-get-json-data-to-display
     return render_template(
         "status.html",
         projects=projects,

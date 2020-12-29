@@ -142,7 +142,6 @@ def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.):
         gpsd_stream.flush()
         raw = gpsd_stream.readline()
         # TODO: write to cursor object
-        print(raw)
         dbase.insert_gps(
             cur, project_id=project_id, survey_run=survey_run, msg=raw
         )
@@ -222,16 +221,7 @@ def task_ready_to_capture(cur, state):
                     "survey_run": survey_run,
                 }
                 Thread(target=gps_log, kwargs=gps_kwargs).start()
-                # gps_logger = RepeatedTimer(
-                #     int(1),
-                #     gps_log,
-                #     start_time=time.time(),
-                #     name="gps",
-                #     cur=cur.connection.cursor(),
-                #     gpsd_stream=gpsd.gpsd_stream,
-                #     project_id=cur_project["project_id"],
-                #     survey_run=survey_run,
-                # )
+                logger.info("Started GPS log")
             except:
                 msg = "GPS connected but not responding"
                 logger.error(msg)
