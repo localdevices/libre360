@@ -123,6 +123,7 @@ module stringer() {
 
 // Camera Base
 module camera_base() {
+translate([-130,0,0]){
     mirror([0,1,0]){
         difference(){
             // Body loop
@@ -166,6 +167,53 @@ module camera_base() {
             }
         }
     }
+}}
+
+// Camera Base
+module camera_base1() {
+    mirror([0,1,0]){
+        difference(){
+
+            hull(){
+                for (cam = [1 : num_cams]){
+                 
+                    rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
+                        translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                            rotate([0, downangle, -rotate_angle]){
+                                
+                                translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                                    cube([picam_base_thickness, picam_base_width, indent_depth]);
+                                }
+                                
+                            }
+                        }
+                    }
+                }
+            }
+           
+            // Camera mount holes loop
+            for (cam = [1 : num_cams]){
+             
+                rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
+                    translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                        rotate([0, downangle, -rotate_angle]){
+                            union(){
+                                translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                                    #cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
+                                }
+                                translate([0, 0, -(bolthead_h * 2 + 10)]){
+                                    cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
+                                    cylinder(r = bolthead_d / 2 + 0.1, h = bolthead_h + 10, $fn = 64);
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+    }
 }
 
 module central_post() {
@@ -187,6 +235,7 @@ echo ("Making camera cover...");
 //    }
 }
 
+/*
 echo ("Cutting holes");
 
 difference() {
@@ -211,5 +260,8 @@ difference() {
         }
     }
 }
+*/
 //central_post();
 
+camera_base();
+camera_base1();
