@@ -123,30 +123,29 @@ module stringer() {
 
 // Camera Base
 module camera_base() {
-translate([-130,0,0]){
     mirror([0,1,0]){
         difference(){
-            // Body loop
-            for (cam = [1 : num_cams]){
-                rotate([0, 0, cam * rotate_angle]){
-                    union(){
-                        translate([radius_central_gap, -poly_side / 2, 0]){
-                            cube([plate_length - radius_central_gap, poly_side, plate_thickness]);
-                        }
-                        // Spokes
-                        translate([radius_central_gap,-poly_side_hole / 2,0]){
-                            cube([overhang, poly_side, edge_thickness]);
-                        }
-                        // Wheel
-                        translate([radius_to_hole - overhang,-poly_side / 2,0]){
-                            cube([overhang * 2, poly_side, edge_thickness]);
+            minkowski(){
+                hull(){
+                    for (cam = [1 : num_cams]){
+                     
+                        rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
+                            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                                rotate([0, downangle, -rotate_angle]){
+                                    
+                                    translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                                        cube([picam_base_thickness, picam_base_width, indent_depth]);
+                                    }
+                                    
+                                }
+                            }
                         }
                     }
                 }
+                sphere(3, $fn=50);
             }
             // Camera mount holes loop
             for (cam = [1 : num_cams]){
-
              
                 rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
                     translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
@@ -154,52 +153,6 @@ translate([-130,0,0]){
                             union(){
                                 translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
                                     cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
-                                }
-                                translate([0, 0, -(bolthead_h * 2 + 10)]){
-                                    cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
-                                    cylinder(r = bolthead_d / 2 + 0.1, h = bolthead_h + 10, $fn = 64);
-
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}}
-
-// Camera Base
-module camera_base1() {
-    mirror([0,1,0]){
-        difference(){
-
-            hull(){
-                for (cam = [1 : num_cams]){
-                 
-                    rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
-                        translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                            rotate([0, downangle, -rotate_angle]){
-                                
-                                translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                    cube([picam_base_thickness, picam_base_width, indent_depth]);
-                                }
-                                
-                            }
-                        }
-                    }
-                }
-            }
-           
-            // Camera mount holes loop
-            for (cam = [1 : num_cams]){
-             
-                rotate([0,0,cam * rotate_angle + (360/num_cams/1.8)]){
-                    translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                        rotate([0, downangle, -rotate_angle]){
-                            union(){
-                                translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                    #cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
                                 }
                                 translate([0, 0, -(bolthead_h * 2 + 10)]){
                                     cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
@@ -264,4 +217,3 @@ difference() {
 //central_post();
 
 camera_base();
-camera_base1();
