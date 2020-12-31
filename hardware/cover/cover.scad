@@ -269,6 +269,7 @@ module camera_hull() {
     }
 }
 
+
 difference() {
     minkowski() {
         camera_hull();
