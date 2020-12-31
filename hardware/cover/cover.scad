@@ -122,36 +122,7 @@ module camera_holeswcone() {
 num_sides = 36;
 rotate_angle_sides = 360/num_sides;
 
-module stringer() {
-    scale([0.234,0.234,0.234]) {
-        translate([-225,0,0]){
-            rotate([0, 90, 0]){    
-                rotate_extrude(angle = 180, $fn = 100, convexity = 20) {
 
-                        rotate([0, 0, 90]){
-                            translate([225,225,0]) {
-                                translate([0,400,0]) {
-                                    intersection(){
-                                        difference(){
-                                            //linear_extrude(height = 5, center = true)
-                                                resize([450,450])circle(d=20, $fn=100);
-                                            translate([0,5,0]) //{linear_extrude(height = 5, center = true)
-                                                    resize([450,450])circle(d=20, $fn=100);
-                                            //}
-                                            // scale([1.5,.5])circle(d=20);
-                                        }
-                                        //linear_extrude(height = 5, center = true) {
-                                            polygon( points = [ [0, 0], [54.5955351399303, -300], [-54.5955351399303, -300] ],convexity = 10);
-                                        //}
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 // Camera Base
 module camera_base() {
