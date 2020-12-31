@@ -248,7 +248,7 @@ difference() {
     }
 }
 */
-central_post();
+
 
 module camera_hull() {
     hull(){
@@ -272,7 +272,7 @@ module camera_hull() {
 difference() {
     minkowski() {
         camera_hull();
-        sphere(3, $fn=50);
+        sphere(2, $fn=50);
     }
     camera_hull();
     cube([200,200,100],center=true);
@@ -291,12 +291,15 @@ difference() {
 
 translate([0,0,90]){
     rotate([0,180,45]){
-        mirror([0,1,0]){
-            //union(){
-            camera_base();
-            //camera_holes();
-            //camera_base();
-            //}
+        difference() {
+            mirror([0,1,0]){
+                //union(){
+                camera_base();
+                //camera_holes();
+                //camera_base();
+                //}
+            }
+            central_post();
         }
     }
 }
