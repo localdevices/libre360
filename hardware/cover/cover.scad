@@ -178,8 +178,15 @@ module cord_holes(){
 
 
 module central_post() {
-    cylinder(r=10, h=80);
-    cylinder(r=5, h=90);
+
+    minkowski(){
+        union(){
+            cylinder(r1=15, r2=15, h=25, $fn=6);
+            cylinder(r1=10, r2=10, h=80, $fn=50);
+        }
+        sphere(0.5, $fn=50);
+    }
+    cylinder(r=5, h=90, $fn=50);
 }
 
 
@@ -252,11 +259,20 @@ module camera_base_top() {
     }
 }
 
+module nut_hole(){
+    minkowski(){
+        translate([0,0,-9]){
+            cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
+        }
+        sphere(0.5, $fn=50);
+    }
+}
+
 module camera_base_bottom() {
     central_post();
     camera_base();
-
 }
+
 
 difference() {
     union(){
@@ -264,5 +280,8 @@ difference() {
         cover();
     }
     cord_holes();
+    nut_hole();
 }
 //camera_base_top();
+
+
