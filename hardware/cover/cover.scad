@@ -111,7 +111,6 @@ num_sides = 36;
 rotate_angle_sides = 360/num_sides;
 
 
-
 // Camera Base
 module camera_base() {
     mirror([0,1,0]){
@@ -165,49 +164,6 @@ module central_post() {
     cylinder(r=5, h=90);
 }
 
-// Case loop            
-
-module camera_cover() {
-//    union() {
-echo ("Making camera cover...");    
-        for (cam = [1 : num_sides]){
-            echo ("Making stringer", cam);
-            rotate([0, 0, cam * rotate_angle_sides]){
-                stringer();
-            }
-        }
-//    }
-}
-
-
-
-/*
-echo ("Cutting holes");
-
-difference() {
-    translate([0,0,45]) {
-        camera_cover();
-    }
-    union(){
-        #camera_holes();
-    }
-
-    //#camera_holes();
-    //camera_base();
-    translate([0,0,90]){
-        rotate([0,180,45]){
-            mirror([0,1,0]){
-                //union(){
-                //camera_base();
-                #camera_holes();
-                //camera_base();
-                //}
-            }
-        }
-    }
-}
-*/
-
 
 module camera_hull() {
     hull(){
@@ -249,17 +205,31 @@ difference() {
     camera_holeswcone();
 }
 */
-translate([0,0,90]){
-    rotate([0,180,45]){
-        difference() {
-            mirror([0,1,0]){
-                //union(){
-                camera_base();
-                //camera_holes();
-                //camera_base();
-                //}
+
+module camera_base_top() {
+    rotate([0,180,0]){
+        translate([0,0,-90]){    
+            translate([0,0,90]){
+                rotate([0,180,45]){
+                    difference() {
+                        mirror([0,1,0]){
+                            //union(){
+                            camera_base();
+                            //camera_holes();
+                            //camera_base();
+                            //}
+                        }
+                        central_post();
+                    }
+                }
             }
-            central_post();
         }
     }
 }
+
+module camera_base_bottom() {
+    central_post();
+    camera_base();
+}
+
+camera_base_bottom();
