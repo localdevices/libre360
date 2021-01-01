@@ -51,7 +51,7 @@ module lenswcone() {
                 
                 translate([0,-25,30]){
                     rotate([90,0,0]) 
-                        {cylinder(r1=0, r2=45.568/2*4, h=19.727*4);}
+                        {cylinder(r1=0, r2=45.568/2*2, h=19.727*2);}
                     }    
                 
                 }
@@ -85,6 +85,23 @@ module camera_lenses() {
                         translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
                             //picam();
                             lens();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+module picams() {
+    for (cam = [1 : num_cams]){
+        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                rotate([0, downangle, rotate_angle ]){
+                    union(){
+                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                            picam();
+                            //lens();
                         }
                     }
                 }
@@ -228,7 +245,7 @@ module cover() {
                         rotate([0,180,45]){
                             mirror([0,1,0]){
                                 camera_base();
-                                camera_holeswcone();
+                                mirror([0,1,0]){#camera_holeswcone();}
                                 //camera_base();
                                 //}
                             }
@@ -268,7 +285,7 @@ module nut_hole(){
         translate([0,0,-9]){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
-        sphere(1.25, $fn=50);
+        sphere(1, $fn=50);
     }
 }
 
@@ -288,4 +305,4 @@ difference() {
 }
 //camera_base_top();
 
-
+//picams();
