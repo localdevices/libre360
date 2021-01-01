@@ -9,8 +9,9 @@ bolthead_d = 10; // bolt head countersink diameter
 bolthead_h = 2; // bolt head height (for countersink depth)
 radius_to_hole = 50; // Distance from center to the center of the mounting holes
 downangle = 32; // Angle in degrees cameras face downward
-cord_hole_diameter = 12;
-cord_hole_offset = 30;
+cord_hole_length = 20;
+cord_hole_width = 10;
+cord_hole_offset = 20;
 
 // Alignment indent in edge
 // picam base width is 13.5
@@ -167,9 +168,12 @@ module camera_mount_holes(){
 
 module cord_holes(){
     for (cam = [1 : num_cams]){
-        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+        rotate([0,0,cam * rotate_angle + (360/num_cams) * 1.5]){
             translate([cord_hole_offset, 0, -20]){
-                cylinder(r = cord_hole_diameter / 2 + 0.1, h = 40, $fn = 64);
+                    minkowski(){
+                        cube([cord_hole_length,cord_hole_width,100]);
+                        sphere(1, $fn=50);
+                    }
             }
         }
     }
@@ -264,7 +268,7 @@ module nut_hole(){
         translate([0,0,-9]){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
-        sphere(0.5, $fn=50);
+        sphere(2, $fn=50);
     }
 }
 
