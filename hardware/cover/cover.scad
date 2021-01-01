@@ -268,7 +268,7 @@ module nut_hole(){
         translate([0,0,-9]){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
-        sphere(2, $fn=50);
+        sphere(1.25, $fn=50);
     }
 }
 
