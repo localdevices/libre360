@@ -21,7 +21,7 @@ picam_base_width = 14.1375;
 // bad drilling and it's better to index against
 // the side
 picam_base_thickness = 12.2;
-indent_depth = 4;
+indent_depth = 2;
 offset_of_hole = 0; // If the mounting bolt hole isn't centered you can adjust it
 
 // Don't touch
@@ -78,15 +78,13 @@ module lens() {
 // Camera lens loop
 module camera_lenses() {
     for (cam = [1 : num_cams]){
-        if(cam%2==0) {
-            rotate([0,0,cam * rotate_angle + (360/num_cams)]){
-                translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                    rotate([0, downangle, rotate_angle ]){
-                        union(){
-                            translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                //picam();
-                                lens();
-                            }
+        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                rotate([0, downangle, rotate_angle ]){
+                    union(){
+                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                            //picam();
+                            lens();
                         }
                     }
                 }
@@ -97,15 +95,13 @@ module camera_lenses() {
 
 module picams() {
     for (cam = [1 : num_cams]){
-        if(cam%2==0) {
-            rotate([0,0,cam * rotate_angle + (360/num_cams)]){
-                translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                    rotate([0, downangle, rotate_angle ]){
-                        union(){
-                            translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                picam();
-                                //lens();
-                            }
+        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                rotate([0, downangle, rotate_angle ]){
+                    union(){
+                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                            picam();
+                            //lens();
                         }
                     }
                 }
@@ -116,15 +112,13 @@ module picams() {
 
 module camera_holeswcone() {
     for (cam = [1 : num_cams]){
-        if(cam%2==0) {
-            rotate([0,0,cam * rotate_angle + (360/num_cams)]){
-                translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                    rotate([0, downangle, rotate_angle ]){
-                        union(){
-                            translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                //picam();
-                                lenswcone();
-                            }
+        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                rotate([0, downangle, rotate_angle ]){
+                    union(){
+                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                            //picam();
+                            lenswcone();
                         }
                     }
                 }
@@ -144,23 +138,21 @@ module camera_base() {
             minkowski(){
                 hull(){
                     for (cam = [1 : num_cams]){
-                        if(cam%2==0) {
                      
-                            rotate([0,0,cam * rotate_angle + (360/num_cams)]){
-                                translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                                    rotate([0, downangle, -rotate_angle]){
-                                        
-                                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                            cube([picam_base_thickness, picam_base_width, indent_depth]);
-                                        }
-                                        
+                        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+                            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                                rotate([0, downangle, -rotate_angle]){
+                                    
+                                    translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                                        #cube([picam_base_thickness, picam_base_width, indent_depth]);
                                     }
+                                    
                                 }
                             }
                         }
                     }
                 }
-                sphere(3, $fn=50);
+                sphere(2, $fn=50);
             }
             // Camera mount holes loop
             camera_mount_holes();
@@ -171,20 +163,18 @@ module camera_base() {
 
 module camera_mount_holes(){
     for (cam = [1 : num_cams]){
-        if(cam%2==0) {
 
-            rotate([0,0,cam * rotate_angle + (360/num_cams)]){
-                translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
-                    rotate([0, downangle, -rotate_angle]){
-                        union(){
-                            translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
-                                cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
-                            }
-                            translate([0, 0, -(bolthead_h * 2 + 10)]){
-                                cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
-                                cylinder(r = bolthead_d / 2 + 0.1, h = bolthead_h + 10, $fn = 64);
+        rotate([0,0,cam * rotate_angle + (360/num_cams)]){
+            translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
+                rotate([0, downangle, -rotate_angle]){
+                    union(){
+                        translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
+                            cube([picam_base_thickness, picam_base_width, indent_depth + 10]);
+                        }
+                        translate([0, 0, -(bolthead_h * 2 + 10)]){
+                            cylinder(r = hole_diameter / 2, h = edge_thickness * 3 + 10, $fn = 64);
+                            cylinder(r = bolthead_d / 2 + 0.1, h = bolthead_h + 10, $fn = 64);
 
-                            }
                         }
                     }
                 }
@@ -195,14 +185,12 @@ module camera_mount_holes(){
 
 module cord_holes(){
     for (cam = [1 : num_cams]){
-        if(cam%2==0) {
-            rotate([0,0,cam * rotate_angle + (360/num_cams) * 1.5]){
-                translate([cord_hole_offset, 0, -20]){
-                        minkowski(){
-                            cube([cord_hole_length,cord_hole_width,100]);
-                            sphere(1, $fn=50);
-                        }
-                }
+        rotate([0,0,cam * rotate_angle + (360/num_cams) * 1.5]){
+            translate([cord_hole_offset, 0, -20]){
+                    minkowski(){
+                        cube([cord_hole_length,cord_hole_width,100]);
+                        sphere(1, $fn=50);
+                    }
             }
         }
     }
@@ -314,8 +302,8 @@ module camera_base_bottom() {
     }
 }
 
-camera_base_bottom();
+//camera_base_bottom();
 //picams();
 
-//camera_base_top();
+camera_base_top();
 //mirror([0,1,0]){picams();}
