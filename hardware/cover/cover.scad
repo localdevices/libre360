@@ -260,6 +260,7 @@ module cover() {
 }
 
 module camera_base_top() {
+    mirror([0,1,0]){cover();}
     rotate([0,180,0]){
         translate([0,0,-90]){    
             translate([0,0,90]){
@@ -290,19 +291,19 @@ module nut_hole(){
 }
 
 module camera_base_bottom() {
-    central_post();
-    camera_base();
-}
-
-
-difference() {
-    union(){
-        camera_base_bottom();
-        cover();
+    difference() {
+        union(){
+            central_post();
+            camera_base();
+            cover();
+        }
+        cord_holes();
+        nut_hole();
     }
-    cord_holes();
-    nut_hole();
 }
-//camera_base_top();
 
+//camera_base_bottom();
 //picams();
+
+camera_base_top();
+//mirror([0,1,0]){picams();}
