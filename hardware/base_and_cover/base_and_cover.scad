@@ -160,7 +160,7 @@ module camera_base() {
                         }
                     }
                 }
-                sphere(3, $fn=50);
+                sphere(3, $fn=36);
             }
             // Camera mount holes loop
             camera_mount_holes();
@@ -200,7 +200,7 @@ module cord_holes(){
                 translate([cord_hole_offset, 0, -20]){
                         minkowski(){
                             cube([cord_hole_length,cord_hole_width,100]);
-                            sphere(1, $fn=50);
+                            sphere(1, $fn=16);
                         }
                 }
             }
@@ -215,11 +215,11 @@ module central_post() {
     minkowski(){
         union(){
             cylinder(r1=15, r2=15, h=25, $fn=6);
-            cylinder(r1=10, r2=10, h=80, $fn=50);
+            cylinder(r1=10, r2=10, h=80, $fn=36);
         }
-        sphere(0.5, $fn=50);
+        sphere(0.5, $fn=16);
     }
-    cylinder(r=5, h=90, $fn=50);
+    cylinder(r=5, h=90, $fn=36);
 }
 
 
@@ -249,7 +249,7 @@ module cover() {
                 difference() {
                     minkowski() {
                         camera_hull();
-                        sphere(2, $fn=50);
+                        sphere(2, $fn=36);
                     }
                     camera_hull();
                     cube([200,200,100],center=true);
@@ -298,7 +298,7 @@ module nut_hole(){
         translate([0,0,-9]){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
-        sphere(1, $fn=50);
+        sphere(1, $fn=16);
     }
 }
 
