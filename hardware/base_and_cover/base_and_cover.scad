@@ -15,7 +15,7 @@ cord_hole_offset = 20;
 
 // Alignment indent in edge
 // picam base width is 13.5
-picam_base_width = 14.1375; 
+picam_base_width = 14.1375;
 // picam base thickness is 11.5, optimum size is
 // 12.1375, but we want to give a little space for
 // bad drilling and it's better to index against
@@ -41,17 +41,17 @@ module lenswcone() {
             union(){
                 // Lens
                 translate([0,0,33]){
-                    rotate([90,0,0]) 
+                    rotate([90,0,0])
                         {cylinder(r=22.8832/2, h=40);}
                     }
 
                 // Cone of lens view
-                
+
                 translate([0,-22,33]){
-                    rotate([90,0,0]) 
+                    rotate([90,0,0])
                         {cylinder(r1=0, r2=45.568/2*2, h=19.727*2);}
-                    }    
-                
+                    }
+
                 }
             }
         }
@@ -63,10 +63,10 @@ module lens() {
             union(){
                 // Lens
                 translate([0,0,33]){
-                    rotate([90,0,0]) 
+                    rotate([90,0,0])
                         {cylinder(r=22.8832/2, h=36);}
                     }
-                
+
                 }
             }
         }
@@ -137,21 +137,21 @@ module camera_base() {
             minkowski(){
                 hull(){
                     for (cam = [1 : num_cams]){
-                     
+
                         rotate([0,0,cam * rotate_angle + (360/num_cams)]){
                             translate([radius_to_hole, -picam_base_width/2, edge_thickness - indent_depth]){
                                 rotate([0, downangle, -rotate_angle]){
-                                    
+
                                     translate([-picam_base_thickness / 2, -picam_base_width / 2, 0]){
                                         cube([picam_base_thickness, picam_base_width, indent_depth]);
                                     }
-                                    
+
                                 }
                             }
                         }
                     }
                 }
-                sphere(2, $fn=50);
+                sphere(3, $fn=36);
             }
             // Camera mount holes loop
             camera_mount_holes();
@@ -184,12 +184,14 @@ module camera_mount_holes(){
 
 module cord_holes(){
     for (cam = [1 : num_cams]){
-        rotate([0,0,cam * rotate_angle + (360/num_cams) * 1.5]){
-            translate([cord_hole_offset, 0, -20]){
-                    minkowski(){
-                        cube([cord_hole_length,cord_hole_width,100]);
-                        sphere(1, $fn=50);
-                    }
+        if(cam%2==0) {
+            rotate([0,0,cam * rotate_angle + (360/num_cams) * 1.5]){
+                translate([cord_hole_offset, 0, -20]){
+                        minkowski(){
+                            cube([cord_hole_length,cord_hole_width,100]);
+                            sphere(1, $fn=16);
+                        }
+                }
             }
         }
     }
@@ -202,11 +204,11 @@ module central_post() {
     minkowski(){
         union(){
             cylinder(r1=15, r2=15, h=25, $fn=6);
-            cylinder(r1=10, r2=10, h=80, $fn=50);
+            cylinder(r1=10, r2=10, h=80, $fn=36);
         }
-        sphere(0.5, $fn=50);
+        sphere(0.5, $fn=16);
     }
-    cylinder(r=5, h=90, $fn=50);
+    cylinder(r=5, h=90, $fn=36);
 }
 
 
@@ -237,7 +239,7 @@ module cover() {
                 difference() {
                     minkowski() {
                         camera_hull();
-                        sphere(3, $fn=50);
+                        sphere(2, $fn=36);
                     }
                     camera_hull();
                     cube([1000,1000,90],center=true);
@@ -267,7 +269,7 @@ module camera_base_top() {
         cover();
     }
     rotate([0,180,0]){
-        translate([0,0,-90]){    
+        translate([0,0,-90]){
             translate([0,0,90]){
                 rotate([0,180,45]){
                     difference() {
@@ -295,7 +297,7 @@ module nut_hole(){
         translate([0,0,-9]){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
-        sphere(1, $fn=50);
+        sphere(1, $fn=16);
     }
 }
 
