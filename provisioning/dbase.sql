@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS gps
     survey_run text
     ,project_id INT
     ,msg JSON NOT NULL
+    ,ts TIMESTAMP NOT NULL
     ,CONSTRAINT fk_project  -- add foreign key constraint referencing the project ID
         FOREIGN KEY(project_id)
             REFERENCES projects(project_id)

@@ -125,6 +125,7 @@ class Camera360Pi(PiCamera):
         # capture to local file
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
+        tic = time.time()
         kwargs = {
             "photo_uuid": photo_uuid,
             "project_id": self._project_id,
@@ -132,9 +133,9 @@ class Camera360Pi(PiCamera):
             "device_uuid": self._device_uuid,
             "device_name": self._device_name,
             "photo_filename": photo_filename,
+            "ts": datetime.utcfromtimestamp(time.time()),
             "fn": target,
         }
-        tic = time.time()
         if not (self.debug):
             super().capture(target, "jpeg")
         # # store details about photo in database

@@ -1,7 +1,7 @@
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
-
+import json
 
 def _generator(cur, table, uuid, chunksize=1024):
     """
@@ -154,8 +154,8 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     insert(cur, sql_command)
 
 
-def insert_gps(cur, project_id, survey_run, msg):
-    sql_command = f"INSERT INTO gps(project_id, survey_run, msg) VALUES ({project_id}, '{survey_run}', '{msg}');"
+def insert_gps(cur, project_id, survey_run, timestamp, msg):
+    sql_command = f"INSERT INTO gps(project_id, survey_run, ts, msg) VALUES ({project_id}, '{survey_run}', '{timestamp}', '{msg}');"
     insert(cur, sql_command)
 
 
@@ -179,6 +179,7 @@ def insert_photo(
     device_uuid,
     device_name,
     photo_filename,
+    timestamp,
     fn,
 ):
     """
@@ -193,6 +194,7 @@ def insert_photo(
     :return:
     """
     # occurs when parent-side storage is done, no binary data is stored
+    ts = timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
     sql_command = f"""
     INSERT INTO photos_child
     (
@@ -202,6 +204,7 @@ def insert_photo(
     ,device_uuid
     ,device_name
     ,photo_filename
+    ,ts
     ,photo
     ) SELECT
     '{photo_uuid}'
@@ -210,6 +213,7 @@ def insert_photo(
     , '{device_uuid}'
     , '{device_name}'
     , '{photo_filename}'
+    , '{ts}'
     , pg_read_binary_file('{fn}')
     ;"""
     insert(cur, sql_command)
@@ -359,6 +363,9 @@ def query_photo_names(cur, project_id=None, survey_run=None):
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
     return fns
+
+
+def query_location(cur, timestamp, ):
 
 
 def query_photos_survey(cur, project_id, survey_run):

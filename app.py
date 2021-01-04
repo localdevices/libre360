@@ -382,6 +382,12 @@ def _download():
     # SELECT (msg -> 'tpv'->-1->>'time') FROM gps;
     # parse dates from gps positions
     # dt = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.%f%z')
+    # get first row of results from time comparison
+    # SELECT (ts) FROM gps WHERE ts >= '2021-01-04 15:27:28.350' FETCH FIRST ROW ONLY;
+    # get last row only ...
+    # SELECT (ts) FROM gps WHERE ts >= '2021-01-04 15:27:28.350' ORDER BY ts DESC FETCH FIRST ROW ONLY;
+
+
     def generator(cur, fns):
         """
         generator for zip archive

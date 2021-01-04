@@ -1,5 +1,6 @@
 import logging
 import time
+import json
 from flask import request
 import datetime
 from odm360 import dbase, utils
@@ -141,9 +142,11 @@ def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.):
         gpsd_stream.write("?POLL;\n")
         gpsd_stream.flush()
         raw = gpsd_stream.readline()
-        # TODO: write to cursor object
+        # retrieve time stamp
+        ts = json.loads(raw)["time"]
+
         dbase.insert_gps(
-            cur, project_id=project_id, survey_run=survey_run, msg=raw
+            cur, project_id=project_id, survey_run=survey_run, timestamp=ts, msg=raw
         )
         print(raw)
         time.sleep(sleep)

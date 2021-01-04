@@ -27,6 +27,7 @@ CREATE TABLE photos_child (
     ,device_uuid UUID
     ,device_name text
     ,photo_filename text
+    ,ts TIMESTAMP
     ,photo bytea
 );
 ALTER TABLE device OWNER TO odm360;
