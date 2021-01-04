@@ -133,7 +133,7 @@ class Camera360Pi(PiCamera):
             "device_uuid": self._device_uuid,
             "device_name": self._device_name,
             "photo_filename": photo_filename,
-            "ts": datetime.utcfromtimestamp(time.time()),
+            "timestamp": datetime.utcfromtimestamp(time.time()),
             "fn": target,
         }
         if not (self.debug):
