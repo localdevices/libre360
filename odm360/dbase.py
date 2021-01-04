@@ -364,10 +364,10 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         fns += fns_server
     return fns
 
-
-def query_location(cur, timestamp, ):
-
-
+#
+def query_location(cur, timestamp):
+    # TODO: implement
+    raise NotImplemented("Function needs to be prepared")
 def query_photos_survey(cur, project_id, survey_run):
     # FIXME: prepare this function
     raise NotImplemented("Function needs to be prepared")
