@@ -2,6 +2,7 @@
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
 import json
+from datetime import datetime
 
 def _generator(cur, table, uuid, chunksize=1024):
     """
@@ -351,9 +352,9 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         # strip the host name from the info
         host = cur.fetchone()[0][0].split("=")[-1]
         if survey_run is None:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE project_id={project_id};"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, timestamp from {table[0]} WHERE project_id={project_id};"
         else:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE survey_run='{survey_run}';"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, timestamp from {table[0]} WHERE survey_run='{survey_run}';"
 
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
@@ -362,12 +363,62 @@ def query_photo_names(cur, project_id=None, survey_run=None):
             fns_server[n]["device_uuid"] = host
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
+    # finally add locations to the files
+    # for fn in fns:
+
     return fns
 
+def query_gps(cur, timestamp, before=True):
+    """
+    Query gps table for location closest to provided time stamp, either before or after that time stamp
+    :param cur: cursor
+    :param timestamp: stamp in "%Y-%m-%d %H:%M:%S.%f format in UTC (very important to make sure UTC is always used!)
+    :param before: If set to True, then the location with closest time stamp before the provided time stamp is provided, otherwise the one after
+    :return: msg in dictionary (from json) format
+    """
+    if before:
+        sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts < '{timestamp}' ORDER BY ts DESC FETCH FIRST ROW ONLY;"
+
+    else:
+        sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
+    cur.execute(sql)
+    data = cur.fetchall()
+    if len(data) > 0:
+        return json.loads(data[0][0])
+    else:
+        return None
+
 #
-def query_location(cur, timestamp):
-    # TODO: implement
+def query_location(cur, timestamp, dt_max=2.):
+    msg_before = query_gps(cur, timestamp)
+    msg_after = query_gps(cur, timestamp, before=False)
+    loc = {
+        "lon": None,
+        "lat": None,
+        "alt": None,
+        "epx": None,
+        "epy": None,
+        "epv": None,
+    }
+    if (msg_before is None) or (msg_after is None):
+        # no suitable location found or one location missing return Nones only
+        return loc
+
+    if (msg_before["mode"] < 2) or (msg_after["mode"] < 2):
+        # mode of one of the locations is less than 2D fix, so no reliable position
+        return loc
+
+    ts_before = datetime.strptime(msg_before['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
+    ts_after = datetime.strptime(msg_after['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
+    ts_photo = datetime.strptime(timestamp +'Z', '%Y-%m-%d %H:%M:%S.%f%z')
+    if (abs(ts_before - ts_photo) > dt_max) or (abs(ts_after - ts_photo) > dt_max):
+        # positions have been taken too far apart from each other to be reliable, so return empty
+        return loc
+    # TODO: implement interpolation
+
     raise NotImplemented("Function needs to be prepared")
+
+
 def query_photos_survey(cur, project_id, survey_run):
     # FIXME: prepare this function
     raise NotImplemented("Function needs to be prepared")
