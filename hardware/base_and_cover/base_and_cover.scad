@@ -1,3 +1,15 @@
+make_odm360("top");
+
+module make_odm360(type="top"){
+    if(type=="top") {
+        camera_base_top();
+    }
+    if(type=="bottom"){
+        camera_base_bottom();
+    }
+}
+
+
 // Define dimensions. All in mm
 
 num_cams = 8;
@@ -313,4 +325,4 @@ module camera_base_bottom() {
     }
 }
 
-camera_base_top();
+
