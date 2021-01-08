@@ -411,10 +411,19 @@ def query_location(cur, timestamp, dt_max=2.):
     ts_before = datetime.strptime(msg_before['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
     ts_after = datetime.strptime(msg_after['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
     ts_photo = datetime.strptime(timestamp +'Z', '%Y-%m-%d %H:%M:%S.%f%z')
-    if (abs(ts_before - ts_photo) > dt_max) or (abs(ts_after - ts_photo) > dt_max):
+    dt_before = abs((ts_before - ts_photo).total_seconds())
+    dt_after = abs((ts_after - ts_photo).total_seconds())
+    if (dt_before > dt_max) or (dt_after > dt_max):
         # positions have been taken too far apart from each other to be reliable, so return empty
         return loc
+    weight_before = 1./dt_before
+    weight_after = 1./dt_after
+    # normalize weights
+    weight_before = weight_before/(weight_after + weight_before)
+    weight_after = weight_after/(weight_after + weight_before)
+    # compute position
     # TODO: implement interpolation
+
 
     raise NotImplemented("Function needs to be prepared")
 
