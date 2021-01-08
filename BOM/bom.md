@@ -3,6 +3,7 @@
 * 7x [Raspberry Pi Zero W](https://www.microcenter.com/product/486575/raspberry-pi-zero-w)
 * 8x [Micro USB Cable Cord - A to Up Angle Micro B](https://www.amazon.com/gp/product/B00EANUQ5M/)
 * Optional if power supply is 6S or larger: [VIFLY ShortSaver V2 Smart Smoke Stopper](https://www.viflydrone.com/smokestopper.html) also available at https://www.amazon.com/gp/product/B088TVVNVM/
+* 2x [Car Charger, 12V-24V Multi Ports](https://www.amazon.com/Charger-Adapter-Identification-Multi-Protection-Charging/dp/B0779D7DFG/)
 * https://www.amazon.com/gp/product/B076Q595HJ/
 * https://www.amazon.com/gp/product/B07MZQ9F5K/
 * https://www.amazon.com/gp/product/B00NQ9JX3W/
