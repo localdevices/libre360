@@ -1,0 +1,10 @@
+https://www.amazon.com/Arducam-Degree-Raspberry-Camera-Length/dp/B08GLYR572/
+https://www.microcenter.com/product/621303/raspberry-pi-hq-camera-for-raspberry-pi-4
+https://www.microcenter.com/product/486575/raspberry-pi-zero-w
+https://www.amazon.com/gp/product/B00EANUQ5M/
+https://www.amazon.com/gp/product/B088TVVNVM/
+https://www.amazon.com/gp/product/B076Q595HJ/
+https://www.amazon.com/gp/product/B07MZQ9F5K/
+https://www.amazon.com/gp/product/B00NQ9JX3W/
+https://www.amazon.com/gp/product/B084FS7BWF/
+https://www.microcenter.com/product/609038/raspberry-pi-4-model-b---4gb-ddr4
