@@ -1,11 +1,14 @@
-make_odm360("top");
+make_odm360("nut");
 
 module make_odm360(type="top"){
     if(type=="top") {
         camera_base_top();
     }
-    if(type=="bottom"){
+    else if(type=="bottom"){
         camera_base_bottom();
+    }
+    else if(type=="nut"){
+    nut_whole();
     }
 }
 
@@ -277,31 +280,31 @@ module cover() {
 
 
 module camera_base_top() {
-    mirror([0,1,0]){
-        cover();
-    }
-    rotate([0,180,0]){
-        translate([0,0,-90]){
-            translate([0,0,90]){
-                rotate([0,180,45]){
-                    difference() {
-                        mirror([0,1,0]){
-                            //union(){
-                            camera_base();
-                            //camera_lenses();
-                            //camera_base();
-                            //}
-                        }
-                        translate([0,0,90-2]){
-                            rotate([0,180,0]){
-                                central_post();
+        mirror([0,1,0]){
+            cover();
+        }
+        rotate([0,180,0]){
+            translate([0,0,-90]){
+                translate([0,0,90]){
+                    rotate([0,180,45]){
+                        difference() {
+                            mirror([0,1,0]){
+                                //union(){
+                                camera_base();
+                                //camera_lenses();
+                                //camera_base();
+                                //}
+                            }
+                            translate([0,0,90-2]){
+                                rotate([0,180,0]){
+                                    central_post();
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
 }
 
 module nut_hole(){
@@ -310,6 +313,16 @@ module nut_hole(){
             cylinder(r=25.4/2, h=25.4*3/4, $fn=6);
         }
         sphere(1, $fn=16);
+    }
+}
+
+//includes cylinder that nut hole is in
+module nut_whole(){
+    rotate([0,180,0]){
+        difference(){
+            cylinder(r=20, h=20, $fn = 48);
+            nut_hole();
+        }
     }
 }
 
@@ -324,5 +337,6 @@ module camera_base_bottom() {
         nut_hole();
     }
 }
+
 
 
