@@ -59,7 +59,7 @@ difference(){
     translate([length_cam_case/2 - screw_hole_offset, 
                width_cam_case/2 - screw_hole_offset,-0.1]) {
                    cylinder(r = screw_hole_radius, h = pin, $fn=64);
-                   cylinder(r = nut_diameter/2, h = nut_seat_depth, $fn=6);
+
                }
 
     mirror([1,0,0]) {    
