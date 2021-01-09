@@ -343,7 +343,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
     # query all available foreign table names
     cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id"]
+    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id", "ts"]
     # start with an empty list of files
     fns = []
     for n, table in enumerate(tables):
@@ -362,6 +362,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         fns_server = [dict(zip(cols, d)) for d in data]
         # add the device id
         for n in range(len(fns_server)):
+            fns_server[n]["ts"] = fns_server[n]["ts"].strftime("%Y-%m-%d %H:%M:%S.%f")
             fns_server[n]["device_uuid"] = host
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
@@ -380,13 +381,21 @@ def query_gps_timestamp(cur, timestamp, before=True):
     """
     if before:
         sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts < '{timestamp}' ORDER BY ts DESC FETCH FIRST ROW ONLY;"
-
+        sql_ts = f"SELECT (ts) FROM gps WHERE ts < '{timestamp}' ORDER BY ts DESC FETCH FIRST ROW ONLY;"
     else:
         sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
+        sql_ts = f"SELECT (ts) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
+    # retrieve time stamp
+
     cur.execute(sql)
     data = cur.fetchall()
     if len(data) > 0:
-        return json.loads(data[0][0])
+        loc = json.loads(data[0][0])
+        # also query ts
+        cur.execute(sql_ts)
+        ts = cur.fetchone()[0]
+        print(ts, loc)
+        return ts, loc
     else:
         return None
 
@@ -422,16 +431,10 @@ def query_gps(cur, project_id, as_geojson=True):
 
 
 def query_location(cur, timestamp, dt_max=2.):
-    msg_before = query_gps_timestamp(cur, timestamp)
-    msg_after = query_gps_timestamp(cur, timestamp, before=False)
-    loc = {
-        "lon": None,
-        "lat": None,
-        "alt": None,
-        "epx": None,
-        "epy": None,
-        "epv": None,
-    }
+    ts_before, msg_before = query_gps_timestamp(cur, timestamp)
+    ts_after, msg_after = query_gps_timestamp(cur, timestamp, before=False)
+    keys = ["lon", "lat", "alt", "epx", "epy", "epv"]
+    loc = {k: None for k in keys}
     if (msg_before is None) or (msg_after is None):
         # no suitable location found or one location missing return Nones only
         return loc
@@ -440,9 +443,7 @@ def query_location(cur, timestamp, dt_max=2.):
         # mode of one of the locations is less than 2D fix, so no reliable position
         return loc
 
-    ts_before = datetime.strptime(msg_before['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
-    ts_after = datetime.strptime(msg_after['time'], '%Y-%m-%dT%H:%M:%S.%f%z')
-    ts_photo = datetime.strptime(timestamp +'Z', '%Y-%m-%d %H:%M:%S.%f%z')
+    ts_photo = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
     dt_before = abs((ts_before - ts_photo).total_seconds())
     dt_after = abs((ts_after - ts_photo).total_seconds())
     if (dt_before > dt_max) or (dt_after > dt_max):
@@ -450,14 +451,16 @@ def query_location(cur, timestamp, dt_max=2.):
         return loc
     weight_before = 1./dt_before
     weight_after = 1./dt_after
+    print(weight_before, weight_after)
     # normalize weights
-    weight_before = weight_before/(weight_after + weight_before)
-    weight_after = weight_after/(weight_after + weight_before)
+    weight_sum = weight_before + weight_after
+    weight_before = weight_before/weight_sum
+    weight_after = weight_after/weight_sum
+    print(f"sum of weights: {weight_before + weight_after}")
     # compute position
-    # TODO: implement interpolation
-
-
-    raise NotImplemented("Function needs to be prepared")
+    for k in keys:
+        loc[k] = msg_before[k] * weight_before + msg_after[k] * weight_after
+    return loc
 
 
 def query_photos_survey(cur, project_id, survey_run):
