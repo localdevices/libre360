@@ -40,7 +40,9 @@ photo_uuid uuid
 ,project_id BIGINT
 ,survey_run text NOT NULL
 ,device_uuid uuid NOT NULL
-,device_name text, photo_filename text NOT NULL
+,device_name text 
+,photo_filename text NOT NULL
+,ts TIMESTAMP
 ,photo BYTEA NOT NULL)
 SERVER child_{nr_of_servers} OPTIONS (schema_name 'public', table_name 'photos_child');
 """
@@ -352,9 +354,9 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         # strip the host name from the info
         host = cur.fetchone()[0][0].split("=")[-1]
         if survey_run is None:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, timestamp from {table[0]} WHERE project_id={project_id};"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, ts from {table[0]} WHERE project_id={project_id};"
         else:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, timestamp from {table[0]} WHERE survey_run='{survey_run}';"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, ts from {table[0]} WHERE survey_run='{survey_run}';"
 
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
@@ -368,7 +370,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
 
     return fns
 
-def query_gps(cur, timestamp, before=True):
+def query_gps_timestamp(cur, timestamp, before=True):
     """
     Query gps table for location closest to provided time stamp, either before or after that time stamp
     :param cur: cursor
@@ -388,10 +390,40 @@ def query_gps(cur, timestamp, before=True):
     else:
         return None
 
-#
+def query_gps(cur, project_id, as_geojson=True):
+    """
+    Query only lat and lon locations from database
+
+    """
+    sql = f"SELECT (msg -> 'tpv'->-1->>'lat') FROM gps WHERE project_id={project_id};"
+    cur.execute(sql)
+    data_lat = cur.fetchall()
+    sql = f"SELECT (msg -> 'tpv'->-1->>'lon') FROM gps WHERE project_id={project_id};"
+    cur.execute(sql)
+    data_lon = cur.fetchall()
+    lon_lat = [[x[0], y[0]] for x, y in zip(data_lon, data_lat)]
+    if as_geojson:
+        geojson = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": lon_lat,
+                },
+                "properties": {
+                    "OBJECTID": project_id,
+                }
+            }]
+        }
+        return geojson
+    else:
+        return lon_lat
+
+
 def query_location(cur, timestamp, dt_max=2.):
-    msg_before = query_gps(cur, timestamp)
-    msg_after = query_gps(cur, timestamp, before=False)
+    msg_before = query_gps_timestamp(cur, timestamp)
+    msg_after = query_gps_timestamp(cur, timestamp, before=False)
     loc = {
         "lon": None,
         "lat": None,

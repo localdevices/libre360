@@ -6,6 +6,7 @@ function loadTable()
       });
     });
 }
+
 function fetchdevices(){
     $.getJSON(
         "_cameras",
@@ -137,6 +138,23 @@ $(document).ready(function () {
             map.flyTo(locMark.getLatLng(), 20);
         }
     });
+    // make LineString of currently covered trajectory in project
+    $.getJSON(
+        "_proj_locs",
+        function(data){
+            L.geoJson(data, {
+              style: function(feature) {
+                return {
+                  stroke: true,
+                  color: "red",
+                  weight: 5
+                };
+              },
+            }).addTo(map);
+        }
+    );
+//}
+
 });
 
 /*

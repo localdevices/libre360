@@ -342,6 +342,10 @@ def _surveys():
 
 @app.route("/_cam_summary")
 def cam_summary():
+    """
+    Retrieve current status of cameras and compare against what's needed for the current project
+    This is typically run every couple of seconds
+    """
     cur_project = dbase.query_project_active(cur)
     project = dbase.query_projects(
         cur, project_id=cur_project[0][0], as_dict=True, flatten=True
@@ -369,6 +373,20 @@ def cam_summary():
     }
     return jsonify(cams)
 
+@app.route("/_proj_locs")
+def _proj_locs():
+    """
+    Retrieve project locations. Typically run when the status page is opened or refreshed.
+
+    """
+    with conn.cursor() as cur_locs:
+        cur_project = dbase.query_project_active(cur_locs)
+        project_id = cur_project[0][0]
+        geojson = dbase.query_gps(cur_locs, project_id=project_id)
+
+    return jsonify(geojson)
+
+"_proj_locs"
 
 @app.route("/odm360.zip", methods=["GET"], endpoint="_download")
 def _download():
