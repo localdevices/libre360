@@ -103,7 +103,18 @@ def get_key_state(value):
     else:
         return keys
 
-def parse_geo_txt(fns, proj="EPSG:4326", fn_key="photo_filename", x_key="lon", y_key="lat", z_key="alt", acc_x_key="epx", acc_y_key="epy", acc_z_key="epv"):
+
+def parse_geo_txt(
+    fns,
+    proj="EPSG:4326",
+    fn_key="photo_filename",
+    x_key="lon",
+    y_key="lat",
+    z_key="alt",
+    acc_x_key="epx",
+    acc_y_key="epy",
+    acc_z_key="epv",
+):
 
     """
     prepare a string containing a geo.txt file, ready for use on ODM
@@ -115,7 +126,19 @@ def parse_geo_txt(fns, proj="EPSG:4326", fn_key="photo_filename", x_key="lon", y
     geo += f"{proj}\n"
     for fn in fns:
         # check if all keys are present (i.e. not None)
-        if all([fn[k] is not None for k in [fn_key, x_key, y_key, z_key, acc_x_key, acc_y_key, acc_z_key]]):
+        if all(
+            [
+                fn[k] is not None
+                for k in [fn_key, x_key, y_key, z_key, acc_x_key, acc_y_key, acc_z_key]
+            ]
+        ):
             # parse line, take average of x and y error
-            geo += template(fn[fn_key], fn[x_key], fn[y_key], fn[z_key], (fn[acc_x_key]+fn[acc_y_key])*.5, fn[acc_z_key])
+            geo += template(
+                fn[fn_key],
+                fn[x_key],
+                fn[y_key],
+                fn[z_key],
+                (fn[acc_x_key] + fn[acc_y_key]) * 0.5,
+                fn[acc_z_key],
+            )
     return geo

@@ -4,6 +4,7 @@ from odm360 import utils
 import json
 from datetime import datetime
 
+
 def _generator(cur, table, uuid, chunksize=1024):
     """
     Generator for streaming photos to zip files
@@ -362,7 +363,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
 
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
-        # add the device id
+        # add the device id and other stuff needed
         for n in range(len(fns_server)):
             fns_server[n]["ts"] = fns_server[n]["ts"].strftime("%Y-%m-%d %H:%M:%S.%f")
             loc = query_location(cur, fns_server[n]["ts"])
@@ -374,6 +375,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
     # for fn in fns:
 
     return fns
+
 
 def query_gps_timestamp(cur, timestamp, before=True):
     """
@@ -401,6 +403,7 @@ def query_gps_timestamp(cur, timestamp, before=True):
     else:
         return None
 
+
 def query_gps(cur, project_id, as_geojson=True):
     """
     Query only lat and lon locations from database
@@ -416,23 +419,20 @@ def query_gps(cur, project_id, as_geojson=True):
     if as_geojson:
         geojson = {
             "type": "FeatureCollection",
-            "features": [{
-                "type": "Feature",
-                "geometry": {
-                    "type": "LineString",
-                    "coordinates": lon_lat,
-                },
-                "properties": {
-                    "OBJECTID": project_id,
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "LineString", "coordinates": lon_lat,},
+                    "properties": {"OBJECTID": project_id,},
                 }
-            }]
+            ],
         }
         return geojson
     else:
         return lon_lat
 
 
-def query_location(cur, timestamp, dt_max=2.):
+def query_location(cur, timestamp, dt_max=2.0):
     ts_before, msg_before = query_gps_timestamp(cur, timestamp)
     ts_after, msg_after = query_gps_timestamp(cur, timestamp, before=False)
     keys = ["lon", "lat", "alt", "epx", "epy", "epv"]
@@ -445,18 +445,18 @@ def query_location(cur, timestamp, dt_max=2.):
         # mode of one of the locations is less than 2D fix, so no reliable position
         return loc
 
-    ts_photo = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
+    ts_photo = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
     dt_before = abs((ts_before - ts_photo).total_seconds())
     dt_after = abs((ts_after - ts_photo).total_seconds())
     if (dt_before > dt_max) or (dt_after > dt_max):
         # positions have been taken too far apart from each other to be reliable, so return empty
         return loc
-    weight_before = 1./dt_before
-    weight_after = 1./dt_after
+    weight_before = 1.0 / dt_before
+    weight_after = 1.0 / dt_after
     # normalize weights
     weight_sum = weight_before + weight_after
-    weight_before = weight_before/weight_sum
-    weight_after = weight_after/weight_sum
+    weight_before = weight_before / weight_sum
+    weight_after = weight_after / weight_sum
     # compute position
     for k in keys:
         loc[k] = msg_before[k] * weight_before + msg_after[k] * weight_after

@@ -114,7 +114,10 @@ def status():
                 # insert new active project
                 dbase.insert_project_active(cur_status, int(form["project"]))
                 cur_project = dbase.query_projects(
-                    cur_status, project_id=int(form["project"]), as_dict=True, flatten=True
+                    cur_status,
+                    project_id=int(form["project"]),
+                    as_dict=True,
+                    flatten=True,
                 )
                 logger.info(
                     f"Successfully changed to project - name: {cur_project['project_name']} cams: {int(cur_project['n_cams'])} interval: {int(cur_project['dt'])} secs.'"
@@ -149,7 +152,6 @@ def status():
                 dbase.update_project_active(
                     cur_status, states["ready"]
                 )  # status 1 means auto_start cameras once they are all online
-
 
         # first check what projects already exist and list those in the status page as selectors
         projects = dbase.query_projects(cur_status)
@@ -372,6 +374,7 @@ def cam_summary():
     }
     return jsonify(cams)
 
+
 @app.route("/_proj_locs")
 def _proj_locs():
     """
@@ -385,7 +388,9 @@ def _proj_locs():
 
     return jsonify(geojson)
 
+
 "_proj_locs"
+
 
 @app.route("/odm360.zip", methods=["GET"], endpoint="_download")
 def _download():
@@ -393,6 +398,7 @@ def _download():
     # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
     # zip file
     """
+
     def generator(cur, fns):
         """
         generator for zip archive
@@ -404,7 +410,7 @@ def _download():
         )
         # first make a geo.txt file
         geo = parse_geo_txt(fns)
-        z.writestr('geo.txt', geo.encode())
+        z.writestr("geo.txt", geo.encode())
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],

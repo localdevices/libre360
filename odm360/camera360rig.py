@@ -9,6 +9,7 @@ import odm360.camera360rig as camrig
 from threading import Thread
 
 import gpsd
+
 try:
     gpsd.connect()
 except:
@@ -121,7 +122,7 @@ def get_task(cur, state):
     return {"task": "wait", "kwargs": {}}
 
 
-def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.):
+def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.0):
     """
     Dedicated gps log function, logging to database. The function stops as soon as the rig stops capturing
     :param conn: psycopg2.connect, connection to database
