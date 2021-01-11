@@ -109,22 +109,8 @@ def get_task(cur, state):
             task = getattr(camrig, task_name)
             # execute task
             return task(cur, state)
-            # if (device_status == "idle") and (rig_status == "ready"):
-            #     # initialize the camera
-            #     logger.info("Sending camera initialization ")
-            #     return {"task": "init", "kwargs": {}}
-            # elif (device_status == "ready") and (rig_status == "capture"):
-            #     return activate_camera(cur, state)
-            #
-            # elif (device_status == "capture") and (rig_status == "ready"):
-            #     return {"task": "stop", "kwargs": {}}
-            #
-            # elif (device_status == "ready") and (rig_status == "stream"):
-            #     return activate_camera(cur, state)
-
             # camera is already capturing, so just wait for further instructions (stop)
     return {"task": "wait", "kwargs": {}}
-
 
 def post_log(cur, state, msg, level="info"):
     """
@@ -173,11 +159,13 @@ def task_ready_to_capture(cur, state):
         )  # this number is send to the child to start capturing
         start_datetime = datetime.datetime.fromtimestamp(start_time_epoch)
         start_datetime_utc = utils.to_utc(start_datetime)
-
+        survey_run = start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")
         # set start time for capturing, and set state to capture
         dbase.update_project_active(
             cur, status=states["capture"], start_time=start_datetime_utc
         )
+        # add survey_run to surveys table
+        dbase.insert_survey(cur, project_id=cur_project["project_id"], survey_run=survey_run)
         logger.debug(
             f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}'
         )
@@ -186,7 +174,7 @@ def task_ready_to_capture(cur, state):
             "task": "capture_continuous",
             "kwargs": {
                 "start_time": start_time_epoch,
-                "survey_run": start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S"),
+                "survey_run": survey_run,
                 "project": project,
             },
         }

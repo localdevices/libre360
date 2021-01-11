@@ -4,7 +4,9 @@ CREATE EXTENSION IF NOT EXISTS postgres_fdw;
 -- drop any tables if they exist
 DROP TABLE IF EXISTS project_active CASCADE;
 DROP TABLE IF EXISTS devices CASCADE;
-DROP TABLE IF EXISTS photos CASCADE;
+DROP TABLE IF EXISTS surveys CASCADE;
+
+--DROP TABLE IF EXISTS photos CASCADE;
 DROP TABLE IF EXISTS projects;
 
 -- create projects table (independent)
@@ -17,23 +19,33 @@ CREATE TABLE IF NOT EXISTS projects
     ,PRIMARY KEY(project_id)
     -- just to keep constraints to the end of the table creation process,we call out the primary key separately
 );
--- create photos table (dependent on projects)
-CREATE TABLE IF NOT EXISTS photos
+
+CREATE TABLE IF NOT EXISTS surveys
 (
-    photo_uuid uuid DEFAULT uuid_generate_v4 ()
+    survey_run text
     ,project_id INT
-    ,survey_run text NOT NULL
-    ,device_name text NOT NULL
-    ,photo_filename text NOT NULL
-    ,photo BYTEA
-    ,thumbnail BYTEA
-    ,device_uuid uuid
-    ,PRIMARY KEY(photo_uuid)
     ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
         FOREIGN KEY(project_id)
             REFERENCES projects(project_id)
         ON DELETE CASCADE
 );
+-- create photos table (dependent on projects)
+--CREATE TABLE IF NOT EXISTS photos
+--(
+--    photo_uuid uuid DEFAULT uuid_generate_v4 ()
+--    ,project_id INT
+--    ,survey_run text NOT NULL
+--    ,device_name text NOT NULL
+--    ,photo_filename text NOT NULL
+--    ,photo BYTEA
+--    ,thumbnail BYTEA
+--    ,device_uuid uuid
+--    ,PRIMARY KEY(photo_uuid)
+--    ,CONSTRAINT fk_project -- add foreign key constraint referencing the project ID
+--        FOREIGN KEY(project_id)
+--            REFERENCES projects(project_id)
+--        ON DELETE CASCADE
+--);
 
 -- Create a table for just the project that is currently active, only holding the project_id, status and start time
 -- for image capturing
@@ -57,14 +69,15 @@ device_uuid uuid  -- GENERATED ALWAYS AS IDENTITY
 ,req_time double precision
 ,last_photo uuid
 ,PRIMARY KEY(device_uuid)
-,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
-        FOREIGN KEY(last_photo)
-        REFERENCES photos(photo_uuid)
-    ON DELETE CASCADE
+--,CONSTRAINT fk_photo -- add foreign key constraint referencing the project ID
+--        FOREIGN KEY(last_photo)
+--        REFERENCES photos(photo_uuid)
+--    ON DELETE CASCADE
 );
 
 ALTER TABLE projects OWNER TO odm360;
-ALTER TABLE photos OWNER TO odm360;
+ALTER TABLE surveys OWNER TO odm360;
+--ALTER TABLE photos OWNER TO odm360;
 ALTER TABLE project_active OWNER TO odm360;
 ALTER TABLE devices OWNER TO odm360;
 
