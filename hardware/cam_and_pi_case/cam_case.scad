@@ -5,9 +5,9 @@ thickness = 2;
 screw_hole_radius = 1.25;
 screw_hole_offset = 3.5;
 pad_height = 6;
-nut_diameter = 6.2;
+nut_diameter = 6;
 nut_seat_depth = 4.2;
-pad_diameter = 3 + nut_diameter;
+pad_diameter = 1 + nut_diameter;
 
 // Don't touch
 pin = pad_height * 2 + 2;
