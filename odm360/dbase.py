@@ -186,14 +186,16 @@ def insert_photo(
     fn,
 ):
     """
-    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
+    Insert a photo into the photos table.
     :param cur: cursor
-    :param project_id: int - project id
-    :param survey_run: string - id of survey within project
-    :param device_uuid: uuid - id of device
-    :param fn: string - filename
-    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
-    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
+    :param photo_uuid: uuid4 str, uuid of photo
+    :param project_id: int, project id
+    :param survey_run: string, id of survey within project
+    :param device_uuid: uuid, id of device
+    :param device_name: str, name of device
+    :param photo_filename: str, total file path of photo
+    :param timestamp: datetime, time stamp of photo
+    :param fn: physical file containing photo (can be temporary)
     :return:
     """
     # occurs when parent-side storage is done, no binary data is stored
@@ -363,6 +365,8 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         # add the device id
         for n in range(len(fns_server)):
             fns_server[n]["ts"] = fns_server[n]["ts"].strftime("%Y-%m-%d %H:%M:%S.%f")
+            loc = query_location(cur, fns_server[n]["ts"])
+            fns_server[n].update(loc)
             fns_server[n]["device_uuid"] = host
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
@@ -386,7 +390,6 @@ def query_gps_timestamp(cur, timestamp, before=True):
         sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
         sql_ts = f"SELECT (ts) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
     # retrieve time stamp
-
     cur.execute(sql)
     data = cur.fetchall()
     if len(data) > 0:
@@ -394,7 +397,6 @@ def query_gps_timestamp(cur, timestamp, before=True):
         # also query ts
         cur.execute(sql_ts)
         ts = cur.fetchone()[0]
-        print(ts, loc)
         return ts, loc
     else:
         return None
@@ -451,21 +453,14 @@ def query_location(cur, timestamp, dt_max=2.):
         return loc
     weight_before = 1./dt_before
     weight_after = 1./dt_after
-    print(weight_before, weight_after)
     # normalize weights
     weight_sum = weight_before + weight_after
     weight_before = weight_before/weight_sum
     weight_after = weight_after/weight_sum
-    print(f"sum of weights: {weight_before + weight_after}")
     # compute position
     for k in keys:
         loc[k] = msg_before[k] * weight_before + msg_after[k] * weight_after
     return loc
-
-
-def query_photos_survey(cur, project_id, survey_run):
-    # FIXME: prepare this function
-    raise NotImplemented("Function needs to be prepared")
 
 
 def query_projects(
