@@ -183,7 +183,7 @@ def task_ready_to_capture(cur, state):
         cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
     )
     dt = int(project["dt"])
-    cur_address = request.remote_addr  # TODO: also add uuid of device
+    cur_address = request.remote_addr
     # check how many cams have the state 'ready', only start when the full rig is ready
     n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
 
@@ -253,7 +253,7 @@ def task_ready_to_stream(cur, state):
         cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
     )
 
-    cur_address = request.remote_addr  # TODO: also add uuid of device
+    cur_address = request.remote_addr
     # check how many cams have the state 'ready', only start when the full rig is ready
     n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
 

@@ -22,7 +22,7 @@ from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
-from odm360.utils import cleanopts, get_key_state
+from odm360.utils import cleanopts, get_key_state, parse_geo_txt
 
 
 def _check_offline(conn, max_idle=60):
@@ -267,7 +267,6 @@ def file_page():
     project_ids = [p[0] for p in projects]
     project_names = [p[1] for p in projects]
     projects = zip(project_ids, project_names)
-
     return render_template("file_page.html", projects=projects)
 
 
@@ -394,18 +393,6 @@ def _download():
     # download works with a streeaming zip archive: all files listed are queued first, and then streamed to a end-user
     # zip file
     """
-    # select the last row of the 'tpv' property of a single record in database
-    # SELECT (msg -> 'tpv'->>-1) FROM gps WHERE msg ->> 'time' = '2020-12-29T09:10:53.232Z';
-    # select gps-time from all records
-    # SELECT (msg -> 'tpv'->-1->>'time') FROM gps;
-    # parse dates from gps positions
-    # dt = datetime.datetime.strptime(t, '%Y-%m-%dT%H:%M:%S.%f%z')
-    # get first row of results from time comparison
-    # SELECT (ts) FROM gps WHERE ts >= '2021-01-04 15:27:28.350' FETCH FIRST ROW ONLY;
-    # get last row only ...
-    # SELECT (ts) FROM gps WHERE ts >= '2021-01-04 15:27:28.350' ORDER BY ts DESC FETCH FIRST ROW ONLY;
-
-
     def generator(cur, fns):
         """
         generator for zip archive
@@ -415,6 +402,9 @@ def _download():
         z = zipstream.ZipFile(
             mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
         )
+        # first make a geo.txt file
+        geo = parse_geo_txt(fns)
+        z.writestr('geo.txt', geo.encode())
         for fn in fns:
             z.write_iter(
                 fn["photo_filename"],
@@ -426,6 +416,9 @@ def _download():
     # retrieve arguments (stringified json)
     args = cleanopts(request.args)
     fns = json.loads(args["photos"])
+    # change filename so that ODM can handle them
+    for n in range(len(fns)):
+        fns[n]["photo_filename"] = fns[n]["photo_filename"].replace("/", "_")
     # open a dedicated connection for the download
     cur_download = conn.cursor()
     response = Response(generator(cur_download, fns), mimetype="application/zip")
@@ -475,11 +468,6 @@ def _delete():
             dbase.delete_project(cur_delete, project_id=project_id)
 
     logger.info("Delete is done")
-
-    # response = Response(generator(cur_download), mimetype="application/zip")
-    # response.headers["Content-Disposition"] = "attachment; filename={}".format(
-    #     "odm360.zip"
-    # )
     return make_response(jsonify("Files successfully deleted", 200))
 
 
