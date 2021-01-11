@@ -9,8 +9,8 @@ length_cam_case = 37;
 width_cam_case = 37;
 offset_distance = 0;
 offset_hole_distance = offset_distance + length_cam_case / 2;
-nut_diameter = 4.82;
-nut_seat_depth = 3;
+nut_diameter = 6.2;
+nut_seat_depth = 4.2;
 pad_diameter = 3 + nut_diameter;
 
 // Don't touch

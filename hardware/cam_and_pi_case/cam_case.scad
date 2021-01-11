@@ -5,8 +5,8 @@ thickness = 2;
 screw_hole_radius = 1.25;
 screw_hole_offset = 3.5;
 pad_height = 6;
-nut_diameter = 4.82;
-nut_seat_depth = 3;
+nut_diameter = 6.2;
+nut_seat_depth = 4.2;
 pad_diameter = 3 + nut_diameter;
 
 // Don't touch
@@ -59,6 +59,7 @@ difference(){
     translate([length_cam_case/2 - screw_hole_offset, 
                width_cam_case/2 - screw_hole_offset,-0.1]) {
                    cylinder(r = screw_hole_radius, h = pin, $fn=64);
+                   cylinder(r = nut_diameter/2, h = nut_seat_depth, $fn=6);
 
                }
 
