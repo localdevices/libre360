@@ -401,7 +401,7 @@ def query_gps_timestamp(cur, timestamp, before=True):
         ts = cur.fetchone()[0]
         return ts, loc
     else:
-        return None
+        return None, None
 
 
 def query_gps(cur, project_id, as_geojson=True):
