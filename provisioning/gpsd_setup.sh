@@ -24,5 +24,6 @@ echo Setting up pps-gpio module
 echo pps-gpio | sudo tee -a /etc/modules
 
 echo Enabling the GPSD service
-sudo systemctl enable gpsd
+sudo systemctl enable gpsd.socket
+sudo systemctl enable gpsd.service
 
