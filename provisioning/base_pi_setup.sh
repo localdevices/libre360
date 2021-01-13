@@ -73,7 +73,7 @@ sleep 5
 sudo apt install -y vim >> provisioning/setup.log 2>> provisioning/error.log
 
 echo Installing requirements from setup.py using pip
-pip3 install -e . >> provisioning/setup.log 2>> provisioning/error.log
+sudo pip3 install -e . >> provisioning/setup.log 2>> provisioning/error.log
 
 echo Installing requirements for mDNS: allows for distributed name resolution.
 echo This is super useful for finding child pis based on domain name
