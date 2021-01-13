@@ -149,7 +149,6 @@ def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.0):
         dbase.insert_gps(
             cur, project_id=project_id, survey_run=survey_run, timestamp=ts, msg=raw
         )
-        print(raw)
         time.sleep(sleep)
 
 
