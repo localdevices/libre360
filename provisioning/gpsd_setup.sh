@@ -1,7 +1,16 @@
 #!/bin/bash
 
 echo Installing GPSD
-sudo apt install -y gpsd gpsd-clients pps-tools
+echo Adding repository to sources.list with latest version of gpsd
+echo $'\n# buster backports\ndeb http://deb.debian.org/debian buster-backports main' | sudo tee -a /etc/apt/sources.list
+
+# get the required repository keys
+sudo wget -qO - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x04EE7237B7D453EC' | sudo apt-key add -
+sudo wget -qO - 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x648ACFD622F3D138' | sudo apt-key add -
+sudo apt update
+
+echo $'\n# Enable UART\nenable_uart=1' | sudo tee -a /boot/config.txt
+sudo apt install -y -t buster-backports gpsd gpsd-clients pps-tools
 
 # echo Setting GPSD to listen to the GNSS on the serial port instead of USB
 # sudo sed -i 's/USBAUTO="true"/USBAUTO="false"/g' /etc/default/gpsd
