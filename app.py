@@ -310,21 +310,24 @@ def cameras():
 
 @app.route("/_files", methods=["GET", "POST"])
 def _files():
-    args = cleanopts(request.args)
-    with conn.cursor() as cur_files:
-        # first query the relevant project
-        project = dbase.query_projects(
-            cur_files, project_id=args["project_id"], as_dict=True, flatten=True
-        )
-        # check what the survey_run id is
-        if args["survey_run"] == "all":
-            survey_run = None
-        else:
-            survey_run = args["survey_run"].upper()
-        fns = dbase.query_photo_names(
-            cur_files, project_id=project["project_id"], survey_run=survey_run
-        )
-    return jsonify(fns)
+    try:
+        args = cleanopts(request.args)
+        with conn.cursor() as cur_files:
+            # first query the relevant project
+            project = dbase.query_projects(
+                cur_files, project_id=args["project_id"], as_dict=True, flatten=True
+            )
+            # check what the survey_run id is
+            if args["survey_run"] == "all":
+                survey_run = None
+            else:
+                survey_run = args["survey_run"].upper()
+            fns = dbase.query_photo_names(
+                cur_files, project_id=project["project_id"], survey_run=survey_run
+            )
+        return jsonify(fns)
+    except BaseException as e:
+        logger.error(f"{_files} failed with error {e}")
 
 
 @app.route("/_surveys", methods=["GET", "POST"])
