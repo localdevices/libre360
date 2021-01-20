@@ -9,3 +9,4 @@
 - [ ] A pile of [Stainless Steel Countersunk Hex Socket Knurled Bolt M2.5x5mm](https://www.amazon.com/gp/product/B00NQ9JX3W/)
 - [ ] 1x [Cudy WU1300S AC 1300Mbps WiFi USB 3.0 Adapter or similar adapter](https://www.amazon.com/gp/product/B084FS7BWF/)
 - [ ] 2x [Raspberry Pi 4](https://www.microcenter.com/product/609038/raspberry-pi-4-model-b---4gb-ddr4)
+- [ ] 8x MicroSD cards (16GB or larger)
