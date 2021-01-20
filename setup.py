@@ -38,6 +38,7 @@ setup(
         "Bootstrap-Flask",
         "psycopg2",
         "uwsgi",
+        "gpsd-py3",
     ],
     extras_require={"dev": ["pytest", "pytest-cov", "black"], "optional": [],},
     scripts=["bin/odm360"],

@@ -35,11 +35,11 @@
   </main>
     <footer style="flex-grow: 0; display: block;"></footer>
       <div class="container text-center bg-light">
-        <span class="text-muted small">Lat: </span>
-        <span class="text-muted small">Lon: </span>
-        <span class="text-muted small">Z: </span>
-        <span class="text-muted small">Fix: </span>
-        <span class="text-muted small">S: </span>
+        <span class="text-muted small">Lat: </span><span class="text-muted small" id="lat">-</span>
+        <span class="text-muted small">Lon: </span><span class="text-muted small" id="lon">-</span>
+        <span class="text-muted small">Z: </span><span class="text-muted small" id="alt">-</span>
+        <span class="text-muted small">Fix: </span><span class="text-muted small" id="mode">-</span>
+        <span class="text-muted small">S: </span><span class="text-muted small" id="sats">-</span>
         <span class="text-muted small">PDOP: </span>
         <span class="text-muted small"> | </span>
         <span class="text-muted small">O: </span><span class="text-muted small" id="cam_total">-</span><span class="text-muted small">/</span><span class="text-muted small" id="cam_required1">-</span>
@@ -56,6 +56,11 @@
     function get_cam_sum() {
         $.getJSON("_cam_summary",
                 function (data) {
+                    $('#lat').text(data.lat.toFixed(6));
+                    $('#lon').text(data.lon.toFixed(6));
+                    $('#alt').text(data.alt.toFixed(3));
+                    $('#mode').text(data.mode);
+                    $('#sats').text(data.sats);
                     $('#cam_ready').text(data.ready);
                     $('#cam_total').text(data.total);
                     $('#cam_capture').text(data.total-data.ready);
@@ -67,7 +72,7 @@
                 }
         );
     }
-    setInterval('get_cam_sum()', 1000);
+    setInterval('get_cam_sum()', 2000);
     </script>
 
     {% endblock %}

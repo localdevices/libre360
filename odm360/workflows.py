@@ -14,6 +14,7 @@ from odm360.camera360serial import Camera360Serial
 from odm360.serial_device import SerialDevice
 from odm360.utils import find_serial, get_lan_ip, get_lan_devices
 
+
 def parent_gphoto2(dt, root=".", timeout=1, logger=logger, debug=False):
     """
 
@@ -159,7 +160,7 @@ def child_tcp_ip(
                                     debug=debug,
                                     host=host,
                                     port=port,
-                                    )  # start without any project info, **msg['project'])
+                                )  # start without any project info, **msg['project'])
                             except:
                                 raise IOError(
                                     "There was a problem setting up the picamera. Check if you have enough GPU memory allocated, and the picamera interface opened."

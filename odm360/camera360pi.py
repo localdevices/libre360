@@ -6,7 +6,6 @@ import requests
 import psycopg2
 import uuid
 import subprocess
-from threading import Thread
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -14,7 +13,7 @@ from datetime import datetime
 # import odm360 methods and functions
 from odm360.timer import RepeatedTimer
 from odm360 import dbase
-# connect to child database
+
 # connect to child database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
@@ -120,12 +119,13 @@ class Camera360Pi(PiCamera):
     def capture(self, timeout=1.0, cur=cur):
         root_dir = "/home/pi/piimages"
         photo_uuid = uuid.uuid4()
-        photo_prefix = f'{photo_uuid}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        photo_prefix = f'{datetime.now().strftime("%Y%m%d_%H%M%S")}'
         photo_filename = f"{self._device_uuid}/{self._project_id}/{self._survey_run}/{photo_prefix}.jpg"
         target = os.path.join(root_dir, "tmp.jpg")
         # capture to local file
         self.logger.info(f"Writing to {target}")
         # prepare kwargs for database insertion
+        tic = time.time()
         kwargs = {
             "photo_uuid": photo_uuid,
             "project_id": self._project_id,
@@ -133,9 +133,9 @@ class Camera360Pi(PiCamera):
             "device_uuid": self._device_uuid,
             "device_name": self._device_name,
             "photo_filename": photo_filename,
+            "timestamp": datetime.utcfromtimestamp(time.time()),
             "fn": target,
         }
-        tic = time.time()
         if not (self.debug):
             super().capture(target, "jpeg")
         # # store details about photo in database

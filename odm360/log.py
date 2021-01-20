@@ -59,7 +59,11 @@ def start_logger(verbose, quiet, name="odm360"):
     else:
         quiet = 0
     log_level = max(10, 30 - 10 * (verbose - quiet))
-    logger = setuplog(name, f"{name}.log", log_level=log_level)
+    try:
+        logger = setuplog(name, f"/var/log/{name}.log", log_level=log_level)
+    except:
+        # if user cannot write to /var/log, write a local file instead
+        logger = setuplog(name, f"{name}.log", log_level=log_level)
     logger.info("starting...")
     return logger
 

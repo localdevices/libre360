@@ -1,8 +1,9 @@
-import psycopg2
-
 # This file contains all database interactions
 # to not jeopardize Ivan's health, we use functions rather than classes to approach our database
 from odm360 import utils
+import json
+from datetime import datetime
+
 
 def _generator(cur, table, uuid, chunksize=1024):
     """
@@ -40,7 +41,9 @@ photo_uuid uuid
 ,project_id BIGINT
 ,survey_run text NOT NULL
 ,device_uuid uuid NOT NULL
-,device_name text, photo_filename text NOT NULL
+,device_name text 
+,photo_filename text NOT NULL
+,ts TIMESTAMP
 ,photo BYTEA NOT NULL)
 SERVER child_{nr_of_servers} OPTIONS (schema_name 'public', table_name 'photos_child');
 """
@@ -75,6 +78,7 @@ def delete_project(cur, project_name=None, project_id=None):
 
     cur.execute(sql_command)
     cur.connection.commit()
+
 
 def delete_server(cur, device_uuid):
     srvoptions = f"host={device_uuid},port=5432,dbname=odm360"
@@ -154,6 +158,11 @@ def insert_device(cur, device_uuid, device_name, status, req_time):
     insert(cur, sql_command)
 
 
+def insert_gps(cur, project_id, survey_run, timestamp, msg):
+    sql_command = f"INSERT INTO gps(project_id, survey_run, ts, msg) VALUES ({project_id}, '{survey_run}', '{timestamp}', '{msg}');"
+    insert(cur, sql_command)
+
+
 def insert_survey(cur, project_id, survey_run):
     """
     insert a new device in table (leave out last_photo since it is not available yet).
@@ -174,20 +183,24 @@ def insert_photo(
     device_uuid,
     device_name,
     photo_filename,
+    timestamp,
     fn,
 ):
     """
-    Insert a photo into the photos table. TODO: fix the blob conversion, now a numpy object is assumed
+    Insert a photo into the photos table.
     :param cur: cursor
-    :param project_id: int - project id
-    :param survey_run: string - id of survey within project
-    :param device_uuid: uuid - id of device
-    :param fn: string - filename
-    :param photo: bytes - content of photo TODO: check how photos are returned and revise if needed
-    :param thumb: bytes - content of thumbnail TODO: check how thumbnails are returned and revise if needed
+    :param photo_uuid: uuid4 str, uuid of photo
+    :param project_id: int, project id
+    :param survey_run: string, id of survey within project
+    :param device_uuid: uuid, id of device
+    :param device_name: str, name of device
+    :param photo_filename: str, total file path of photo
+    :param timestamp: datetime, time stamp of photo
+    :param fn: physical file containing photo (can be temporary)
     :return:
     """
     # occurs when parent-side storage is done, no binary data is stored
+    ts = timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
     sql_command = f"""
     INSERT INTO photos_child
     (
@@ -197,6 +210,7 @@ def insert_photo(
     ,device_uuid
     ,device_name
     ,photo_filename
+    ,ts
     ,photo
     ) SELECT
     '{photo_uuid}'
@@ -205,6 +219,7 @@ def insert_photo(
     , '{device_uuid}'
     , '{device_name}'
     , '{photo_filename}'
+    , '{ts}'
     , pg_read_binary_file('{fn}')
     ;"""
     insert(cur, sql_command)
@@ -277,7 +292,9 @@ def make_dict_devices(cur):
             "device_uuid": d[0],
             "device_name": d[1],
             "status": utils.get_key_state(int(d[2])),
-            "device_stream": f'<a href="http://{d[0]}.local:8554/stream">http://{d[0]}.local:8554/stream</a>' if utils.get_key_state(int(d[2])) == "stream" else "",
+            "device_stream": f'<a href="http://{d[0]}.local:8554/stream">http://{d[0]}.local:8554/stream</a>'
+            if utils.get_key_state(int(d[2])) == "stream"
+            else "",
             "last_photo": d[
                 3
             ],  # TODO: currently last_photo is the last moment device was online. Change to last_photo once database structure is entirely clear.
@@ -329,7 +346,7 @@ def query_photo_names(cur, project_id=None, survey_run=None):
     # query all available foreign table names
     cur.execute("select foreign_table_name from information_schema.foreign_tables")
     tables = cur.fetchall()
-    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id"]
+    cols = ["photo_filename", "photo_uuid", "survey_run", "project_id", "ts"]
     # start with an empty list of files
     fns = []
     for n, table in enumerate(tables):
@@ -340,23 +357,110 @@ def query_photo_names(cur, project_id=None, survey_run=None):
         # strip the host name from the info
         host = cur.fetchone()[0][0].split("=")[-1]
         if survey_run is None:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE project_id={project_id};"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, ts from {table[0]} WHERE project_id={project_id};"
         else:
-            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id from {table[0]} WHERE survey_run='{survey_run}';"
+            sql_command = f"SELECT photo_filename, photo_uuid, survey_run, project_id, ts from {table[0]} WHERE survey_run='{survey_run}';"
 
         data = query_table(cur, sql_command, table_name=table[0])
         fns_server = [dict(zip(cols, d)) for d in data]
-        # add the device id
+        # add the device id and other stuff needed
         for n in range(len(fns_server)):
+            fns_server[n]["ts"] = fns_server[n]["ts"].strftime("%Y-%m-%d %H:%M:%S.%f")
+            loc = query_location(cur, fns_server[n]["ts"])
+            fns_server[n].update(loc)
             fns_server[n]["device_uuid"] = host
             fns_server[n]["srvname"] = table[0]
         fns += fns_server
+    # finally add locations to the files
+    # for fn in fns:
+
     return fns
 
 
-def query_photos_survey(cur, project_id, survey_run):
-    # FIXME: prepare this function
-    raise NotImplemented("Function needs to be prepared")
+def query_gps_timestamp(cur, timestamp, before=True):
+    """
+    Query gps table for location closest to provided time stamp, either before or after that time stamp
+    :param cur: cursor
+    :param timestamp: stamp in "%Y-%m-%d %H:%M:%S.%f format in UTC (very important to make sure UTC is always used!)
+    :param before: If set to True, then the location with closest time stamp before the provided time stamp is provided, otherwise the one after
+    :return: msg in dictionary (from json) format
+    """
+    if before:
+        sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts < '{timestamp}' ORDER BY ts DESC FETCH FIRST ROW ONLY;"
+        sql_ts = f"SELECT (ts) FROM gps WHERE ts < '{timestamp}' ORDER BY ts DESC FETCH FIRST ROW ONLY;"
+    else:
+        sql = f"SELECT (msg -> 'tpv'->> -1) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
+        sql_ts = f"SELECT (ts) FROM gps WHERE ts >= '{timestamp}' FETCH FIRST ROW ONLY;"
+    # retrieve time stamp
+    cur.execute(sql)
+    data = cur.fetchall()
+    if len(data) > 0:
+        loc = json.loads(data[0][0])
+        # also query ts
+        cur.execute(sql_ts)
+        ts = cur.fetchone()[0]
+        return ts, loc
+    else:
+        return None, None
+
+
+def query_gps(cur, project_id, as_geojson=True):
+    """
+    Query only lat and lon locations from database
+
+    """
+    sql = f"SELECT (msg -> 'tpv'->-1->>'lat') FROM gps WHERE project_id={project_id};"
+    cur.execute(sql)
+    data_lat = cur.fetchall()
+    sql = f"SELECT (msg -> 'tpv'->-1->>'lon') FROM gps WHERE project_id={project_id};"
+    cur.execute(sql)
+    data_lon = cur.fetchall()
+    lon_lat = [[x[0], y[0]] for x, y in zip(data_lon, data_lat)]
+    if as_geojson:
+        geojson = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {"type": "LineString", "coordinates": lon_lat,},
+                    "properties": {"OBJECTID": project_id,},
+                }
+            ],
+        }
+        return geojson
+    else:
+        return lon_lat
+
+
+def query_location(cur, timestamp, dt_max=2.0):
+    ts_before, msg_before = query_gps_timestamp(cur, timestamp)
+    ts_after, msg_after = query_gps_timestamp(cur, timestamp, before=False)
+    keys = ["lon", "lat", "alt", "epx", "epy", "epv"]
+    loc = {k: None for k in keys}
+    if (msg_before is None) or (msg_after is None):
+        # no suitable location found or one location missing return Nones only
+        return loc
+
+    if (msg_before["mode"] < 2) or (msg_after["mode"] < 2):
+        # mode of one of the locations is less than 2D fix, so no reliable position
+        return loc
+
+    ts_photo = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    dt_before = abs((ts_before - ts_photo).total_seconds())
+    dt_after = abs((ts_after - ts_photo).total_seconds())
+    if (dt_before > dt_max) or (dt_after > dt_max):
+        # positions have been taken too far apart from each other to be reliable, so return empty
+        return loc
+    weight_before = 1.0 / dt_before
+    weight_after = 1.0 / dt_after
+    # normalize weights
+    weight_sum = weight_before + weight_after
+    weight_before = weight_before / weight_sum
+    weight_after = weight_after / weight_sum
+    # compute position
+    for k in keys:
+        loc[k] = msg_before[k] * weight_before + msg_after[k] * weight_after
+    return loc
 
 
 def query_projects(
@@ -378,12 +482,14 @@ def query_projects(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
 
+
 def query_surveys(cur, project_id, as_dict=False, flatten=False):
     table_name = "surveys"
     sql_command = f"SELECT * FROM {table_name} WHERE project_id={project_id}"
     return query_table(
         cur, sql_command, table_name=table_name, as_dict=as_dict, flatten=flatten
     )
+
 
 def query_project_active(cur, as_dict=False):
     """

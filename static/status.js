@@ -1,3 +1,4 @@
+var locMark;
 function loadTable()
 {
     $(function () {
@@ -5,6 +6,7 @@ function loadTable()
       });
     });
 }
+
 function fetchdevices(){
     $.getJSON(
         "_cameras",
@@ -22,7 +24,7 @@ function fetchdevices(){
         console.log("Not enough cameras online, disabling Play button")
         document.getElementById("play-btn").disabled = true
     }
-
+    locMark.setLatLng({lng: cam_summary["lon"], lat: cam_summary["lat"]});
 }
 
 loadTable();
@@ -32,22 +34,6 @@ jQuery(function() {
         this.form.submit();
     });
 });
-//jQuery(function() {
-//    jQuery('#play-btn').click(function() {
-//        console.log("Starting preview stream")
-////        this.form.submit();
-//        document.getElementById("play-btn").disabled = true
-//        document.getElementById("stop-btn").disabled = false
-//    });
-//});
-//jQuery(function() {
-//    jQuery('#stop-btn').click(function() {
-//        console.log("Stopping preview stream")
-//        this.form.submit();
-//    });
-//});
-
-
 /*
 lastBaseMsg = new Object();
 numOfRepetition = 0;
@@ -94,7 +80,8 @@ $(document).ready(function () {
     updateCoordinateGrid(msg_status)
 
     // ####################### MAP ####################################################
-
+*/
+$(document).ready(function () {
 
     var map = L.map('map').setView({lon: 0, lat: 0}, 2);
 
@@ -106,26 +93,26 @@ $(document).ready(function () {
 
     });
 
-    if (maptiler_key.length > 0) {
-    var aerialLayer = L.tileLayer('https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=' + maptiler_key,{
-        tileSize: 512,
-        zoomOffset: -1,
-        minZoom: 1,
-        maxZoom: 20,
-        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
-        crossOrigin: true
-      });
-    };
+//    if (maptiler_key.length > 0) {
+//    var aerialLayer = L.tileLayer('https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=' + maptiler_key,{
+//        tileSize: 512,
+//        zoomOffset: -1,
+//        minZoom: 1,
+//        maxZoom: 20,
+//        attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
+//        crossOrigin: true
+//      });
+//    };
 
     var baseMaps = {
         "OpenStreetMap": osmLayer
     };
 
-    if (typeof(aerialLayer) !== 'undefined') {
-        baseMaps["Aerial_Hybrid"] = aerialLayer;
-    };
-    console.log("basemap après if" + baseMaps);
-    console.log
+//    if (typeof(aerialLayer) !== 'undefined') {
+//        baseMaps["Aerial_Hybrid"] = aerialLayer;
+//    };
+//    console.log("basemap après if" + baseMaps);
+//    console.log
     L.control.layers(baseMaps).addTo(map);
     osmLayer.addTo(map);
 
@@ -138,10 +125,10 @@ $(document).ready(function () {
 
 
     //the baseCoordinates variable comes from status.html
-    var baseMark = L.marker(baseCoordinates, {icon: crossIcon, zIndexOffset: 0}).addTo(map);
+//    var baseMark = L.marker(baseCoordinates, {icon: crossIcon, zIndexOffset: 0}).addTo(map);
 
     // Add realtime localisation marker
-    var locMark = L.marker({lng: 0, lat: 0}).addTo(map);
+    locMark = L.marker({lng: 0, lat: 0}, {icon: crossIcon, zIndexOffset: 0}).addTo(map);
 
     // Move map view with marker location
     locMark.addEventListener("move", function() {
@@ -151,7 +138,26 @@ $(document).ready(function () {
             map.flyTo(locMark.getLatLng(), 20);
         }
     });
+    // make LineString of currently covered trajectory in project
+    $.getJSON(
+        "_proj_locs",
+        function(data){
+            L.geoJson(data, {
+              style: function(feature) {
+                return {
+                  stroke: true,
+                  color: "red",
+                  weight: 5
+                };
+              },
+            }).addTo(map);
+        }
+    );
+//}
 
+});
+
+/*
     // ####################### HANDLE SATELLITE LEVEL BROADCAST #######################
 
     socket.on("satellite broadcast rover", function(msg) {

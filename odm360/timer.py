@@ -1,12 +1,11 @@
 import time
 from threading import Event, Thread
-from multiprocessing.dummy import Pool as ThreadPool
 
 
 class RepeatedTimer:
     """Repeat `function` every `interval` seconds."""
 
-    def __init__(self, interval, function, start_time=None, *args, **kwargs):
+    def __init__(self, interval, function, start_time=None, name=None, *args, **kwargs):
         self.interval = interval
         self.function = function
         self.args = args
@@ -16,7 +15,7 @@ class RepeatedTimer:
         else:
             self.start = start_time
         self.event = Event()
-        self.thread = Thread(target=self._target)
+        self.thread = Thread(target=self._target, name=name)
         self.thread.start()
 
     def _target(self):

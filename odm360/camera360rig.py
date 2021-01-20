@@ -1,10 +1,19 @@
 import logging
 import time
+import json
 from flask import request
 import datetime
 from odm360 import dbase, utils
 from odm360.states import states
 import odm360.camera360rig as camrig
+from threading import Thread
+
+import gpsd
+
+try:
+    gpsd.connect()
+except:
+    gpsd = None
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +121,37 @@ def get_task(cur, state):
             # camera is already capturing, so just wait for further instructions (stop)
     return {"task": "wait", "kwargs": {}}
 
+
+def gps_log(conn, gpsd_stream, project_id, survey_run, sleep=1.0):
+    """
+    Dedicated gps log function, logging to database. The function stops as soon as the rig stops capturing
+    :param conn: psycopg2.connect, connection to database
+    :param gpsd_stream: gpsd.gpsd_stream, gps object that can be polled
+    :param project_id: int, id of current project
+    :param survey_run: str, name of current survey
+    :param sleep: amount of time sleeping in between gps polls (default 1 second).
+    :return:
+    """
+    cur = conn.cursor()
+    while True:
+        rig = dbase.query_project_active(cur, as_dict=True)
+        rig_status = utils.get_key_state(rig["status"])
+        if rig_status != "capture":
+            # apparently rig stopped capturing, so close cursor and return from function
+            cur.close()
+            return
+        gpsd_stream.write("?POLL;\n")
+        gpsd_stream.flush()
+        raw = gpsd_stream.readline()
+        # retrieve time stamp
+        ts = json.loads(raw)["time"]
+
+        dbase.insert_gps(
+            cur, project_id=project_id, survey_run=survey_run, timestamp=ts, msg=raw
+        )
+        time.sleep(sleep)
+
+
 def post_log(cur, state, msg, level="info"):
     """
     Log message from current camera on logger
@@ -126,9 +166,11 @@ def post_log(cur, state, msg, level="info"):
     except:
         return {"success": False}
 
+
 def task_idle_to_ready(cur, state):
     logger.info("Sending camera initialization ")
     return {"task": "init", "kwargs": {}}
+
 
 def task_capture_to_ready(cur, state):
     return {"task": "stop", "kwargs": {}}
@@ -141,8 +183,7 @@ def task_ready_to_capture(cur, state):
         cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
     )
     dt = int(project["dt"])
-
-    cur_address = request.remote_addr  # TODO: also add uuid of device
+    cur_address = request.remote_addr
     # check how many cams have the state 'ready', only start when the full rig is ready
     n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
 
@@ -165,11 +206,28 @@ def task_ready_to_capture(cur, state):
             cur, status=states["capture"], start_time=start_datetime_utc
         )
         # add survey_run to surveys table
-        dbase.insert_survey(cur, project_id=cur_project["project_id"], survey_run=survey_run)
+        dbase.insert_survey(
+            cur, project_id=cur_project["project_id"], survey_run=survey_run
+        )
         logger.debug(
             f'start time is set to {start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%S")}'
         )
         logger.info(f"Sending capture command to {cur_address}")
+        # starting gps
+        if gpsd is not None:
+            # log gpsd messages
+            try:
+                gps_kwargs = {
+                    "conn": cur.connection,
+                    "gpsd_stream": gpsd.gpsd_stream,
+                    "project_id": cur_project["project_id"],
+                    "survey_run": survey_run,
+                }
+                Thread(target=gps_log, kwargs=gps_kwargs).start()
+                logger.info("Started GPS log")
+            except:
+                msg = "GPS connected but not responding"
+                logger.error(msg)
         return {
             "task": "capture_continuous",
             "kwargs": {
@@ -187,6 +245,7 @@ def task_ready_to_capture(cur, state):
         # roll back to state "ready"
         dbase.update_project_active(cur, status=states["ready"])
 
+
 def task_ready_to_stream(cur, state):
     # retrieve settings of current project
     cur_project = dbase.query_project_active(cur, as_dict=True)
@@ -194,7 +253,7 @@ def task_ready_to_stream(cur, state):
         cur, project_id=cur_project["project_id"], as_dict=True, flatten=True
     )
 
-    cur_address = request.remote_addr  # TODO: also add uuid of device
+    cur_address = request.remote_addr
     # check how many cams have the state 'ready', only start when the full rig is ready
     n_cams_ready = len(dbase.query_devices(cur, status=states["ready"]))
 
@@ -204,9 +263,7 @@ def task_ready_to_stream(cur, state):
             f'All cameras ready. Start streaming on device {state["device_uuid"]} on ip {state["ip"]}'
         )
         # set state to stream
-        dbase.update_project_active(
-            cur, status=states["stream"]
-        )
+        dbase.update_project_active(cur, status=states["stream"])
         logger.info(f"Sending stream command to {cur_address}")
         return {
             "task": "capture_stream",
@@ -220,6 +277,7 @@ def task_ready_to_stream(cur, state):
         return {"task": "wait", "kwargs": {}}
         # roll back to state "ready"
         dbase.update_project_active(cur, status=states["ready"])
+
 
 def task_stream_to_ready(cur, state):
     return {"task": "stop_stream", "kwargs": {}}

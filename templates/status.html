@@ -1,22 +1,10 @@
 {% extends 'base.html' %}
 
 {% block styles %}
-<style>
-        #test_video {
-            width: 720px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-        }
-</style>
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
 {{super()}}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
-<link href="https://vjs.zencdn.net/7.10.2/video-js.css" rel="stylesheet" />
-
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -71,8 +59,8 @@
                     </label>
                 </form>
             </div>
-        </div>
-        <div class="row">
+<!--        </div>-->
+<!--        <div class="row">-->
         <div class="col py-3 border bg-light">
             <b>Video preview:</b>
             <form action="" method="POST">
@@ -86,6 +74,7 @@
             </form>
         </div>
     </div>
+    <div id="map" style="height: 420px; margin-top: 2em; margin-bottom: 2em;">
 </div>
 <br>
 
@@ -110,6 +99,10 @@
 {% block scripts %}
 {{super()}}
 <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap-table.min.js') }}" charset="utf-8"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='lib/leaflet.js') }}" charset="utf-8"></script>
+<script>
+var baseCoordinates = {'lat': 0, 'lon': 0}
+</script>
 <script type="text/javascript" src="{{ url_for('static', filename='status.js') }}" charset="utf-8"></script>
 
 {% endblock %}

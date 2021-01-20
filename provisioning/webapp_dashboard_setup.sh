@@ -22,7 +22,7 @@ server {
 
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/home/pi/odm360/odm360.sock;
+        uwsgi_pass unix:/tmp/odm360.sock;
     }
 }
 EOF
@@ -36,11 +36,16 @@ else echo Looks like the symlink has already been created
 fi
 
 echo setting up uwsgi and flask
-pip install wheel
-pip install uwsgi flask
+# install uwsgi as root, to ensure it is in /usr/local/bin
+sudo pip3 install uwsgi
+# pip install wheel
+# pip install flask
 
 echo adding the odm360 service to Systemd
 sudo cp provisioning/odm360_dashboard.service /etc/systemd/system/
+
+# ensuring credentials are set correctly
+sudo chmod 644 /etc/systemd/system/odm360_dashboard.service
 
 echo starting and enabling the odm360_dashboard service with Systemd
 sudo systemctl start odm360_dashboard.service
