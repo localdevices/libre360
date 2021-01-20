@@ -117,7 +117,7 @@ def _stop_handler(msg):
 def main():
     cam = WebCamVideoStream(sio)
     cam.sio.connect(
-        "http://192.168.178.15:5000",
+        "http://parent.local:5000",
         # transports=['websocket'],
         namespaces=["/test"],
     )
