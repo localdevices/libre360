@@ -22,7 +22,7 @@ from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
-from odm360.utils import cleanopts, get_key_state, parse_geo_txt
+from odm360.utils import cleanopts, get_key_state, create_geo_txt
 
 
 def _check_offline(conn, max_idle=60):
@@ -412,7 +412,7 @@ def _download():
             mode="w", compression=zipstream.ZIP_DEFLATED, allowZip64=True
         )
         # first make a geo.txt file
-        geo = parse_geo_txt(fns)
+        geo = create_geo_txt(fns)
         z.writestr("geo.txt", geo.encode())
         for fn in fns:
             z.write_iter(

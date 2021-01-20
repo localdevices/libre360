@@ -104,7 +104,7 @@ def get_key_state(value):
         return keys
 
 
-def parse_geo_txt(
+def create_geo_txt(
     fns,
     proj="EPSG:4326",
     fn_key="photo_filename",

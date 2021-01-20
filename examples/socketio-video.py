@@ -9,7 +9,7 @@ sio = socketio.Client(logger=True)
 
 
 class WebCamVideoStream:
-    def __init__(self, sio, src="/home/hcwinsemius/temp/phone/*.jpg"):
+    def __init__(self, sio, src="*.jpg"):
         # initialize the video camera stream and read the first frame
         # from the stream
         self.sio = sio
