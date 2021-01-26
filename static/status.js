@@ -33,7 +33,7 @@ jQuery(function() {
     jQuery('#service').change(function() {
         this.form.submit();
     });
-});
+
 /*
 lastBaseMsg = new Object();
 numOfRepetition = 0;
