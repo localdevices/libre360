@@ -17,6 +17,7 @@ import logging
 import time
 import zipstream
 import gpsd
+import numpy as np
 
 from odm360.log import start_logger, stream_logger
 from odm360.camera360rig import do_request
@@ -425,6 +426,12 @@ def _download():
     # retrieve arguments (stringified json)
     args = cleanopts(request.args)
     fns = json.loads(args["photos"])
+    # build zipfile name
+    if len(np.unique([fn["survey_run"] for fn in fns])) > 1:
+        # apparently a full project is downloaded
+        zip_fn = "{:03d}.zip".format(fns[0]['project_id'])
+    else:
+        zip_fn = "{:03d}_{:s}.zip".format(fns[0]["project_id"], fns[0]["survey_run"].upper())
     # change filename so that ODM can handle them
     for n in range(len(fns)):
         fns[n]["photo_filename"] = fns[n]["photo_filename"].replace("/", "_")
@@ -432,7 +439,7 @@ def _download():
     cur_download = conn.cursor()
     response = Response(generator(cur_download, fns), mimetype="application/zip")
     response.headers["Content-Disposition"] = "attachment; filename={}".format(
-        "odm360.zip"
+        zip_fn
     )
     return response
 
