@@ -56,8 +56,8 @@
     function get_cam_sum() {
         $.getJSON("_cam_summary",
                 function (data) {
-                    $('#lat').text(data.lat.toFixed(6));
-                    $('#lon').text(data.lon.toFixed(6));
+                    $('#lat').text(data.lat.toFixed(8));
+                    $('#lon').text(data.lon.toFixed(8));
                     $('#alt').text(data.alt.toFixed(3));
                     $('#mode').text(data.mode);
                     $('#sats').text(data.sats);
