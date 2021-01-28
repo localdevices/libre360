@@ -79,6 +79,10 @@ echo Installing requirements for mDNS: allows for distributed name resolution.
 echo This is super useful for finding child pis based on domain name
 sudo apt-get install avahi-daemon >> provisioning/setup.log 2>> provisioning/error.log
 
+echo "Preparing log file in /var/log/odm360.log"
+sudo touch /var/log/odm360.log
+sudo chown www-data:www-data /var/log/odm360.log
+sudo chmod 774 /var/log/odm360.log
 
 echo "************************************"
 echo Now you should have a $model set up with the basic infrastructure common to all devices in the ODM360 rig. The next steps depend whether this device is intended to be a Parent or Child.

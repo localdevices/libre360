@@ -33,13 +33,13 @@
             <div class="col py-3 border bg-light">
                 <b>Select project:</b>
                 <form action="" method="POST">
-                    <select class="btn btn-primary dropdown-toggle" name="project" id="project">
+                    <select onchange="this.form.submit()" class="btn btn-primary dropdown-toggle" name="project" id="project">
                         {% if projects %}
                           {% for project_id, project_name in projects %}
                             {% if project_id == cur_project_id %}
-                              <option selected value="{{ project_id }}">{{ project_name }}</option>
+                              <option name="project_select" selected value="{{ project_id }}">{{ project_name }}</option>
                             {% else %}
-                              <option value="{{ project_id }}">{{ project_name }}</option>
+                              <option name="project_select" value="{{ project_id }}">{{ project_name }}</option>
                             {% endif %}
                           {% endfor %}
                       {% endif %}

@@ -34,6 +34,7 @@ jQuery(function() {
         this.form.submit();
     });
 });
+
 /*
 lastBaseMsg = new Object();
 numOfRepetition = 0;

@@ -395,13 +395,15 @@ def query_gps_timestamp(cur, timestamp, before=True):
     cur.execute(sql)
     data = cur.fetchall()
     if len(data) > 0:
-        loc = json.loads(data[0][0])
-        # also query ts
-        cur.execute(sql_ts)
-        ts = cur.fetchone()[0]
-        return ts, loc
+        # check content of data
+        if data[0][0] is not None:
+            loc = json.loads(data[0][0])
+            # also query ts
+            cur.execute(sql_ts)
+            ts = cur.fetchone()[0]
+            return ts, loc
     else:
-        return None, None
+        return None
 
 
 def query_gps(cur, project_id, as_geojson=True):
@@ -433,8 +435,16 @@ def query_gps(cur, project_id, as_geojson=True):
 
 
 def query_location(cur, timestamp, dt_max=2.0):
-    ts_before, msg_before = query_gps_timestamp(cur, timestamp)
-    ts_after, msg_after = query_gps_timestamp(cur, timestamp, before=False)
+    response = query_gps_timestamp(cur, timestamp)
+    if response is not None:
+        ts_before, msg_before = response
+    else:
+        ts_before = None; msg_before = None
+    response = query_gps_timestamp(cur, timestamp, before=False)
+    if response is not None:
+        ts_after, msg_after = response
+    else:
+        ts_after = None; msg_after = None
     keys = ["lon", "lat", "alt", "epx", "epy", "epv"]
     loc = {k: None for k in keys}
     if (msg_before is None) or (msg_after is None):
