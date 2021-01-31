@@ -8,8 +8,10 @@
 {% endblock %}
 
 {% block content %}
+{{ super() }}
 
 <div class="container">
+    <div class="row">
     <table id="table">
         <thead>
           <tr>
@@ -23,30 +25,31 @@
           </tr>
         </thead>
       </table>
-</div>
-<br>
-<br>
+    </div>
+<!--</div>-->
+<!--<br>-->
+<!--<br>-->
 
-<div class="container">
-    <div id="bar-chart"></div>
-        <div class="row">
-            <div class="col py-3 border bg-light">
-                <b>Select project:</b>
-                <form action="" method="POST">
-                    <select onchange="this.form.submit()" class="btn btn-primary dropdown-toggle" name="project" id="project">
-                        {% if projects %}
-                          {% for project_id, project_name in projects %}
-                            {% if project_id == cur_project_id %}
-                              <option name="project_select" selected value="{{ project_id }}">{{ project_name }}</option>
-                            {% else %}
-                              <option name="project_select" value="{{ project_id }}">{{ project_name }}</option>
-                            {% endif %}
-                          {% endfor %}
-                      {% endif %}
-                    </select>
-                </form>
-            </div>
-            <div class="col py-3 border bg-light">
+<!--<div class="container">-->
+    <div class="row">
+        <div class="col-md-6 py-3">
+<!--            <div class="container">-->
+            <b>Select project:</b>
+            <form action="" method="POST">
+                <select onchange="this.form.submit()" class="btn btn-primary dropdown-toggle" name="project" id="project">
+                    {% if projects %}
+                      {% for project_id, project_name in projects %}
+                        {% if project_id == cur_project_id %}
+                          <option name="project_select" selected value="{{ project_id }}">{{ project_name }}</option>
+                        {% else %}
+                          <option name="project_select" value="{{ project_id }}">{{ project_name }}</option>
+                        {% endif %}
+                      {% endfor %}
+                  {% endif %}
+                </select>
+            </form>
+<!--            </div>-->
+<!--            <div class="container">-->
                 <b>Main service:</b>
                 <form action="" method="POST">
                     <label class="switch">
@@ -58,10 +61,9 @@
                       <span class="slider round"></span>
                     </label>
                 </form>
-            </div>
-<!--        </div>-->
-<!--        <div class="row">-->
-        <div class="col py-3 border bg-light">
+<!--            </div>-->
+        </div>
+        <div class="col-md-6 py-3">
             <b>Video preview:</b>
             <form action="" method="POST">
                 <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">
@@ -74,26 +76,12 @@
             </form>
         </div>
     </div>
-    <div id="map" style="height: 420px; margin-top: 2em; margin-bottom: 2em;">
+    <div class="row">
+    <div class="col">
+        <div id="map" style="height: 420px; margin-top: 2em; margin-bottom: 2em;"></div> <!--; margin-top: 2em; margin-bottom: 2em;"></div>-->
+    </div>
+    </div>
 </div>
-<br>
-
-<!--<div class="container">-->
-<!--        <b>Video preview:</b>-->
-<!--        <div class="col py-3 border bg-light">-->
-
-<!--&lt;!&ndash;    <div class="contents">&ndash;&gt;-->
-<!--        <form action="" method="POST">-->
-<!--            <button type="submit" id="play-btn" name="play-btn" class="btn btn-primary">-->
-<!--                Play</button>-->
-<!--        </form>-->
-<!--        <form action="" method="POST">-->
-<!--            <button type="submit" id="stop-btn" name="stop-btn" class="btn btn-danger">-->
-<!--                Stop</button>-->
-<!--        </form>-->
-<!--    </div>-->
-<!--</div>-->
-
 {% endblock %}
 
 {% block scripts %}

@@ -6,11 +6,15 @@ from flask import (
     redirect,
     request,
     jsonify,
+    flash,
+    url_for,
     make_response,
     Response,
 )
+# import items for navigation bar
 from flask_bootstrap import Bootstrap
 
+import os
 import psycopg2
 import json
 import logging
@@ -24,7 +28,11 @@ from odm360.camera360rig import do_request
 from odm360 import dbase
 from odm360.states import states
 from odm360.utils import cleanopts, get_key_state, create_geo_txt
+from werkzeug.utils import secure_filename
 
+def _allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def _check_offline(conn, max_idle=60):
     """
@@ -85,10 +93,14 @@ if len(cur_project) == 1:
 # start scheduled task to check for offline devices
 # checker = RepeatedTimer(5, _check_offline, start_time=time.time(), conn=conn)
 
+UPLOAD_FOLDER = "./static/images"
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
-app.logger.disabled = True
+app.logger.disabled = False
 bootstrap = Bootstrap(app)
 try:
     gpsd.connect()
@@ -237,6 +249,20 @@ def settings_page():
         if form["submit_button"] == "hotspot":
             logger.info("Switching to local hotspot")
             # switch to serving a hotspot, and tell all children to switch to hotspot
+        elif form["submit_button"] == "logo":
+            if "filename" not in request.files:
+                logger.error("No file provided")
+            else:
+                file = request.files['filename']
+                # if user does not select file, browser also
+                # submit an empty part without filename
+                if file.filename == '':
+                    logger.error("Empty file name provided")
+                else:
+                    if file and _allowed_file(file.filename):
+                        logger.error(f"Uploading {file.filename} to logo.png")
+                        filename = "logo.png"
+                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         else:
             ssid = form["ssid"]
             passwd = form["password"]

@@ -9,8 +9,7 @@
 {% endblock %}
 
 {% block content %}
-<br>
-<br>
+{{ super() }}
 <div class="container">
     <div id="query_files"></div>
     <div class="row">
@@ -56,6 +55,7 @@
 </div>
 <br>
 <div class="container">
+    <div class="row">
     <table
             id="logtable">
         <thead>
@@ -67,6 +67,7 @@
           </tr>
         </thead>
       </table>
+    </div>
 </div>
 {% endblock %}
 
