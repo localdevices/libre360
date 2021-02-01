@@ -19,6 +19,6 @@ function get_cam_sum() {
     );
 }
 setInterval('get_cam_sum()', 2000);
-response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
-response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
-response.setHeader("Expires", "0"); // Proxies.
+//response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
+//response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
+//response.setHeader("Expires", "0"); // Proxies.
