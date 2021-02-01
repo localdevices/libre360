@@ -260,7 +260,7 @@ def settings_page():
                     logger.error("Empty file name provided")
                 else:
                     if file and _allowed_file(file.filename):
-                        logger.error(f"Uploading {file.filename} to logo.png")
+                        logger.info(f"Uploading {file.filename} to logo.png")
                         filename = "logo.png"
                         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         else:

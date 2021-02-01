@@ -4,9 +4,9 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <title>ODM 360</title>
     {% block styles %}
-
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap.min.css') }}">
     <style>
@@ -20,12 +20,9 @@
                 display: inline-block;
                 flex-grow: 0;
                 z-index: -1;
-
             }
     </style>
     {% endblock %}
-
-    <title>ODM 360</title>
     {% endblock %}
   </head>
   {% include "navbar.html" %}
@@ -37,30 +34,7 @@
     {% block scripts %}
     <script type="text/javascript" src="{{ url_for('static', filename='lib/jquery-3.5.1.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap.min.js') }}"></script>
-
-    <script>
-    var cam_summary;
-    function get_cam_sum() {
-        $.getJSON("_cam_summary",
-                function (data) {
-                    $('#lat').text(data.lat.toFixed(8));
-                    $('#lon').text(data.lon.toFixed(8));
-                    $('#alt').text(data.alt.toFixed(3));
-                    $('#mode').text(data.mode);
-                    $('#sats').text(data.sats);
-                    $('#cam_ready').text(data.ready);
-                    $('#cam_total').text(data.total);
-                    $('#cam_capture').text(data.total-data.ready);
-                    $('#cam_required1').text(data.required);
-                    $('#cam_required2').text(data.required);
-                    $('#cam_required3').text(data.required);
-                    // make cam_summary available through entire application
-                    cam_summary = data;
-                }
-        );
-    }
-    setInterval('get_cam_sum()', 2000);
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='base.js') }}"></script>
 
     {% endblock %}
   </body>

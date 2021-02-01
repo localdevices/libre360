@@ -1,13 +1,12 @@
 {% extends 'base.html' %}
-
+{% block head %}
+{{ super() }}
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}"
-<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap4-toggle.min.css') }}"
-
-      xmlns="http://www.w3.org/1999/html">
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap4-toggle.min.css') }}">
 {{super()}}
 {% endblock %}
-
+{% endblock %}
 {% block content %}
 {{ super() }}
 <div class="container">

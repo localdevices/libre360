@@ -1,8 +1,10 @@
 {% extends 'base.html' %}
-
+{% block head %}
+{{ super() }}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/log.css') }}">
 {{super()}}
+{% endblock %}
 {% endblock %}
 
 {% block content %}

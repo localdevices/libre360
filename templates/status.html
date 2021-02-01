@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
-
+{% block head %}
+{{super()}}
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap-table.min.css') }}">
-{{super()}}
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/buttons.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='lib/leaflet.css') }}">
+{{super()}}
 {% endblock %}
-
+{% endblock %}
 {% block content %}
 {{ super() }}
-
 <div class="container">
     <div class="row">
     <table id="table">

@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
-
+{% block head %}
+{{ super() }}
 {% block styles %}
-{{super()}}
+{{ super() }}
 
 {% endblock %}
-
+{% endblock %}
 {% block content %}
 {{ super() }}
 <div class="container">
