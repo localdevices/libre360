@@ -2,106 +2,71 @@
 
 from flask import (
     Flask,
-    render_template,
-    redirect,
     request,
+    render_template,
     jsonify,
-    flash,
-    url_for,
+    redirect,
     make_response,
     Response,
 )
+
 # import items for navigation bar
 from flask_bootstrap import Bootstrap
 
 import os
 import psycopg2
-import json
 import logging
-import time
+import json
 import zipstream
-import gpsd
 import numpy as np
+import time
+import gpsd
 
-from odm360.log import start_logger, stream_logger
-from odm360.camera360rig import do_request
+from odm360 import states
+from odm360.utils import cleanopts, get_key_state, create_geo_txt
+
+from odm360.log import add_filehandler
 from odm360 import dbase
 from odm360.states import states
-from odm360.utils import cleanopts, get_key_state, create_geo_txt
-from werkzeug.utils import secure_filename
+from odm360.camera360rig import do_request
 
-def _allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def _check_offline(conn, max_idle=60):
-    """
-    Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
-    is switched off in this case.
-    :param max_idle: maximum allowed idle time
-    :return:
-    """
-    """Run scheduled job."""
-    with conn.cursor() as cur_check:
-        devices = dbase.query_devices(cur_check)
-        for dev in devices:
-            # check the last time the device was online
-            time_idle = time.time() - dev[3]  # seconds
-            if (time_idle > max_idle) and (dev[2] != 0):
-                logger.warning(f"Device {dev[0]} is offline...")
-                # check if there is an active project
-                rig = dbase.query_project_active(cur_check, as_dict=True)
-                if len(rig) > 0:
-                    # check if project is capturing
-                    if get_key_state(rig["status"]) == "capture":
-                        # set back to ready
-                        logger.warning(f"Stopping capturing")
-                        dbase.update_project_active(cur_check, states["ready"])
-                    logger.warning(f"Setting connection to offline")
-                    dbase.update_device(
-                        cur_check,
-                        device_uuid=dev[0],
-                        req_time=dev[3],
-                        status=states["offline"],
-                    )
-                    # remove foreign server belonging to offline device
-                    dbase.delete_server(cur_check, dev[0])
-
-
+# connect with database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
 conn = psycopg2.connect(db)
 
+ALLOWED_EXTENSIONS = {"txt", "pdf", "png", "jpg", "jpeg", "gif"}
+UPLOAD_FOLDER = "./static/images"
+
 # cursor for requests
-cur = conn.cursor()
+with conn.cursor() as cur:
+    cur = conn.cursor()
+    # make sure devices is empty
+    dbase.truncate_table(cur, "devices")
+    # make sure no server connections are present
+    dbase.delete_servers(cur)
+    time.sleep(0.2)
+    # start logger
+    # logger = start_logger("True", "False")
 
-# # dedicated cursor for checking the offline status of child devices
-# cur_check = conn.cursor()
+    # if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
+    cur_project = dbase.query_project_active(cur)
+    if len(cur_project) == 1:
+        dbase.update_project_active(cur, states["ready"])
 
-# make sure devices is empty
-dbase.truncate_table(cur, "devices")
-# make sure no server connections are present
-dbase.delete_servers(cur)
-time.sleep(0.2)
-# start logger
-logger = start_logger("True", "False")
-
-# if there is an active project, put status on zero (waiting for cams) at the beginning no matter what
-cur_project = dbase.query_project_active(cur)
-if len(cur_project) == 1:
-    dbase.update_project_active(cur, states["ready"])
-
-# start scheduled task to check for offline devices
+# start scheduled task to check for offline devices, seems not to be needed, so left out for now
 # checker = RepeatedTimer(5, _check_offline, start_time=time.time(), conn=conn)
 
-UPLOAD_FOLDER = "./static/images"
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
-
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.logger.disabled = False
+app.logger.setLevel(20)
+add_filehandler(app.logger, "odm360.log")
+
+logger = app.logger
+logger.info("Starting app")
 bootstrap = Bootstrap(app)
 try:
     gpsd.connect()
@@ -109,6 +74,7 @@ except:
     # simply set gps unit to None to indicate that there is no GPS device available
     gpsd = None
     logger.warning("GPS unit not found or no connection possible")
+
 
 @app.after_request
 def add_header(r):
@@ -119,8 +85,12 @@ def add_header(r):
     r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     r.headers["Pragma"] = "no-cache"
     r.headers["Expires"] = "0"
-    r.headers['Cache-Control'] = 'public, max-age=0'
+    r.headers["Cache-Control"] = "public, max-age=0"
     return r
+
+
+# import routes, organized in several files
+
 
 @app.route("/", methods=["GET", "POST"])
 def status():
@@ -211,115 +181,6 @@ def status():
     )
 
 
-@app.route("/project", methods=["GET", "POST"])
-def project_page():
-    """
-        The settings page where you can manage the various services, the parameters, update, power...
-    """
-    if request.method == "POST":
-        # config = current_app.config['config']
-        form = cleanopts(request.form)
-        # set the config options as provided
-        dbase.insert_project(
-            cur, form["project_name"], n_cams=int(form["n_cams"]), dt=int(form["dt"])
-        )
-        dbase.truncate_table(cur, "project_active")
-        # set project to current by retrieving its id and inserting that in current project table
-        project_id = dbase.query_projects(cur, project_name=form["project_name"])[0][0]
-        dbase.insert_project_active(cur, project_id=project_id)
-        logger.info(
-            f'Created a new project name: "{form["project_name"]}" cams: {form["n_cams"]} interval: {int(form["dt"])} secs.'
-        )
-        return redirect("/")
-    else:
-        return render_template("project.html")
-
-
-@app.route("/logs")
-def logs_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    return render_template("logs.html")
-
-
-@app.route("/nodeodm")
-def nodeodm_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    return render_template("nodeodm.html")
-
-
-@app.route("/settings", methods=["GET", "POST"])
-def settings_page():
-    """
-        The data web pages where you can download/delete the raw gnss data
-    """
-    if request.method == "POST":
-        form = cleanopts(request.form)
-        if form["submit_button"] == "hotspot":
-            logger.info("Switching to local hotspot")
-            # switch to serving a hotspot, and tell all children to switch to hotspot
-        elif form["submit_button"] == "logo":
-            if "filename" not in request.files:
-                logger.error("No file provided")
-            else:
-                file = request.files['filename']
-                # if user does not select file, browser also
-                # submit an empty part without filename
-                if file.filename == '':
-                    logger.error("Empty file name provided")
-                else:
-                    if file and _allowed_file(file.filename):
-                        logger.info(f"Uploading {file.filename} to logo.png")
-                        filename = "logo.png"
-                        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        else:
-            ssid = form["ssid"]
-            passwd = form["password"]
-            if ssid != "" and passwd != "":
-                # Check if all children for current job are online. If not, don't change, as all children need to be online first
-                # TODO: implement check
-                devices_ready = dbase.query_devices(cur, status=states["ready"])
-                cur_project = dbase.query_project_active(cur)
-                project = dbase.query_projects(
-                    cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-                )
-                if project["n_cams"] == len(devices_ready):
-                    # Instruct all children to switch networks
-                    logger.info(f"Switching to ssid: {ssid} with passwd: {passwd}")
-                else:
-                    logger.error(
-                        f"Not all expected children ({len(devices_ready)}/{project['n_cams']}) ready"
-                    )
-                # TODO: make instruction upon task request
-                # Switch network yourself.
-                # TODO: make switcher for wifi network
-            else:
-                logger.error(f"ssid or password missing")
-
-    return render_template("settings.html")
-
-
-@app.route("/file_page")  # , methods=["GET", "POST"])
-def file_page():
-    projects = dbase.query_projects(cur)
-    project_ids = [p[0] for p in projects]
-    project_names = [p[1] for p in projects]
-    projects = zip(project_ids, project_names)
-    return render_template("file_page.html", projects=projects)
-
-
-@app.route("/log_stream", methods=["GET"])
-def stream():
-    """returns logging information"""
-    # largely taken from https://towardsdatascience.com/how-to-add-on-screen-logging-to-your-flask-application-and-deploy-it-on-aws-elastic-beanstalk-aa55907730f
-    return Response(
-        stream_logger(), mimetype="text/plain", content_type="text/event-stream"
-    )
-
-
 @app.route("/_cameras")
 def cameras():
     with conn.cursor() as cur_camera:
@@ -345,6 +206,129 @@ def cameras():
             )
 
         return jsonify(devices)
+
+
+@app.route("/_cam_summary")
+def cam_summary():
+    """
+    Retrieve current status of cameras and compare against what's needed for the current project
+    This is typically run every couple of seconds
+    """
+    with conn.cursor() as cur_summary:
+        cur_project = dbase.query_project_active(cur_summary)
+        project = dbase.query_projects(
+            cur_summary, project_id=cur_project[0][0], as_dict=True, flatten=True
+        )
+        devices_ready = dbase.query_devices(cur_summary, status=states["ready"])
+
+        devices = dbase.query_devices(cur_summary)
+        # request gps location
+        try:
+            msg = gpsd.get_current()
+            logger.debug(f"GPS msg: {msg}")
+        except:
+            logger.debug("No msg received from GPS unit or unit not available")
+            msg = None
+        cams = {
+            "ready": len(devices_ready),
+            "total": len(devices),
+            "required": project["n_cams"],
+            "lat": msg.lat if msg is not None else 0.0,
+            "lon": msg.lon if msg is not None else 0.0,
+            "alt": msg.alt if msg is not None else 0.0,
+            "sats": msg.sats if msg is not None else 0,
+            "error": msg.error if msg is not None else "-",
+            "mode": msg.mode if msg is not None else "OFF",
+        }
+        return jsonify(cams)
+
+
+@app.route("/_proj_locs")
+def _proj_locs():
+    """
+    Retrieve project locations. Typically run when the status page is opened or refreshed.
+
+    """
+    with conn.cursor() as cur_locs:
+        cur_project = dbase.query_project_active(cur_locs)
+        project_id = cur_project[0][0]
+        geojson = dbase.query_gps(cur_locs, project_id=project_id)
+
+    return jsonify(geojson)
+
+
+def _check_offline(conn, max_idle=60):
+    """
+    Check if devices have not requested anything for a too long time. Device is set to offline if this is the case. Rig
+    is switched off in this case.
+    :param max_idle: maximum allowed idle time
+    :return:
+    """
+    """Run scheduled job."""
+    with conn.cursor() as cur_check:
+        devices = dbase.query_devices(cur_check)
+        for dev in devices:
+            # check the last time the device was online
+            time_idle = time.time() - dev[3]  # seconds
+            if (time_idle > max_idle) and (dev[2] != 0):
+                logger.warning(f"Device {dev[0]} is offline...")
+                # check if there is an active project
+                rig = dbase.query_project_active(cur_check, as_dict=True)
+                if len(rig) > 0:
+                    # check if project is capturing
+                    if get_key_state(rig["status"]) == "capture":
+                        # set back to ready
+                        logger.warning(f"Stopping capturing")
+                        dbase.update_project_active(cur_check, states["ready"])
+                    logger.warning(f"Setting connection to offline")
+                    dbase.update_device(
+                        cur_check,
+                        device_uuid=dev[0],
+                        req_time=dev[3],
+                        status=states["offline"],
+                    )
+                    # remove foreign server belonging to offline device
+                    dbase.delete_server(cur_check, dev[0])
+
+
+@app.route("/project", methods=["GET", "POST"])
+def project_page():
+    """
+        The settings page where you can manage the various services, the parameters, update, power...
+    """
+    with conn.cursor() as cur_project:
+        if request.method == "POST":
+            # config = current_app.config['config']
+            form = cleanopts(request.form)
+            # set the config options as provided
+            dbase.insert_project(
+                cur_project,
+                form["project_name"],
+                n_cams=int(form["n_cams"]),
+                dt=int(form["dt"]),
+            )
+            dbase.truncate_table(cur_project, "project_active")
+            # set project to current by retrieving its id and inserting that in current project table
+            project_id = dbase.query_projects(
+                cur_project, project_name=form["project_name"]
+            )[0][0]
+            dbase.insert_project_active(cur_project, project_id=project_id)
+            logger.info(
+                f'Created a new project name: "{form["project_name"]}" cams: {form["n_cams"]} interval: {int(form["dt"])} secs.'
+            )
+            return redirect("/")
+        else:
+            return render_template("project.html")
+
+
+@app.route("/file_page")  # , methods=["GET", "POST"])
+def file_page():
+    with conn.cursor() as cur_files:
+        projects = dbase.query_projects(cur_files)
+        project_ids = [p[0] for p in projects]
+        project_names = [p[1] for p in projects]
+        projects = zip(project_ids, project_names)
+        return render_template("file_page.html", projects=projects)
 
 
 @app.route("/_files", methods=["GET", "POST"])
@@ -383,57 +367,6 @@ def _surveys():
     return jsonify(surveys)
 
 
-@app.route("/_cam_summary")
-def cam_summary():
-    """
-    Retrieve current status of cameras and compare against what's needed for the current project
-    This is typically run every couple of seconds
-    """
-    cur_project = dbase.query_project_active(cur)
-    project = dbase.query_projects(
-        cur, project_id=cur_project[0][0], as_dict=True, flatten=True
-    )
-    devices_ready = dbase.query_devices(cur, status=states["ready"])
-
-    devices = dbase.query_devices(cur)
-    # request gps location
-    try:
-        msg = gpsd.get_current()
-        logger.debug(f"GPS msg: {msg}")
-    except:
-        logger.debug("No msg received from GPS unit or unit not available")
-        msg = None
-    cams = {
-        "ready": len(devices_ready),
-        "total": len(devices),
-        "required": project["n_cams"],
-        "lat": msg.lat if msg is not None else 0.0,
-        "lon": msg.lon if msg is not None else 0.0,
-        "alt": msg.alt if msg is not None else 0.0,
-        "sats": msg.sats if msg is not None else 0,
-        "error": msg.error if msg is not None else "-",
-        "mode": msg.mode if msg is not None else "OFF",
-    }
-    return jsonify(cams)
-
-
-@app.route("/_proj_locs")
-def _proj_locs():
-    """
-    Retrieve project locations. Typically run when the status page is opened or refreshed.
-
-    """
-    with conn.cursor() as cur_locs:
-        cur_project = dbase.query_project_active(cur_locs)
-        project_id = cur_project[0][0]
-        geojson = dbase.query_gps(cur_locs, project_id=project_id)
-
-    return jsonify(geojson)
-
-
-"_proj_locs"
-
-
 @app.route("/odm360.zip", methods=["GET"], endpoint="_download")
 def _download():
     """
@@ -467,18 +400,18 @@ def _download():
     # build zipfile name
     if len(np.unique([fn["survey_run"] for fn in fns])) > 1:
         # apparently a full project is downloaded
-        zip_fn = "{:03d}.zip".format(fns[0]['project_id'])
+        zip_fn = "{:03d}.zip".format(fns[0]["project_id"])
     else:
-        zip_fn = "{:03d}_{:s}.zip".format(fns[0]["project_id"], fns[0]["survey_run"].upper())
+        zip_fn = "{:03d}_{:s}.zip".format(
+            fns[0]["project_id"], fns[0]["survey_run"].upper()
+        )
     # change filename so that ODM can handle them
     for n in range(len(fns)):
         fns[n]["photo_filename"] = fns[n]["photo_filename"].replace("/", "_")
     # open a dedicated connection for the download
     cur_download = conn.cursor()
     response = Response(generator(cur_download, fns), mimetype="application/zip")
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(
-        zip_fn
-    )
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(zip_fn)
     return response
 
 
@@ -525,6 +458,69 @@ def _delete():
     return make_response(jsonify("Files successfully deleted", 200))
 
 
+def _allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/settings", methods=["GET", "POST"])
+def settings_page():
+    """
+        The data web pages where you can download/delete the raw gnss data
+    """
+    with conn.cursor() as cur_settings:
+        if request.method == "POST":
+            form = cleanopts(request.form)
+            if form["submit_button"] == "hotspot":
+                logger.info("Switching to local hotspot")
+                # switch to serving a hotspot, and tell all children to switch to hotspot
+            elif form["submit_button"] == "logo":
+                if "filename" not in request.files:
+                    logger.error("No file provided")
+                else:
+                    file = request.files["filename"]
+                    # if user does not select file, browser also
+                    # submit an empty part without filename
+                    if file.filename == "":
+                        logger.error("Empty file name provided")
+                    else:
+                        if file and _allowed_file(file.filename):
+                            logger.info(f"Uploading {file.filename} to logo.png")
+                            filename = "logo.png"
+                            file.save(
+                                os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                            )
+            else:
+                ssid = form["ssid"]
+                passwd = form["password"]
+                if ssid != "" and passwd != "":
+                    # Check if all children for current job are online. If not, don't change, as all children need to be online first
+                    # TODO: implement check
+                    devices_ready = dbase.query_devices(
+                        cur_settings, status=states["ready"]
+                    )
+                    cur_project = dbase.query_project_active(cur_settings)
+                    project = dbase.query_projects(
+                        cur_settings,
+                        project_id=cur_project[0][0],
+                        as_dict=True,
+                        flatten=True,
+                    )
+                    if project["n_cams"] == len(devices_ready):
+                        # Instruct all children to switch networks
+                        logger.info(f"Switching to ssid: {ssid} with passwd: {passwd}")
+                    else:
+                        logger.error(
+                            f"Not all expected children ({len(devices_ready)}/{project['n_cams']}) ready"
+                        )
+                    # TODO: make instruction upon task request
+                    # Switch network yourself.
+                    # TODO: make switcher for wifi network
+                else:
+                    logger.error(f"ssid or password missing")
+
+        return render_template("settings.html")
+
+
 @app.route("/picam", methods=["GET", "POST"])
 def picam():
     with conn.cursor() as cur_request:
@@ -539,6 +535,10 @@ def picam():
             )  # response is passed back to client
             # print(r, status_code)
             return make_response(jsonify(r), status_code)
+
+
+from routes.nodeodm import *
+from routes.logs import *
 
 
 def run(app):

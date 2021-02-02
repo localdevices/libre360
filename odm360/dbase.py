@@ -439,12 +439,14 @@ def query_location(cur, timestamp, dt_max=2.0):
     if response is not None:
         ts_before, msg_before = response
     else:
-        ts_before = None; msg_before = None
+        ts_before = None
+        msg_before = None
     response = query_gps_timestamp(cur, timestamp, before=False)
     if response is not None:
         ts_after, msg_after = response
     else:
-        ts_after = None; msg_after = None
+        ts_after = None
+        msg_after = None
     keys = ["lon", "lat", "alt", "epx", "epy", "epv"]
     loc = {k: None for k in keys}
     if (msg_before is None) or (msg_after is None):
