@@ -36,21 +36,11 @@
     </div>
 </div>
 </form>
-<!--<form>-->
-<!--    <div class="row">-->
-<!--    <div class="col">-->
-<!--        <b>Debug log level</b>-->
-<!--          <select class="btn btn-primary dropdown-toggle" name="loglevel" id="loglevel">-->
-<!--            <option value="debug">DEBUG</option>-->
-<!--            <option value="info">INFO</option>-->
-<!--          </select>-->
-<!--    </div>-->
-<!--    </div>-->
-<!--</form>-->
+
 <form>
   <div class="form-group row">
     <label for="loglevel" class="col-sm-2 col-form-label">Log level</label>
-    <div class="col-sm-10">
+    <div class="input-group-prepend">
           <select class="btn btn-primary dropdown-toggle" name="loglevel" id="loglevel">
             <option value="debug">DEBUG</option>
             <option value="info">INFO</option>
@@ -59,18 +49,21 @@
   </div>
 </form>
 <form action="/settings" method="POST" enctype="multipart/form-data">
-<!--    <div class="input-group mb-3">-->
-<!--      <div class="input-group-prepend">-->
-<!--        <button name="submit_button" value="logo" class="btn btn-primary" type="submit">Upload</button>-->
-<!--      </div>-->
-      <div class="custom-file">
-        <input type="file" class="custom-file-input" id="customFile" name="filename" accept="image/*">
-        <label class="custom-file-label" for="customFile">Select file</label>
-      </div>
-      <div class="mt-3">
-        <button name="submit_button" value="logo" type="submit" class="btn btn-primary">Upload</button>
-      </div>
-<!--    </div>-->
+    <div class="form-group row">
+        <div class="input-group mb-3">
+          <label for="customFile" class="col-sm-2 col-form-label">Upload logo</label>
+          <div class="input-group-prepend">
+            <button name="submit_button" value="logo" class="btn btn-primary" type="submit">Upload</button>
+          </div>
+          <div class="custom-file">
+            <input type="file" class="custom-file-input" id="customFile" name="filename" accept="image/*">
+            <label class="custom-file-label" for="customFile">Select file</label>
+          </div>
+    <!--      <div class="mt-3">-->
+    <!--        <button name="submit_button" value="logo" type="submit" class="btn btn-primary">Upload</button>-->
+    <!--      </div>-->
+        </div>
+    </div>
 </form>
 <br>
 This page is not finalized yet and may not work.
