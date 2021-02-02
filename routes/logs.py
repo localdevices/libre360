@@ -3,14 +3,18 @@ from flask import render_template, Response
 from odm360.log import stream_logger
 import os
 
+
 @app.route("/logs")
 def logs_page():
     """
         The data web pages where you can download/delete the raw gnss data
     """
-    return render_template("logs.html",
-                           logo="./static/images/logo.png" if os.path.isfile("./static/images/logo.png") else ""
-                           )
+    return render_template(
+        "logs.html",
+        logo="./static/images/logo.png"
+        if os.path.isfile("./static/images/logo.png")
+        else "",
+    )
 
 
 @app.route("/log_stream", methods=["GET"])

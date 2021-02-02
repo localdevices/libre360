@@ -61,6 +61,7 @@ log = logging.getLogger("werkzeug")
 log.setLevel(logging.ERROR)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.config["MAX_CONTENT_LENGTH"] = 512 * 1024  # 512 kb
 app.logger.disabled = False
 app.logger.setLevel(20)
 add_filehandler(app.logger, "odm360.log")
@@ -87,9 +88,6 @@ def add_header(r):
     r.headers["Expires"] = "0"
     r.headers["Cache-Control"] = "public, max-age=0"
     return r
-
-
-# import routes, organized in several files
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -178,6 +176,9 @@ def status():
         projects=projects,
         cur_project_id=cur_project_id,
         service_active=service_active,
+        logo="./static/images/logo.png"
+        if os.path.isfile("./static/images/logo.png")
+        else "",
     )
 
 
@@ -318,7 +319,12 @@ def project_page():
             )
             return redirect("/")
         else:
-            return render_template("project.html")
+            return render_template(
+                "project.html",
+                logo="./static/images/logo.png"
+                if os.path.isfile("./static/images/logo.png")
+                else "",
+            )
 
 
 @app.route("/file_page")  # , methods=["GET", "POST"])
@@ -328,7 +334,13 @@ def file_page():
         project_ids = [p[0] for p in projects]
         project_names = [p[1] for p in projects]
         projects = zip(project_ids, project_names)
-        return render_template("file_page.html", projects=projects)
+        return render_template(
+            "file_page.html",
+            projects=projects,
+            logo="./static/images/logo.png"
+            if os.path.isfile("./static/images/logo.png")
+            else "",
+        )
 
 
 @app.route("/_files", methods=["GET", "POST"])
@@ -489,6 +501,9 @@ def settings_page():
                             file.save(
                                 os.path.join(app.config["UPLOAD_FOLDER"], filename)
                             )
+            elif form["submit_button"] == "delete_logo":
+                filename = os.path.join(app.config["UPLOAD_FOLDER"], "logo.png")
+                os.remove(filename)
             else:
                 ssid = form["ssid"]
                 passwd = form["password"]
@@ -518,7 +533,12 @@ def settings_page():
                 else:
                     logger.error(f"ssid or password missing")
 
-        return render_template("settings.html")
+        return render_template(
+            "settings.html",
+            logo="./static/images/logo.png"
+            if os.path.isfile("./static/images/logo.png")
+            else "",
+        )
 
 
 @app.route("/picam", methods=["GET", "POST"])
