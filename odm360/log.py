@@ -16,7 +16,6 @@ def setuplog(name, path=None, log_level=20, fmt=FMT):
     syslog = logging.handlers.SysLogHandler(address="/dev/log")
     syslog.setLevel(log_level)
     syslog.setFormatter(logging.Formatter(fmt))
-
     logger.addHandler(syslog)
 
     console = logging.StreamHandler(sys.stdout)

@@ -1,79 +1,39 @@
-<!DOCTYPE html>
-{% from 'bootstrap/nav.html' import render_nav_item %}
-
-<html lang="en" style="position:relative; min-height: 100%;">
+<html> <!--lang="en" style="position:relative; min-height: 100%;">-->
   <head>
     {% block head %}
     <!-- Required meta tags -->
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <title>ODM 360</title>
     {% block styles %}
-
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='lib/bootstrap.min.css') }}">
-
+    <style>
+            #footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                height: 25px;
+                margin-top: 1em;
+                background: white;
+                display: inline-block;
+                flex-grow: 0;
+                z-index: -1;
+            }
+    </style>
     {% endblock %}
-
-    <title>ODM 360</title>
     {% endblock %}
   </head>
-  <body style="min-height: 100vh; display:flex; flex-direction: column;">
-    <div class="container">
-      <ul class="nav nav-pills nav-justified bg-light font-weight-bolder text-uppercase">
-        <li class="nav-item">{{ render_nav_item('status', 'Status') }}</li>
-        <li class="nav-item">{{ render_nav_item('project_page', 'Project') }}</li>
-        <li class="nav-item">{{ render_nav_item('file_page', 'Files') }}</li>
-        <li class="nav-item">{{ render_nav_item('logs_page', 'Logs') }}</li>
-        <li class="nav-item">{{ render_nav_item('nodeodm_page', 'NodeODM') }}</li>
-        <li class="nav-item">{{ render_nav_item('settings_page', 'Settings') }}</li>
-      </ul>
-    </div>
-    <!-- Your page content -->
-    <main style="flex-grow: 1;">
-    {% block content %}{% endblock %}
-  </main>
-    <footer style="flex-grow: 0; display: block;"></footer>
-      <div class="container text-center bg-light">
-        <span class="text-muted small">Lat: </span><span class="text-muted small" id="lat">-</span>
-        <span class="text-muted small">Lon: </span><span class="text-muted small" id="lon">-</span>
-        <span class="text-muted small">Z: </span><span class="text-muted small" id="alt">-</span>
-        <span class="text-muted small">Fix: </span><span class="text-muted small" id="mode">-</span>
-        <span class="text-muted small">S: </span><span class="text-muted small" id="sats">-</span>
-        <span class="text-muted small">PDOP: </span>
-        <span class="text-muted small"> | </span>
-        <span class="text-muted small">O: </span><span class="text-muted small" id="cam_total">-</span><span class="text-muted small">/</span><span class="text-muted small" id="cam_required1">-</span>
-        <span class="text-muted small">R: </span><span class="text-muted small" id="cam_ready">-</span><span class="text-muted small">/</span><span class="text-muted small" id="cam_required2">-</span>
-        <span class="text-muted small">C: </span><span class="text-muted small" id="cam_capture">-</span><span class="text-muted small">/</span><span class="text-muted small" id="cam_required3">-</span>
-      </div>
-      <div class="container text-center bg-light"><span class="text-muted small">ODM360 v{{ g.version }}</span></div>
-    </footer>
-
+  {% include "navbar.html" %}
+<!--    <main style="flex-grow: 1;">-->
+    {% block content %}
+    {% include "footer.html" %}
+    {% endblock %}
+<!--  </main>-->
     {% block scripts %}
     <script type="text/javascript" src="{{ url_for('static', filename='lib/jquery-3.5.1.min.js') }}"></script>
-    <script>
-    var cam_summary;
-    function get_cam_sum() {
-        $.getJSON("_cam_summary",
-                function (data) {
-                    $('#lat').text(data.lat.toFixed(8));
-                    $('#lon').text(data.lon.toFixed(8));
-                    $('#alt').text(data.alt.toFixed(3));
-                    $('#mode').text(data.mode);
-                    $('#sats').text(data.sats);
-                    $('#cam_ready').text(data.ready);
-                    $('#cam_total').text(data.total);
-                    $('#cam_capture').text(data.total-data.ready);
-                    $('#cam_required1').text(data.required);
-                    $('#cam_required2').text(data.required);
-                    $('#cam_required3').text(data.required);
-                    // make cam_summary available through entire application
-                    cam_summary = data;
-                }
-        );
-    }
-    setInterval('get_cam_sum()', 2000);
-    </script>
+    <script type="text/javascript" src="{{ url_for('static', filename='lib/bootstrap.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='base.js') }}"></script>
 
     {% endblock %}
   </body>
