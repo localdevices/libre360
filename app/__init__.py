@@ -30,8 +30,8 @@ from odm360 import dbase
 from odm360.states import states
 from odm360.camera360rig import do_request
 
-from flask_app import logs
-from flask_app import nodeodm
+from app import logs
+from app import nodeodm
 
 # connect with database
 db = "dbname=odm360 user=odm360 host=localhost password=zanzibar"
