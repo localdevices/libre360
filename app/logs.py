@@ -1,8 +1,7 @@
-#from app import app
 from flask import render_template, Response
 from odm360.log import stream_logger
 import os
-
+from app import app
 
 @app.route("/logs")
 def logs_page():
