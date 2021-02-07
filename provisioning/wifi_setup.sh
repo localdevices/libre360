@@ -64,10 +64,20 @@ echo $'
 net.ipv4.ip_forward=1
 ' | sudo tee /etc/sysctl.d/routed-ap.conf
 
-sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+# check if there is a wlan usb device. If not go for eth0 routing
+if (ip addr) | grep -q "wlan1: <BROADCAST";
+then
+  echo "Additional WiFi adapter found, configuring for wlan1";
+  sudo iptables -t nat -A POSTROUTING -o wlan1 -j MASQUERADE
+  sudo iptables -A FORWARD -i wlan1 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -i wlan0 -o wlan1 -j ACCEPT
+else
+  echo "No additional WiFi adapter present, configuring for eth0"
+  sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+  sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
 
+fi
 # store the iptables rules
 sudo netfilter-persistent save
 
