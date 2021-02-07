@@ -14,19 +14,42 @@ echo "Setting up local access point via wlan0"
 # add denyinterfaces to dhcp conf
 sudo echo "denyinterfaces wlan0" >> /etc/dhcpcd.conf
 
-echo $'auto lo
-iface lo inet loopback
+if (ip addr) | grep -q "wlan1: <BROADCAST";
 
-auto eth0
-iface eth0 inet dhcp
+then
+  echo "Additional WiFi adapter found, setting up DHCP for wlan1";
+  echo $'auto lo
+  iface lo inet loopback
 
-allow-hotplug wlan0
-iface wlan0 inet static
-    address 192.168.5.1
-    netmask 255.255.255.0
-    network 192.168.5.0
-    broadcast 192.168.5.255
-' | sudo tee -a /etc/network/interfaces
+  allow-hotplug wlan1
+  auto wlan1
+  iface wlan1 inet dhcp
+  wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+  allow-hotplug wlan0
+  iface wlan0 inet static
+      address 192.168.5.1
+      netmask 255.255.255.0
+      network 192.168.5.0
+      broadcast 192.168.5.255
+  ' | sudo tee -a /etc/network/interfaces
+else
+  echo "No additional WiFi adapter found, setting up DHCP for eth0";
+
+  echo $'auto lo
+  iface lo inet loopback
+
+  auto eth0
+  iface eth0 inet dhcp
+
+  allow-hotplug wlan0
+  iface wlan0 inet static
+      address 192.168.5.1
+      netmask 255.255.255.0
+      network 192.168.5.0
+      broadcast 192.168.5.255
+  ' | sudo tee -a /etc/network/interfaces
+fi
 
 echo $'interface=wlan0
 driver=nl80211
