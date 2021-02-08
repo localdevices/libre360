@@ -20,6 +20,8 @@ then
   echo "Additional WiFi adapter found, setting up DHCP for wlan1";
   echo $'auto lo
   iface lo inet loopback
+  auto eth0
+  iface eth0 inet dhcp
 
   allow-hotplug wlan1
   auto wlan1
@@ -95,12 +97,13 @@ then
   sudo iptables -A FORWARD -i wlan1 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -A FORWARD -i wlan0 -o wlan1 -j ACCEPT
 else
-  echo "No additional WiFi adapter present, configuring for eth0"
-  sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-  sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
-
+  echo "No additional WiFi adapter present, only configuring for eth0"
 fi
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+
+sudo route add default gw 192.168.5.1
 # store the iptables rules
 sudo netfilter-persistent save
 
