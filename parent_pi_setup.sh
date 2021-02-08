@@ -1,12 +1,14 @@
 #!/bin/bash
 
 # Set up a Raspberry Pi as an ODM360 Parent.
-
 model="$( cat /proc/device-tree/model )" 2>> provisioning/error.log
 onpi="no"
 if [[ "$model" == *"Raspberry Pi"* ]]; then
     echo "This is actually a Raspberry Pi!"
     onpi="yes"
+else
+    echo "This is not a raspberry pi, exiting."
+    exit 1
 fi
 
 # If nothing in /proc/device-tree/model:
@@ -15,10 +17,6 @@ if [[ "$model" == "" ]]; then
     model="computer of some sort"
 fi
 
-# Install dnsmasq and hostapd only if on a raspi
-if [[ $onpi == "yes" ]]; then
-  provisioning/wifi_setup.sh >> provisioning/setup.log 2>> provisioning/error.log
-fi
 
 echo Running base pi setup
 provisioning/base_pi_setup.sh
@@ -39,6 +37,9 @@ restrict 192.168.1.0 mask 255.255.255.0
 broadcast 192.168.1.255
 broadcast 224.0.1.1
 ' | sudo tee -a /etc/ntp.conf
+
+# Install dnsmasq and hostapd
+provisioning/wifi_setup.sh >> provisioning/setup.log 2>> provisioning/error.log
 
 echo installing nginx and configuring it to use uwsgi
 sudo apt install -y nginx >> provisioning/setup.log 2>> provisioning/error.log

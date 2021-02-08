@@ -19,38 +19,38 @@ if (ip addr) | grep -q "wlan1: <";
 then
   echo "Additional WiFi adapter found, setting up DHCP for wlan1";
   echo $'auto lo
-  iface lo inet loopback
-  auto eth0
-  iface eth0 inet dhcp
+iface lo inet loopback
 
-  allow-hotplug wlan1
-  auto wlan1
-  iface wlan1 inet dhcp
-  wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+auto eth0
+iface eth0 inet dhcp
 
-  allow-hotplug wlan0
-  iface wlan0 inet static
-      address 192.168.5.1
-      netmask 255.255.255.0
-      network 192.168.5.0
-      broadcast 192.168.5.255
-  ' | sudo tee -a /etc/network/interfaces
+allow-hotplug wlan1
+auto wlan1
+iface wlan1 inet dhcp
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+allow-hotplug wlan0
+iface wlan0 inet static
+    address 192.168.5.1
+    netmask 255.255.255.0
+    network 192.168.5.0
+    broadcast 192.168.5.255
+' | sudo tee -a /etc/network/interfaces
 else
   echo "No additional WiFi adapter found, setting up DHCP for eth0";
-
   echo $'auto lo
-  iface lo inet loopback
+iface lo inet loopback
 
-  auto eth0
-  iface eth0 inet dhcp
+auto eth0
+iface eth0 inet dhcp
 
-  allow-hotplug wlan0
-  iface wlan0 inet static
-      address 192.168.5.1
-      netmask 255.255.255.0
-      network 192.168.5.0
-      broadcast 192.168.5.255
-  ' | sudo tee -a /etc/network/interfaces
+allow-hotplug wlan0
+iface wlan0 inet static
+    address 192.168.5.1
+    netmask 255.255.255.0
+    network 192.168.5.0
+    broadcast 192.168.5.255
+' | sudo tee -a /etc/network/interfaces
 fi
 
 echo $'interface=wlan0
@@ -90,6 +90,10 @@ net.ipv4.ip_forward=1
 ' | sudo tee /etc/sysctl.d/routed-ap.conf
 
 # check if there is a wlan usb device. If not go for eth0 routing
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+
 if (ip addr) | grep -q "wlan1: <";
 then
   echo "Additional WiFi adapter found, configuring for wlan1";
@@ -99,9 +103,6 @@ then
 else
   echo "No additional WiFi adapter present, only configuring for eth0"
 fi
-sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
 
 sudo route add default gw 192.168.5.1
 # store the iptables rules
