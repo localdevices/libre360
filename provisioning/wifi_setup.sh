@@ -14,7 +14,7 @@ echo "Setting up local access point via wlan0"
 # add denyinterfaces to dhcp conf
 sudo echo "denyinterfaces wlan0" >> /etc/dhcpcd.conf
 
-if (ip addr) | grep -q "wlan1: <BROADCAST";
+if (ip addr) | grep -q "wlan1: <";
 
 then
   echo "Additional WiFi adapter found, setting up DHCP for wlan1";
@@ -90,7 +90,7 @@ net.ipv4.ip_forward=1
 ' | sudo tee /etc/sysctl.d/routed-ap.conf
 
 # check if there is a wlan usb device. If not go for eth0 routing
-if (ip addr) | grep -q "wlan1: <BROADCAST";
+if (ip addr) | grep -q "wlan1: <";
 then
   echo "Additional WiFi adapter found, configuring for wlan1";
   sudo iptables -t nat -A POSTROUTING -o wlan1 -j MASQUERADE
