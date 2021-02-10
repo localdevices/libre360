@@ -150,10 +150,10 @@ def add_wifi(ssid, passkey, wpa_file="/etc/wpa_supplicant/wpa_supplicant.conf"):
     Taken from https://www.raspberrypi.org/forums/viewtopic.php?t=216506
     """
     template = """
-network={
+network={{
     ssid="{:s}"
     psk="{:s}"
-}""".format
+}}""".format
 
     p1 = subprocess.Popen(["echo", template(ssid, passkey)], stdout=subprocess.PIPE)
     p2 = subprocess.Popen(["sudo", "tee", "-a", "/etc/wpa_supplicant/wpa_supplicant.conf", ">", "/dev/null"],
