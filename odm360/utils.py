@@ -149,7 +149,13 @@ def add_wifi(ssid, passkey, wpa_file="/etc/wpa_supplicant/wpa_supplicant.conf"):
     Add a WiFi network name and PSK to /etc/wpa_supplicant/wpa_supplicant.conf
     Taken from https://www.raspberrypi.org/forums/viewtopic.php?t=216506
     """
-    p1 = subprocess.Popen(["wpa_passphrase", ssid, passkey], stdout=subprocess.PIPE)
+    template = """
+network={
+    ssid="{:s}"
+    psk="{:s}"
+}""".format
+
+    p1 = subprocess.Popen(["echo", template(ssid, passkey)], stdout=subprocess.PIPE)
     p2 = subprocess.Popen(["sudo", "tee", "-a", "/etc/wpa_supplicant/wpa_supplicant.conf", ">", "/dev/null"],
                           stdin=p1.stdout, stdout=subprocess.PIPE)
     p1.stdout.close()  # Give p1 a SIGPIPE if p2 dies.
