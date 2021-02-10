@@ -23,7 +23,7 @@ import time
 import gpsd
 
 from odm360 import states
-from odm360.utils import cleanopts, get_key_state, create_geo_txt
+from odm360.utils import cleanopts, get_key_state, create_geo_txt, add_wifi
 
 from odm360.log import add_filehandler
 from odm360 import dbase
@@ -483,7 +483,17 @@ def settings_page():
         if request.method == "POST":
             form = cleanopts(request.form)
             if form["submit_button"] == "hotspot":
-                logger.info("Switching to local hotspot")
+                import platform
+                if "arm" in platform.platform():
+                    logger.info("adding hotspot to recognized WiFi networks")
+                    if form["ssid"] != "" and form["passkey"] != "":
+                        wifi_str, err = add_wifi(form["ssid"], form["passkey"])
+                        if err is not None:
+                            logger.error(f"WiFi adding failed with error {err}")
+                    else:
+                        logger.error(f"ssid or password missing")
+                else:
+                    logger.error("This machine is not a Raspberry Pi, please add a known network yourself.")
                 # switch to serving a hotspot, and tell all children to switch to hotspot
             elif form["submit_button"] == "logo":
                 if "filename" not in request.files:
@@ -530,8 +540,6 @@ def settings_page():
                     # TODO: make instruction upon task request
                     # Switch network yourself.
                     # TODO: make switcher for wifi network
-                else:
-                    logger.error(f"ssid or password missing")
 
         return render_template(
             "settings.html",

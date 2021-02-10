@@ -11,30 +11,24 @@
 <div class="container">
 <br><br>
 <form action="/settings" method="POST">
-<div id="settings_service_space" class="form-group">
-    <div class="row">
-        <div class="col">
-            <b>SSID</b>
-            <div class="form-group">
-                <input type="text" class="form-control" name="ssid" placeholder="WiFi SSID">
-            </div>
+    <div class="form-group row">
+        <div class="input-group mb-3">
+          <label for="ssid" class="col-sm-2 col-form-label">SSID</label>
+            <input type="text" id="ssid" class="form-control" name="ssid" placeholder="WiFi SSID">
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="input-group mb-3">
+          <label for="passkey" class="col-sm-2 col-form-label">Pass</label>
+            <input type="text" id="passkey" class="form-control" name="passkey" placeholder="Pass key">
         </div>
     </div>
     <div class="row">
         <div class="col py-3">
-            <b>Pass phrase</b>
-            <div class="form-group">
-                <input type="password" class="form-control" name="password" placeholder="psk-password">
-            </div>
+        <button type="submit" name="submit_button" value="hotspot" class="btn btn-primary">Save hotspot</button>
         </div>
     </div>
-    <div class="row">
-        <div class="col py-3">
-        <button type="submit" name="submit_button" value="save" class="btn btn-primary">Save</button>
-        <button type="submit" name="submit_button" value="hotspot" class="btn btn-primary">WiFi Hotspot</button>
-        </div>
-    </div>
-</div>
+</form>
 </form>
 
 <form>
