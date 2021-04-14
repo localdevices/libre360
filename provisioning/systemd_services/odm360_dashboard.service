@@ -5,8 +5,8 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/home/pi/odm360
-ExecStart=/usr/local/bin/uwsgi --http :5000 --ini /home/pi/odm360/uwsgi.ini
+WorkingDirectory=/home/pi/libre360
+ExecStart=/usr/local/bin/uwsgi --http :5000 --ini /home/pi/libre360/uwsgi.ini
 
 [Install]
 WantedBy=multi-user.target
