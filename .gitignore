@@ -5,6 +5,10 @@
 #pycharm
 /.idea/
 
+/docs/_build
+/docs/_static
+/docs/_templates
+
 #logs
 odm360.log
 
