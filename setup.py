@@ -10,20 +10,20 @@ with open("README.md") as readme_file:
     readme = readme_file.read()
 
 setup(
-    name="odm360",
-    description="odm360 is a python package to control a 360 camera uBlox positioning setup",
+    name="libre360",
+    description="libre360 is a python package to control a 360 camera with uBlox positioning setup",
     long_description=readme + "\n\n",
-    url="https://github.com/OpenDroneMap/odm360",
-    author="Stephen Mather",
-    author_email="svm@clevelandmetroparks.com",
+    url="https://github.com/localdevices/libre360",
+    author="Rainbow Sensing",
+    author_email="info@rainbowsensing.com",
     packages=find_packages(),
-    package_dir={"odm360": "odm360"},
+    package_dir={"libre360": "libre360"},
     test_suite="tests",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     python_requires=">=3.6",
     install_requires=[
-        "pySerial",
+        "pyserial",
         "numpy",
         "pytz",
         "tzlocal",
@@ -41,11 +41,11 @@ setup(
         "gpsd-py3",
     ],
     extras_require={"dev": ["pytest", "pytest-cov", "black"], "optional": [],},
-    scripts=["bin/odm360"],
+    scripts=["bin/libre360"],
     entry_points="""
     """,
     include_package_data=True,
-    license="MIT",
+    license="AGPLv3",
     zip_safe=False,
     classifiers=[
         # https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -58,5 +58,5 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    keywords="opendronemap topography photogrammetry data-science odm360",
+    keywords="opendronemap topography photogrammetry data-science libre360",
 )
