@@ -23,7 +23,7 @@ security = Security(app, user_datastore)
 # Alternative routes
 @app.route("/")
 def index():
-    return redirect("/portal", code=302)
+    return redirect("/dashboard", code=302)
 
 
 # Create admin interface

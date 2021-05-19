@@ -10,7 +10,7 @@ from views.help import HelpView
 from views.project import ProjectView
 from views.survey import SurveyView
 
-admin = admin.Admin(name="Libre360", template_mode="bootstrap4", url="/portal")
+admin = admin.Admin(name="Libre360", template_mode="bootstrap4", url="/dashboard", base_template="base.html")
 
 # Login/logout menu links.
 admin.add_link(LogoutMenuLink(name="Logout", category="", url="/logout"))

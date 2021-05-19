@@ -1,0 +1,21 @@
+var cam_summary;
+function get_cam_sum() {
+    $.getJSON("/api/status/get_status",
+        function (data) {
+            $('#lat').text(data.lat.toFixed(8));
+            $('#lon').text(data.lon.toFixed(8));
+            $('#alt').text(data.alt.toFixed(3));
+            $('#mode').text(data.mode);
+            $('#sats').text(data.sats);
+            $('#cam_ready').text(data.ready);
+            $('#cam_total').text(data.total);
+            $('#cam_capture').text(data.total-data.ready);
+            $('#cam_required1').text(data.required);
+            $('#cam_required2').text(data.required);
+            $('#cam_required3').text(data.required);
+            // make cam_summary available through entire application
+            cam_summary = data;
+        }
+    );
+}
+setInterval('get_cam_sum()', 2000);

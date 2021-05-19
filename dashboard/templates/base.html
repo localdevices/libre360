@@ -1,0 +1,14 @@
+{% extends 'admin/base.html' %}
+{% block head_css %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}
+{% block brand %}
+    <a class="navbar-brand" href="http://www.google.com/"><img
+        src="{{ url_for('static', filename='img/logo_small.png') }}"></a>
+{% endblock %}
+
+{% block tail_js %}
+    {{ super() }}
+    <script type="text/javascript" src="{{ url_for('static', filename='base.js') }}"></script>
+{% endblock %}

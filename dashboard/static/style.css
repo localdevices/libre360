@@ -1,0 +1,8 @@
+nav.navbar {
+    background-color: steelblue!important;
+}
+
+.navbar-nav .nav-link.active {
+    font-weight-bold;
+}
+
