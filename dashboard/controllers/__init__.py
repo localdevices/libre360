@@ -1,3 +1,3 @@
-from .child import *
-from .states import *
+from .device import *
+from .dashboard import *
 from .data import *

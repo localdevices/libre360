@@ -16,7 +16,7 @@ class Device(Base, SerializerMixin):
     id = Column(Integer, primary_key=True)  # on-the-fly created id of device
     hostname = Column(String, nullable=False)
     status = Column(Enum(DeviceStatus), default=DeviceStatus.IDLE)
-    status_time = Column(Float, nullable=False)  # last moment that device was reporting its status
+    request_time = Column(String, nullable=False)  # last moment that device was reporting its status
     last_photo = Column(String)  # last filename known of photo locally on device
 
     def __str__(self):

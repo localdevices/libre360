@@ -3,17 +3,17 @@ from flask_admin import helpers as admin_helpers
 from flask_security import Security, login_required, SQLAlchemySessionUserDatastore
 from models import db
 from models.user import User, Role
-from controllers import child_api
+from controllers import device_api
 from controllers import data_api
-from controllers import states_api
+from controllers import dashboard_api
 
 from views import admin
 
 # Create flask app
 app = Flask(__name__, template_folder="templates")
-app.register_blueprint(child_api)
+app.register_blueprint(device_api)
 app.register_blueprint(data_api)
-app.register_blueprint(states_api)
+app.register_blueprint(dashboard_api)
 
 app.debug = True
 app.config["SECRET_KEY"] = "super-secret"

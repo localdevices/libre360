@@ -18,4 +18,8 @@ Base.metadata.create_all(engine)
 
 DBSession = sessionmaker(bind=engine)
 db = scoped_session(DBSession)
+
+# remove any devices from the last session
+[db.execute(table.delete()) for table in Base.metadata.sorted_tables if table.name == "device"]
+db.commit()
 Base.query = db.query_property()
