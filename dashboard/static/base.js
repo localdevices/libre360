@@ -1,6 +1,6 @@
 var cam_summary;
 function get_cam_sum() {
-    $.getJSON("/api/status/get_status",
+    $.getJSON("/api/get_status",
         function (data) {
             $('#lat').text(data.lat.toFixed(8));
             $('#lon').text(data.lon.toFixed(8));
