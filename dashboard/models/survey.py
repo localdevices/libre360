@@ -8,7 +8,7 @@ from models.base import Base
 class Survey(Base, SerializerMixin):
     __tablename__ = "survey"
     id = Column(Integer, primary_key=True)
-    time_start = Column(DateTime, nullable=False)
+    timestamp = Column(DateTime, nullable=False)
     project_id = Column(Integer, ForeignKey("project.id"))
     project = relationship("Project", cascade="all, delete")
 

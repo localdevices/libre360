@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request, flash, url_for, redirect
 from jsonschema import validate, ValidationError
 from models import db
-from models.device import Device, DeviceStatus
-
+from models.device import Device, DeviceStatus, DeviceType
+from controllers import tasks
 device_api = Blueprint("device_api", __name__)
 
 # functionality to select and return tasks
@@ -30,9 +30,9 @@ def get_task(cur, state):
         if device_status != rig_status:
             # something needs to be done to get the states the same
             task_name = f"task_{device_status}_to_{rig_status}"
-            if not (hasattr(camrig, task_name)):
-                return f"task {task_name} not available"
-            task = getattr(camrig, task_name)
+            if not (hasattr(controllers.device, task_name)):
+                return f"task {task_name} not available", 400
+            task = getattr(controllers.device, task_name)
             # execute task
             return task(cur, state)
             # camera is already capturing, so just wait for further instructions (stop)
@@ -70,20 +70,29 @@ def task_request(hostname):
     content["hostname"] = hostname  # add the host to the content
     # content["status"] = DeviceStatus[content["status"]]
     # FIXME: implement task handling, which eventually should lead to return of task
-    device = Device.query.filter(Device.hostname == hostname).first()
-    if device is None:
+    child = Device.query.filter(Device.hostname == hostname).first()
+    if child is None:
         # device hasn't been online yet, add to database
         print(content)
-        db.add(Device(**content))
+        child = Device(**content)
+        db.add(child)
     else:
         # update status
-        device.status = content["status"]
+        child.status = content["status"]
     db.commit()
     # request a task
-
-    # ....
-    return "Success", 200
-    # return jsonify(task.to_dict())
+    parent = Device.query.filter(Device.device_type == DeviceType.PARENT).first()  # retrieve parent
+    # construct task name from status differences
+    if child.status != parent.status:
+        task_name = f"task_{child.status.name}_to_{parent.status.name}".lower()
+        print(task_name)
+        if not (hasattr(tasks, task_name)):
+            return f"task {task_name} not available", 400
+        task = getattr(tasks, task_name)
+        # execute task
+        return task()
+    # if the status of child is the same as parent, then just wait
+    return {"task": "wait", "kwargs": {}}, 200
 
 @device_api.route("/api/child_log/<id>", methods=["POST"])
 def child_log(id):
