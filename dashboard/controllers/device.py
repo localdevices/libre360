@@ -65,7 +65,6 @@ def task_request(hostname):
     :return:
     """
     content = request.get_json(silent=True)
-    print(f"Content = {content}")
     validate(instance=content, schema=task_schema)
     content["hostname"] = hostname  # add the host to the content
     # content["status"] = DeviceStatus[content["status"]]
@@ -73,7 +72,6 @@ def task_request(hostname):
     child = Device.query.filter(Device.hostname == hostname).first()
     if child is None:
         # device hasn't been online yet, add to database
-        print(content)
         child = Device(**content)
         db.add(child)
     else:
@@ -85,7 +83,6 @@ def task_request(hostname):
     # construct task name from status differences
     if child.status != parent.status:
         task_name = f"task_{child.status.name}_to_{parent.status.name}".lower()
-        print(task_name)
         if not (hasattr(tasks, task_name)):
             return f"task {task_name} not available", 400
         task = getattr(tasks, task_name)
