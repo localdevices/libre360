@@ -9,6 +9,7 @@ class ProjectView(UserModelView):
         Project.name,
         Project.n_cams,
         Project.dt,
+        Project.status,
     )
 
     column_labels = {
@@ -22,6 +23,11 @@ class ProjectView(UserModelView):
         "n_cams": "Amount of cameras available",
         "dt": "Time interval between photos in whole seconds",
     }
+    form_columns = (
+        Project.name,
+        Project.n_cams,
+        Project.dt,
+    )
     # if you want to edit project list, create, update, or detail view, specify adapted templates below.
     # list_template = "project/list.html"
     #create_template = "project/create.html"

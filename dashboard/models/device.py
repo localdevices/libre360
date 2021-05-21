@@ -11,13 +11,17 @@ class DeviceStatus(enum.Enum):
     STREAM = 4
     BROKEN = 9
 
+class DeviceType(enum.Enum):
+    PARENT = 0
+    CHILD = 1
+
 class Device(Base, SerializerMixin):
     __tablename__ = "device"
     id = Column(Integer, primary_key=True)  # on-the-fly created id of device
+    device_type = Column(Enum(DeviceType), nullable=False)
     hostname = Column(String, nullable=False)
     status = Column(Enum(DeviceStatus), default=DeviceStatus.IDLE)
     request_time = Column(String, nullable=False)  # last moment that device was reporting its status
-    last_photo = Column(String)  # last filename known of photo locally on device
 
     def __str__(self):
         return "{}".format(self.name)
