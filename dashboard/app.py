@@ -1,13 +1,18 @@
 from flask import Flask, redirect, jsonify, url_for
 from flask_admin import helpers as admin_helpers
 from flask_security import Security, login_required, SQLAlchemySessionUserDatastore
+from werkzeug import serving
+import re
 from models import db
 from models.user import User, Role
 from controllers import device_api
 from controllers import data_api
 from controllers import dashboard_api
-
 from views import admin
+
+def log_request(self, *args, **kwargs):
+    if not self.path in disabled_endpoints:
+        parent_log_request(self, *args, **kwargs)
 
 # Create flask app
 app = Flask(__name__, template_folder="templates")
@@ -25,7 +30,14 @@ app.config["SECURITY_PASSWORD_SALT"] = "salt"
 user_datastore = SQLAlchemySessionUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
+#Disable logs for requests to specific endpoints
+disabled_endpoints = ['/api/get_status']
+
+parent_log_request = serving.WSGIRequestHandler.log_request
+serving.WSGIRequestHandler.log_request = log_request
 # Alternative routes
+
+
 @app.route("/")
 def index():
     return redirect("/dashboard", code=302)
