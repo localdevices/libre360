@@ -1,22 +1,29 @@
-from flask import Blueprint, jsonify, request, flash, url_for, redirect
+from flask import Blueprint, jsonify, request, flash, url_for, redirect, current_app
 from jsonschema import validate, ValidationError
+from models.photo import Photo
+from models import db
 
 # API components that retrieve or download data from database for use on front end
 data_api = Blueprint("data_api", __name__)
 
-@data_api.route("/api/get_project/<id>", methods=["GET"])
-def get_project(id):
+@data_api.route("/api/get_files/<project_id>", defaults={"survey_id": None}, methods=["GET"])
+@data_api.route("/api/get_files/<project_id>/<survey_id>", methods=["GET"])
+def get_files(project_id, survey_id):
     """
     API endpoint for getting list of files from project
 
     :param id: id of project
     :return:
     """
-    # FIXME: implement retrieval of files, should lead to list of files with details and report of files missing or not
-    # ....
-    # return jsonify(files.to_dict())
+    current_app.logger.info(f"Retrieving files for project_id: {project_id} and survey_id: {survey_id}")
 
-@data_api.route("/api/get_gps_locs/<id>", methods=["GET"])
+    if survey_id is None:
+        files = Photo.query.filter(Photo.project_id == project_id).all()
+    else:
+        files = Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id).all()
+    return jsonify([f.to_dict() for f in files]), 200
+
+@data_api.route("/api/get_gps_locs/<project_id>", methods=["GET"])
 def get_gps_locs(id):
     """
     API endpoint to retrieve all gps points belonging to current project
@@ -53,12 +60,20 @@ def download_zip_timestamp(id, time):
     # response.headers["Content-Disposition"] = "attachment; filename={}".format(zip_fn)
     # return response
 
-@data_api.route("/api/delete_project/<id>", methods=["GET"])
-def delete_project(id):
+@data_api.route("/api/delete_files/<project_id>", defaults={"survey_id": None}, methods=["GET"])
+@data_api.route("/api/delete_files/<project_id>/<survey_id>", methods=["GET"])
+def delete_project(project_id, survey_id):
     """
     API end point for deleting a project with all files under that project
     """
-    # return success or not
+    current_app.logger.info(f"Deleting files for project_id: {project_id} and survey_id: {survey_id}")
+    if survey_id is None:
+        files = Photo.query.filter(Photo.project_id == project_id)
+    else:
+        files = Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id)
+    files.delete()
+    db.commit()
+    return "Files successfully deleted from database", 200
 
 
 @data_api.errorhandler(ValidationError)

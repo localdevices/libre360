@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, current_app
 from jsonschema import validate, ValidationError
 from models import db
 from models.device import Device, DeviceType
@@ -68,8 +68,8 @@ def child_log(hostname):
 
     :param id: hostname of child
     """
+    current_app.logger.info(f"Receiving new photo details from {hostname}")
     content = request.get_json(silent=True)
-    print(f"Content = {content}")
     validate(instance=content, schema=log_schema)
     # deserialize components, and make data model complete
     content["hostname"] = hostname

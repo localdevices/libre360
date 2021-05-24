@@ -14,7 +14,7 @@ class Photo(Base, SerializerMixin):
     timestamp = Column(DateTime, nullable=False)
 
     def __str__(self):
-        return "{}".format(self.name)
+        return "{}".format(self.file)
 
     def __repr__(self):
         return "{}: {}".format(self.id, self.__str__())
