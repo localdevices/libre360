@@ -38,21 +38,17 @@ def task_ready_to_capture():
             start_datetime = datetime.datetime.fromtimestamp(start_time_epoch)
             dt_local = start_datetime.astimezone()
             start_datetime_utc = dt_local.astimezone(pytz.utc)
-            survey_run = start_datetime_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
             survey = {
                 "project_id": project.id,
                 "timestamp": start_datetime_utc,
                 }
             # set start time for capturing, and set state to capture
-            db.add(Survey(**survey))
+            new_survey = Survey(**survey)
+            db.add(new_survey)
             db.commit()
             return {
                 "task": "capture_continuous",
-                "kwargs": {
-                    "start_time": start_time_epoch,
-                    "project": project.id,
-                    "survey": survey_run,
-                }
+                "kwargs": new_survey.to_dict()
             }, 200
         else:
             # this should not happen as the front end part already checks if enough cams are online.

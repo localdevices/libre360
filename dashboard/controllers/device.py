@@ -1,47 +1,12 @@
-from flask import Blueprint, jsonify, request, flash, url_for, redirect
+from flask import Blueprint, jsonify, request
 from jsonschema import validate, ValidationError
 from models import db
-from models.device import Device, DeviceStatus, DeviceType
+from models.device import Device, DeviceType
+from models.photo import Photo
 from controllers import tasks
+
 device_api = Blueprint("device_api", __name__)
 
-# functionality to select and return tasks
-def get_task(cur, state):
-    """
-    Choose a task for the child to perform, and return this
-    Currently implemented are:
-        init: - initialize camera (done when status of camera is 'idle')
-        wait: - tell camera to simply wait and send a request for a task later (typically done when not all cameras are online yet
-        capture_until: - capture until a stop (not implemented yet) is given, using kwargs for time and time intervals
-                         this is only provided when all cameras in the expected camera rig size are initialized
-    :return:
-    dict representation of task, including the following fields:
-    task: str - name of task method to be performed on child side
-    kwargs: dict - set of key word arguments and their values to provide to that task
-    """
-    rig = dbase.query_project_active(cur, as_dict=True)
-    cur_device = dbase.query_devices(
-        cur, device_uuid=state["device_uuid"], as_dict=True, flatten=True
-    )
-    # get states of parent and child in human readable format
-    device_status = utils.get_key_state(cur_device["status"])
-    if len(rig) > 0:
-        rig_status = utils.get_key_state(rig["status"])
-        if device_status != rig_status:
-            # something needs to be done to get the states the same
-            task_name = f"task_{device_status}_to_{rig_status}"
-            if not (hasattr(controllers.device, task_name)):
-                return f"task {task_name} not available", 400
-            task = getattr(controllers.device, task_name)
-            # execute task
-            return task(cur, state)
-            # camera is already capturing, so just wait for further instructions (stop)
-    return {"task": "wait", "kwargs": {}}
-
-
-
-
-# FIXME: make a schema format to check task request messages of child against, before processing
 task_schema = {
     "type": "object",
     "required": ["device_type", "request_time", "status"],
@@ -52,8 +17,15 @@ task_schema = {
     }
 }
 
-# FIXME: make a schema format to check log messages of child against, before processing
 log_schema = {
+    "type": "object",
+    "required": [],
+    "properties": {
+        "project_id": {"type": "integer"},
+        "survey_id": {"type": "integer"},
+        "file": {"type": "string"},
+        "timestamp": {"type": "string"},
+    }
 }
 
 @device_api.route("/api/task_request/<hostname>", methods=["POST"])
@@ -67,8 +39,6 @@ def task_request(hostname):
     content = request.get_json(silent=True)
     validate(instance=content, schema=task_schema)
     content["hostname"] = hostname  # add the host to the content
-    # content["status"] = DeviceStatus[content["status"]]
-    # FIXME: implement task handling, which eventually should lead to return of task
     child = Device.query.filter(Device.hostname == hostname).first()
     if child is None:
         # device hasn't been online yet, add to database
@@ -91,8 +61,8 @@ def task_request(hostname):
     # if the status of child is the same as parent, then just wait
     return {"task": "wait", "kwargs": {}}, 200
 
-@device_api.route("/api/child_log/<id>", methods=["POST"])
-def child_log(id):
+@device_api.route("/api/child_log/<hostname>", methods=["POST"])
+def child_log(hostname):
     """
     API endpoint to post a log message of child to the parent device
 
@@ -101,11 +71,12 @@ def child_log(id):
     content = request.get_json(silent=True)
     print(f"Content = {content}")
     validate(instance=content, schema=log_schema)
-    # parse content
-    # FIXME: implement log message handling, eventually leading to a success/error msg for child
-    # ...
-    # return jsonify(bathymetry.to_dict())
-
+    # deserialize components, and make data model complete
+    content["hostname"] = hostname
+    photo = Photo(**content)
+    db.add(photo)
+    db.commit()
+    return "Success", 200
 
 @device_api.errorhandler(ValidationError)
 @device_api.errorhandler(ValueError)
