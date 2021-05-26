@@ -39,6 +39,8 @@ def task_request(hostname):
     content = request.get_json(silent=True)
     validate(instance=content, schema=task_schema)
     content["hostname"] = hostname  # add the host to the content
+    # replace string of DeviceStatus for type
+
     child = Device.query.filter(Device.hostname == hostname).first()
     if child is None:
         # device hasn't been online yet, add to database

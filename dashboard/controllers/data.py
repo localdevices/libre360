@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request, flash, url_for, redirect, current_app
 from jsonschema import validate, ValidationError
 from models.photo import Photo
+from models.project import Project
+from models.survey import Survey
 from models import db
 
 # API components that retrieve or download data from database for use on front end
@@ -62,16 +64,17 @@ def download_zip_timestamp(id, time):
 
 @data_api.route("/api/delete_files/<project_id>", defaults={"survey_id": None}, methods=["GET"])
 @data_api.route("/api/delete_files/<project_id>/<survey_id>", methods=["GET"])
-def delete_project(project_id, survey_id):
+def delete_files(project_id, survey_id):
     """
     API end point for deleting a project with all files under that project
     """
     current_app.logger.info(f"Deleting files for project_id: {project_id} and survey_id: {survey_id}")
     if survey_id is None:
-        files = Photo.query.filter(Photo.project_id == project_id)
+        Photo.query.filter(Photo.project_id == project_id).delete()
+        Project.query.filter(Project.id == project_id).delete()
     else:
-        files = Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id)
-    files.delete()
+        Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id).delete()
+        Survey.query.filter(Survey.id == survey_id).delete()
     db.commit()
     return "Files successfully deleted from database", 200
 

@@ -2,7 +2,6 @@ from sqlalchemy import Integer, ForeignKey, String, DateTime, Column
 from sqlalchemy_serializer import SerializerMixin
 from models.base import Base
 
-
 class Photo(Base, SerializerMixin):
     __tablename__ = "photo"
     # id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

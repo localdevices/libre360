@@ -82,3 +82,32 @@ def task_ready_to_stream():
     return {"task": "wait", "kwargs": {}}, 200
 
 
+def gps_log(gpsd_stream, project_id, survey_run, sleep=1.0):
+    """
+    Dedicated gps log function, logging to database. The function stops as soon as the rig stops capturing
+    :param conn: psycopg2.connect, connection to database
+    :param gpsd_stream: gpsd.gpsd_stream, gps object that can be polled
+    :param project_id: int, id of current project
+    :param survey_run: str, name of current survey
+    :param sleep: amount of time sleeping in between gps polls (default 1 second).
+    :return:
+    """
+    cur = conn.cursor()
+    while True:
+        rig = dbase.query_project_active(cur, as_dict=True)
+        rig_status = utils.get_key_state(rig["status"])
+        if rig_status != "capture":
+            # apparently rig stopped capturing, so close cursor and return from function
+            cur.close()
+            return
+        gpsd_stream.write("?POLL;\n")
+        gpsd_stream.flush()
+        raw = gpsd_stream.readline()
+        # retrieve time stamp
+        ts = json.loads(raw)["time"]
+
+        dbase.insert_gps(
+            cur, project_id=project_id, survey_run=survey_run, timestamp=ts, msg=raw
+        )
+        time.sleep(sleep)
+

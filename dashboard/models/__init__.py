@@ -14,6 +14,7 @@ from models import survey
 from models import user
 from models import device
 from models import photo
+from models import gps
 
 # TODO: Persistent database by removing drop all once DB models are stable..
 # Base.metadata.drop_all(engine)
