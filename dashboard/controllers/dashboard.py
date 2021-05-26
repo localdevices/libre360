@@ -1,6 +1,6 @@
+import json
 from flask import Blueprint, jsonify, request, flash, url_for, redirect
-from jsonschema import validate, ValidationError
-
+from models import Device
 # API components that retrieve or download data from database for use on front end
 dashboard_api = Blueprint("dashboard_api", __name__)
 
@@ -11,27 +11,20 @@ def get_devices():
 
     :return:
     """
-    # FIXME: implement retrieval of device states files, should lead to list of devices
-    # return jsonify(devices.to_dict())
+    devices = Device.query.all()
+    return jsonify([d.to_dict() for d in devices])
 
 @dashboard_api.route("/api/get_gps", methods=["GET"])
 def get_gps():
     """
-    API endpoint for getting current gps location
+    API endpoint to retrieve all gps points belonging to current project
 
-    :return:
+    :param id: id of project
     """
-    # FIXME: implement retrieval of gps status
-    # return jsonify(gps.to_dict())
-
-@dashboard_api.route("/api/get_status", methods=["GET"])
-def get_status():
-    """
-    API endpoint for getting overall rig status
-
-    :return:
-    """
-    # FIXME: implement retrieval of rig status
-    return "success"
-    # return jsonify(rig.to_dict())
+    import gpsd
+    gpsd.connect()
+    gpsd.gpsd_stream.write("?POLL;\n")
+    gpsd.gpsd_stream.flush()
+    raw = gpsd.gpsd_stream.readline()
+    return jsonify(json.loads(raw)["tpv"])
 

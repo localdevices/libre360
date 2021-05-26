@@ -1,6 +1,5 @@
-from flask import Blueprint, jsonify, request, flash, url_for, redirect, current_app
+from flask import Blueprint, jsonify, current_app
 from jsonschema import validate, ValidationError
-import json
 from models.photo import Photo
 from models.project import Project
 from models.survey import Survey
@@ -24,22 +23,6 @@ def get_files(project_id, survey_id):
     else:
         files = Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id).all()
     return jsonify([f.to_dict() for f in files]), 200
-
-@data_api.route("/api/get_gps", methods=["GET"])
-def get_gps():
-    """
-    API endpoint to retrieve all gps points belonging to current project
-
-    :param id: id of project
-    """
-    # FIXME: implement gps data retrieval, should lead to dict with gps locs, relevant for project (e.g. for plotting
-    #  on a map
-    import gpsd
-    gpsd.connect()
-    gpsd.gpsd_stream.write("?POLL;\n")
-    gpsd.gpsd_stream.flush()
-    raw = gpsd.gpsd_stream.readline()
-    return jsonify(json.loads(raw)["tpv"])
 
 @data_api.route("/api/download_zip/<project_id>", defaults={"survey_id": None}, methods=["GET"])
 @data_api.route("/api/download_zip/<project_id>/<survey_id>", methods=["GET"])
