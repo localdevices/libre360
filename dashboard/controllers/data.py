@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, flash, url_for, redirect, current_app
 from jsonschema import validate, ValidationError
+import json
 from models.photo import Photo
 from models.project import Project
 from models.survey import Survey
@@ -18,15 +19,14 @@ def get_files(project_id, survey_id):
     :return:
     """
     current_app.logger.info(f"Retrieving files for project_id: {project_id} and survey_id: {survey_id}")
-
     if survey_id is None:
         files = Photo.query.filter(Photo.project_id == project_id).all()
     else:
         files = Photo.query.filter(Photo.project_id == project_id).filter(Photo.survey_id == survey_id).all()
     return jsonify([f.to_dict() for f in files]), 200
 
-@data_api.route("/api/get_gps_locs/<project_id>", methods=["GET"])
-def get_gps_locs(id):
+@data_api.route("/api/get_gps", methods=["GET"])
+def get_gps():
     """
     API endpoint to retrieve all gps points belonging to current project
 
@@ -34,10 +34,15 @@ def get_gps_locs(id):
     """
     # FIXME: implement gps data retrieval, should lead to dict with gps locs, relevant for project (e.g. for plotting
     #  on a map
-    # ...
-    # return jsonify(gps.to_dict())
+    import gpsd
+    gpsd.connect()
+    gpsd.gpsd_stream.write("?POLL;\n")
+    gpsd.gpsd_stream.flush()
+    raw = gpsd.gpsd_stream.readline()
+    return jsonify(json.loads(raw)["tpv"])
 
-@data_api.route("/api/download_zip/<id>", methods=["GET"])
+@data_api.route("/api/download_zip/<project_id>", defaults={"survey_id": None}, methods=["GET"])
+@data_api.route("/api/download_zip/<project_id>/<survey_id>", methods=["GET"])
 def download_zip(id):
     """
     API end point for retrieving a zip file from all files in a project
@@ -46,18 +51,6 @@ def download_zip(id):
     """
     # FIXME: implement zip download
     # ...
-    # response = Response(generator(cur_download, fns), mimetype="application/zip")
-    # response.headers["Content-Disposition"] = "attachment; filename={}".format(zip_fn)
-    # return response
-
-@data_api.route("/api/download_zip_time/<id>/<time>", methods=["GET"])
-def download_zip_timestamp(id, time):
-    """
-    API end point for retrieving a zip file from files in a project belonging to a survey run of specified time stamp
-
-    :param id: id of project
-    :param time: time stamp of project
-    """
     # response = Response(generator(cur_download, fns), mimetype="application/zip")
     # response.headers["Content-Disposition"] = "attachment; filename={}".format(zip_fn)
     # return response
