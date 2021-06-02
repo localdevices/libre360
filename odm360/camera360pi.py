@@ -117,6 +117,7 @@ class Camera360Pi(PiCamera):
         return {"msg": msg, "level": "info"}
 
     def capture(self, timeout=1.0, cur=cur):
+        # FIXME: store photos file based in minio bucket
         root_dir = "/home/pi/piimages"
         photo_uuid = uuid.uuid4()
         photo_prefix = f'{datetime.now().strftime("%Y%m%d_%H%M%S")}'
@@ -146,6 +147,7 @@ class Camera360Pi(PiCamera):
         toc = time.time()
         # self.state['last_photo'] = target
         self.logger.debug(f"Photo took {toc-tic} seconds to take")
+        # FIXME: Change the message information posted to parent, so that  photo can be logged entirely to database
         post_capture = {
             "kwargs": {"msg": f"Taken photo {photo_filename}", "level": "info"},
             "req": "LOG",
@@ -156,6 +158,22 @@ class Camera360Pi(PiCamera):
         )  # this just logs on parent side what happened on child side
 
     def capture_continuous(self, start_time=None, survey_run=None, project=None):
+        # FIXME alter to new model: receiving a serialized survey object of following example:
+        # {
+        #     "kwargs": {
+        #         "id": 5,
+        #         "project": {
+        #             "dt": 4,
+        #             "id": 1,
+        #             "n_cams": 1,
+        #             "name": "dar",
+        #             "status": 1
+        #         },
+        #         "project_id": 1,
+        #         "timestamp": "2021-05-24 16:41:32"
+        #     },
+        #     "task": "capture_continuous"
+        # }
         self._project_id = int(project["project_id"])
         self._project_name = project["project_name"]
         self._dt = int(project["dt"])
