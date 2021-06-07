@@ -29,7 +29,7 @@ class ProjectView(UserModelView):
         Project.dt,
     )
     # if you want to edit project list, create, update, or detail view, specify adapted templates below.
-    # list_template = "project/list.html"
+    list_template = "project/list.html"
     #create_template = "project/create.html"
     #edit_template = "project/edit.html"
     #details_template = "project/details.html"

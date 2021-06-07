@@ -1,4 +1,4 @@
-{% extends 'admin/model/list.html' %}
+{% extends 'admin/master.html' %}
 {% block head %}
     {{ super() }}
     <head>
@@ -20,6 +20,7 @@
         maxZoom: 18,
     }).addTo(map);
     var marker = L.marker([51.5, -0.09]).addTo(map);
+    marker.bindPopup("<b>Hello world!</b><br><a href=https://github.com/localdevices/libre360#libre360>Link</a>").openPopup();
     </script>
     <footer>Test test</footer>
 

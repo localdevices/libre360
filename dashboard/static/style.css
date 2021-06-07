@@ -6,3 +6,15 @@ nav.navbar {
     font-weight-bold;
 }
 
+footer {
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   background-color: steelblue;
+   color: white;
+   text-align: center;
+}
+#mapid {
+    margin-bottom: 20px;
+    height: 500px;
+}
