@@ -48,7 +48,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Get changelog from amd64 build
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: changelog
       - name: Overwrite existing changelog
@@ -81,7 +81,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Get artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           path: ~/artifacts
       - name: Build package repository
